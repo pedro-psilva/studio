@@ -51,7 +51,7 @@ export default function LoginPage() {
             Login with Google
           </Button>
           <Button variant="secondary" className="w-full" asChild>
-            <Link href="/">Entrar como Admin</Link>
+            <Link href="/admin">Entrar como Admin</Link>
           </Button>
         </div>
       </form>
