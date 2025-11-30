@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Laptop, Moon, Sun } from 'lucide-react';
+import { Laptop, Moon, Sun, Palette } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 export function ThemeSwitcher() {
@@ -17,8 +17,7 @@ export function ThemeSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <Palette className="h-[1.2rem] w-[1.2rem]" />
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
@@ -32,7 +31,7 @@ export function ThemeSwitcher() {
           <span>Dark</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('gray')}>
-            <Laptop className="mr-2 h-4 w-4" />
+            <div className="mr-2 h-4 w-4 rounded-full bg-slate-500" />
             <span>Gray</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
