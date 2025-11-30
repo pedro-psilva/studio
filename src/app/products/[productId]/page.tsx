@@ -27,19 +27,44 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useTranslation } from '@/hooks/use-translation';
 import { Separator } from '@/components/ui/separator';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel';
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+
+const colorOptions = {
+  "VITA CLASSIC": {
+    "Tonalidades A": ["A1", "A2", "A3", "A3.5", "A4"],
+    "Tonalidades B": ["B1", "B2", "B3", "B4"],
+    "Tonalidades C": ["C1", "C2", "C3", "C4"],
+    "Tonalidades D": ["D1", "D2", "D3", "D4"],
+  },
+  "DENTES CLAREADOS": {
+    "e.max Cad": ["BL1", "BL2", "BL3", "BL4"],
+    "Rosetta": ["W1", "W2", "W3", "W4"],
+  },
+  "VITA 3D MASTER": {
+    "Tonalidades 0": ["0M1", "0M2", "0M3"],
+    "Tonalidades 1": ["1M1", "1M2"],
+    "Tonalidades 2": ["2L2.5", "2M1", "2M2", "2M3", "2R2.5"],
+    "Tonalidades 3": ["3L2.5", "3M1", "3M2", "3M3", "3R1.5", "3R2.5"],
+    "Tonalidades 4": ["4L2.5", "4R2.5", "4R1.5", "4M1", "4M2", "4M3"],
+    "Tonalidades 5": ["5M1", "5M2", "5M3"],
+  }
+};
+
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -49,6 +74,7 @@ export default function ProductDetailPage() {
   const product = products.find((p) => p.id === productId);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(product?.images[0]);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
   if (!product) {
     notFound();
@@ -63,7 +89,6 @@ export default function ProductDetailPage() {
     : productImages[0];
     
   const category = categories.find(c => c.id === product.categoryId);
-
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -123,82 +148,66 @@ export default function ProductDetailPage() {
 
               <Separator className="my-6" />
 
-              {/* Variants */}
-              <div className="space-y-6">
-                {product.variants.materials.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Material</h3>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o material" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {product.variants.materials.map((material) => (
-                          <SelectItem key={material} value={material}>
-                            {material}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                {product.variants.shades.length > 0 && (
-                   <div>
-                    <h3 className="font-semibold mb-2">Cor</h3>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a cor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {product.variants.shades.map((shade) => (
-                          <SelectItem key={shade} value={shade}>
-                            {shade}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                 {product.variants.implantSystems && product.variants.implantSystems.length > 0 && (
-                   <div>
-                    <h3 className="font-semibold mb-2">Sistema de Implante</h3>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o sistema" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {product.variants.implantSystems.map((system) => (
-                          <SelectItem key={system} value={system}>
-                            {system}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-
-              <Separator className="my-6" />
-
-              {/* Quantity & Add to Cart */}
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <div className="flex items-center gap-2 border rounded-md p-2">
-                  <Button variant="ghost" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
-                    <Minus className="h-4 w-4"/>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="lg" className="w-full sm:w-auto flex-1">
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Comprar
                   </Button>
-                  <span className="w-10 text-center font-bold">{quantity}</span>
-                   <Button variant="ghost" size="icon" onClick={() => setQuantity(quantity + 1)}>
-                    <Plus className="h-4 w-4"/>
-                  </Button>
-                </div>
-                <Button size="lg" className="w-full sm:w-auto flex-1">
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Adicionar ao Carrinho
-                </Button>
-              </div>
-                {product.requiresStl && (
-                    <Badge variant="destructive" className="mt-4">Necessário Envio de Arquivo STL</Badge>
-                )}
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Personalize seu Produto</DialogTitle>
+                    <DialogDescription>
+                      Passo 1 de 6: Seleção de Cor
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  {/* Step 1: Color Selection */}
+                  <div className="py-4">
+                    <h3 className="text-lg font-semibold mb-4">SELECIONE A COR DESEJADA</h3>
+                    <RadioGroup value={selectedColor || ""} onValueChange={setSelectedColor}>
+                      <Accordion type="multiple" className="w-full">
+                        {Object.entries(colorOptions).map(([system, subGroups]) => (
+                           <AccordionItem value={system} key={system}>
+                             <AccordionTrigger className="text-md font-medium">{system}</AccordionTrigger>
+                             <AccordionContent>
+                              <div className="pl-4">
+                               <Accordion type="multiple" className="w-full">
+                                {Object.entries(subGroups).map(([groupName, colors]) => (
+                                  <AccordionItem value={groupName} key={groupName}>
+                                    <AccordionTrigger className="text-sm">{groupName}</AccordionTrigger>
+                                    <AccordionContent>
+                                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-2">
+                                        {colors.map((color) => (
+                                          <Label key={color} htmlFor={color} className={`flex items-center justify-center p-3 rounded-md border-2 cursor-pointer transition-colors ${selectedColor === color ? 'border-primary bg-primary/10' : 'border-muted'}`}>
+                                            <RadioGroupItem value={color} id={color} className="sr-only" />
+                                            <span>{color}</span>
+                                          </Label>
+                                        ))}
+                                      </div>
+                                    </AccordionContent>
+                                  </AccordionItem>
+                                ))}
+                               </Accordion>
+                               </div>
+                             </AccordionContent>
+                           </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </RadioGroup>
+                  </div>
+
+                  <DialogFooter>
+                    <Button variant="outline">Cancelar</Button>
+                    <Button>Próximo</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {product.requiresStl && (
+                  <Badge variant="destructive" className="mt-4">Necessário Envio de Arquivo STL</Badge>
+              )}
             </div>
           </div>
 
