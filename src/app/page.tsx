@@ -64,8 +64,7 @@ export default function HomePage() {
               {categories.map((category) => (
                 <Link key={category.id} href={`/products?category=${category.id}`} className="group">
                   <Card className="overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg hover:shadow-primary/20">
-                    <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                      <div className="text-4xl mb-2">{category.icon}</div>
+                    <CardContent className="p-4 flex flex-col items-center justify-center text-center h-24">
                       <h3 className="font-semibold text-foreground">{t(`categories.${category.id}`)}</h3>
                     </CardContent>
                   </Card>
