@@ -10,8 +10,10 @@ import {
   Clock,
   AlertTriangle,
   ShoppingCart,
+  PackageCheck,
+  Factory,
+  FileWarning,
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,14 +32,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   ResponsiveContainer,
   XAxis,
   YAxis,
   Tooltip,
+  CartesianGrid,
 } from 'recharts';
-import { Header } from '@/components/layout/header';
 
 const ordersByStatusData = [
   { name: 'Recebido', total: 45 },
@@ -47,78 +51,98 @@ const ordersByStatusData = [
   { name: 'Enviado', total: 18 },
 ];
 
+const salesLast30Days = [
+    { date: '01/11', value: 1200 },
+    { date: '02/11', value: 1500 },
+    { date: '03/11', value: 900 },
+    { date: '04/11', value: 2200 },
+    { date: '05/11', value: 1800 },
+    { date: '06/11', value: 2500 },
+    { date: '07/11', value: 2100 },
+  ];
+
 export default function AdminDashboard() {
   return (
     <>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3 xl:grid-cols-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Faturamento (Mês)
-              </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">$45,231.89</div>
-              <p className="text-xs text-muted-foreground">
-                +20.1% em relação ao mês passado
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Pedidos (Hoje)
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Pedidos (Hoje)</CardTitle>
               <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+25</div>
-              <p className="text-xs text-muted-foreground">
-                +10% em relação a ontem
-              </p>
+              <div className="text-2xl font-bold">25</div>
+              <p className="text-xs text-muted-foreground">+10% vs ontem</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Tempo Médio de Produção
-              </CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Em Produção</CardTitle>
+              <Factory className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">5.2 dias</div>
-              <p className="text-xs text-muted-foreground">
-                -0.5 dias em relação à semana passada
-              </p>
+              <div className="text-2xl font-bold">38</div>
+              <p className="text-xs text-muted-foreground">Itens na esteira</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Pedidos Atrasados
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Finalizados (Hoje)</CardTitle>
+              <PackageCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">12</div>
+              <p className="text-xs text-muted-foreground">Prontos para envio</p>
+            </CardContent>
+          </Card>
+           <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Faturamento (Mês)</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">R$45.231,89</div>
+              <p className="text-xs text-muted-foreground">+20.1% vs mês passado</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">128</div>
+              <p className="text-xs text-muted-foreground">+5 novos este mês</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pedidos Atrasados</CardTitle>
               <AlertTriangle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">3</div>
-              <p className="text-xs text-muted-foreground">
-                Verificar produção urgente
-              </p>
+              <p className="text-xs text-muted-foreground">Verificar produção</p>
             </CardContent>
           </Card>
         </div>
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
           <Card className="xl:col-span-2">
             <CardHeader>
-              <CardTitle>Pedidos por Status</CardTitle>
+              <CardTitle>Vendas (Últimos 7 dias)</CardTitle>
             </CardHeader>
             <CardContent className="pl-2">
               <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={ordersByStatusData}>
+                <AreaChart data={salesLast30Days}>
+                  <defs>
+                    <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
                   <XAxis
-                    dataKey="name"
+                    dataKey="date"
                     stroke="#888888"
                     fontSize={12}
                     tickLine={false}
@@ -129,8 +153,9 @@ export default function AdminDashboard() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `${value}`}
+                    tickFormatter={(value) => `R$${value/1000}k`}
                   />
+                   <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                   <Tooltip
                     cursor={{ fill: 'hsl(var(--accent))', opacity: 0.2 }}
                     contentStyle={{
@@ -138,18 +163,14 @@ export default function AdminDashboard() {
                       border: '1px solid hsl(var(--border))',
                     }}
                   />
-                  <Bar
-                    dataKey="total"
-                    fill="hsl(var(--primary))"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
+                  <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorUv)" />
+                </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Produtos Mais Usados (Top 5)</CardTitle>
+              <CardTitle>Top Serviços Mais Vendidos</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-6">
               {[
@@ -171,96 +192,82 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
-        <Card>
-          <CardHeader className="flex flex-row items-center">
-            <div className="grid gap-2">
-              <CardTitle>Pedidos Recentes</CardTitle>
-              <CardDescription>
-                Os 5 pedidos mais recentes.
-              </CardDescription>
-            </div>
-            <Button asChild size="sm" className="ml-auto gap-1">
-              <Link href="/admin/orders">
-                Ver Todos
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    Produto
-                  </TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    Status
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">Data</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[
-                  {
-                    customer: 'Clínica Sorriso Aberto',
-                    product: 'Coroa de Zircônia',
-                    status: 'Em Produção',
-                    date: '2023-11-23',
-                    amount: '$250.00',
-                  },
-                  {
-                    customer: 'Dr. João Pereira',
-                    product: 'Lente E-Max',
-                    status: 'Recebido',
-                    date: '2023-11-22',
-                    amount: '$150.00',
-                  },
-                  {
-                    customer: 'OdontoPrime',
-                    product: 'Implante de Titânio',
-                    status: 'Enviado',
-                    date: '2023-11-21',
-                    amount: '$350.00',
-                  },
-                  {
-                    customer: 'Clínica Dente Feliz',
-                    product: 'Guia Cirúrgico',
-                    status: 'Finalizado',
-                    date: '2023-11-20',
-                    amount: '$450.00',
-                  },
-                  {
-                    customer: 'Dr. Ricardo Alves',
-                    product: 'Prótese Total',
-                    status: 'Em Análise',
-                    date: '2023-11-19',
-                    amount: '$550.00',
-                  },
-                ].map((order, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <div className="font-medium">{order.customer}</div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      {order.product}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge className="text-xs" variant="outline">
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {order.date}
-                    </TableCell>
-                    <TableCell className="text-right">{order.amount}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+            <Card className="lg:col-span-2">
+              <CardHeader className="flex flex-row items-center">
+                <div className="grid gap-2">
+                  <CardTitle>Pedidos Recentes</CardTitle>
+                  <CardDescription>
+                    Os 5 pedidos mais recentes.
+                  </CardDescription>
+                </div>
+                <Button asChild size="sm" className="ml-auto gap-1">
+                  <Link href="/admin/orders">
+                    Ver Todos
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead className="hidden sm:table-cell">
+                        Produto
+                      </TableHead>
+                      <TableHead className="hidden sm:table-cell">
+                        Status
+                      </TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[
+                      { customer: 'Clínica Sorriso Aberto', product: 'Coroa de Zircônia', status: 'Em Produção', amount: 'R$250.00' },
+                      { customer: 'Dr. João Pereira', product: 'Lente E-Max', status: 'Recebido', amount: 'R$150.00' },
+                      { customer: 'OdontoPrime', product: 'Implante de Titânio', status: 'Enviado', amount: 'R$350.00' },
+                      { customer: 'Clínica Dente Feliz', product: 'Guia Cirúrgico', status: 'Finalizado', amount: 'R$450.00' },
+                      { customer: 'Dr. Ricardo Alves', product: 'Prótese Total', status: 'Em Análise', amount: 'R$550.00' },
+                    ].map((order, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <div className="font-medium">{order.customer}</div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">{order.product}</TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge className="text-xs" variant="outline">{order.status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{order.amount}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><FileWarning className="h-5 w-5 text-destructive"/> Alertas</CardTitle>
+                    <CardDescription>Ações que precisam de atenção</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                    <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                        <div className="flex-1">
+                            <p className="text-sm font-medium">Pedido #ORD-087</p>
+                            <p className="text-xs text-muted-foreground">Faltando arquivo STL</p>
+                        </div>
+                        <Button variant="secondary" size="sm">Resolver</Button>
+                    </div>
+                    <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                        <div className="flex-1">
+                            <p className="text-sm font-medium">Pedido #ORD-082</p>
+                            <p className="text-xs text-muted-foreground">Pagamento pendente</p>
+                        </div>
+                        <Button variant="secondary" size="sm">Ver Fatura</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
       </main>
     </>
   );

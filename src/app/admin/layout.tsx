@@ -6,7 +6,6 @@ import {
   Bell,
   Home,
   Package,
-  Package2,
   ShoppingCart,
   Users,
   LineChart,
@@ -14,6 +13,12 @@ import {
   Settings,
   Ticket,
   Factory,
+  Building,
+  HardHat,
+  Receipt,
+  FileText,
+  BadgePercent,
+  BellRing,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -23,14 +28,14 @@ import { Logo } from '@/components/icons/logo';
 
 const navLinks = [
   { href: '/admin', label: 'Dashboard', icon: Home },
-  { href: '/admin/orders', label: 'Pedidos', icon: ShoppingCart, badge: '6' },
+  { href: '/admin/orders', label: 'Pedidos', icon: ShoppingCart },
   { href: '/admin/production', label: 'Produção', icon: Factory },
   { href: '/admin/products', label: 'Produtos', icon: Package },
   { href: '/admin/users', label: 'Usuários', icon: Users },
   { href: '/admin/finance', label: 'Financeiro', icon: CreditCard },
   { href: '/admin/reports', label: 'Relatórios', icon: LineChart },
-  { href: '/admin/coupons', label: 'Cupons', icon: Ticket },
-  { href: '/admin/notifications', label: 'Notificações', icon: Bell },
+  { href: '/admin/coupons', label: 'Cupons', icon: BadgePercent },
+  { href: '/admin/notifications', label: 'Notificações', icon: BellRing },
   { href: '/admin/settings', label: 'Configurações', icon: Settings },
 ];
 
@@ -51,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="sr-only">Toggle notifications</span>
             </Button>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 overflow-auto">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               {navLinks.map((link) => (
                 <Link
@@ -64,11 +69,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <link.icon className="h-4 w-4" />
                   {link.label}
-                  {link.badge && (
-                    <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                      {link.badge}
-                    </Badge>
-                  )}
                 </Link>
               ))}
             </nav>
