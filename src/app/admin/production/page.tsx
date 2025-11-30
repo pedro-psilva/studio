@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Paperclip, Clock, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
@@ -48,19 +48,22 @@ const initialColumns: Record<KanbanColumn['id'], KanbanColumn> = {
 export default function ProductionPage() {
     const [columns, setColumns] = useState(initialColumns);
 
-    const onDragEnd = (result: any) => {
+    const onDragEnd = (result: DropResult) => {
         const { source, destination, draggableId } = result;
 
         if (!destination) {
             return;
         }
 
-        if (source.droppableId === destination.droppableId && source.index === destination.index) {
+        const sourceColId = source.droppableId as keyof typeof columns;
+        const destColId = destination.droppableId as keyof typeof columns;
+
+        if (sourceColId === destColId && source.index === destination.index) {
             return;
         }
-
-        const startColumn = columns[source.droppableId as keyof typeof columns];
-        const endColumn = columns[destination.droppableId as keyof typeof columns];
+        
+        const startColumn = columns[sourceColId];
+        const endColumn = columns[destColId];
 
         if (startColumn === endColumn) {
             const newOrders = Array.from(startColumn.orders);
@@ -179,7 +182,7 @@ export default function ProductionPage() {
                                                                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
                                                                             <DropdownMenuItem className="focus:bg-[#333] focus:text-white">Ver Detalhes</DropdownMenuItem>
                                                                             <DropdownMenuSeparator className="bg-[#2d2d2d]" />
-                                                                            <DropdownMenuItem className="focus:bg-[#333] focus:text-white">Mover para...</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="focus:bg-[#333] focustext-white">Mover para...</DropdownMenuItem>
                                                                         </DropdownMenuContent>
                                                                     </DropdownMenu>
                                                                 </div>
