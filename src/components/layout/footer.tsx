@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -24,10 +25,10 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { href: '#', icon: Facebook },
-  { href: '#', icon: Instagram },
-  { href: '#', icon: Twitter },
-  { href: '#', icon: Linkedin },
+  { href: '#', icon: Facebook, name: 'Facebook' },
+  { href: '#', icon: Instagram, name: 'Instagram' },
+  { href: '#', icon: Twitter, name: 'Twitter' },
+  { href: '#', icon: Linkedin, name: 'Linkedin' },
 ];
 
 export function Footer() {
@@ -91,8 +92,8 @@ export function Footer() {
           </p>
           <div className="flex items-center space-x-2 mt-4 sm:mt-0">
             {socialLinks.map((social) => (
-              <Button key={social.href} variant="ghost" size="icon" asChild>
-                <Link href={social.href} aria-label={social.icon.displayName}>
+              <Button key={social.name} variant="ghost" size="icon" asChild>
+                <Link href={social.href} aria-label={social.name}>
                   <social.icon className="h-5 w-5" />
                 </Link>
               </Button>
