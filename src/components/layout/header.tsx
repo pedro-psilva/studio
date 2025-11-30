@@ -5,10 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ShoppingCart, User, Languages } from 'lucide-react';
+import {
+  Menu,
+  Search,
+  ShoppingCart,
+  User,
+  Info,
+  Mail,
+} from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { ThemeSwitcher } from '../theme-switcher';
 import { LanguageSwitcher } from '../language-switcher';
 import { useTranslation } from '@/hooks/use-translation';
@@ -20,8 +26,7 @@ export function Header() {
   const { t } = useTranslation('common');
 
   const navLinks = [
-    { href: '/about', label: t('nav.about') },
-    { href: '/contact', label: t('nav.contact') },
+    // Links foram movidos para ícones
   ];
 
   const NavLinks = () => (
@@ -71,7 +76,8 @@ export function Header() {
               <span className="text-lg font-bold font-headline">IT Lab</span>
             </Link>
             <nav className="flex flex-col space-y-4">
-              <NavLinks />
+               <Link href="/about" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Sobre Nós</Link>
+               <Link href="/contact" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Contato</Link>
             </nav>
           </SheetContent>
         </Sheet>
@@ -92,6 +98,18 @@ export function Header() {
           <div className="flex items-center space-x-1">
             <ThemeSwitcher />
             <LanguageSwitcher />
+             <Button asChild variant="ghost" size="icon">
+              <Link href="/about">
+                <Info className="h-5 w-5" />
+                <span className="sr-only">Sobre Nós</span>
+              </Link>
+            </Button>
+             <Button asChild variant="ghost" size="icon">
+              <Link href="/contact">
+                <Mail className="h-5 w-5" />
+                <span className="sr-only">Contato</span>
+              </Link>
+            </Button>
             <Button asChild variant="ghost" size="icon">
               <Link href="/auth/login">
                 <User className="h-5 w-5" />
