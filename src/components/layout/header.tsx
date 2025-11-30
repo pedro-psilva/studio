@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ShoppingCart, User } from 'lucide-react';
+import { Menu, Search, ShoppingCart, User, Palette } from 'lucide-react';
 import { Logo } from '../icons/logo';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { ThemeSwitcher } from '../theme-switcher';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -98,6 +100,7 @@ export function Header() {
             </form>
           </div>
           <div className="flex items-center space-x-1">
+            <ThemeSwitcher />
             <Button asChild variant="ghost" size="icon">
               <Link href="/auth/login">
                 <User className="h-5 w-5" />
