@@ -1,21 +1,18 @@
 "use client"
 
-// Inspired by react-hot-toast library
 import * as React from "react"
-
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
 
-type ToasterToast = ToastProps & {
+type ToasterToast = {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
-  action?: ToastActionElement
+  action?: React.ReactNode
+  variant?: "default" | "destructive"
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 const actionTypes = {
@@ -28,7 +25,7 @@ const actionTypes = {
 let count = 0
 
 function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER
+  count = (count + 1) % Number.MAX_VALUE
   return count.toString()
 }
 
@@ -93,8 +90,6 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -140,7 +135,10 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id">
+type Toast = Partial<Omit<ToasterToast, 'id'>> & {
+  id?: string;
+  title?: React.ReactNode;
+}
 
 function toast({ ...props }: Toast) {
   const id = genId()
@@ -158,7 +156,7 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
-      onOpenChange: (open) => {
+      onOpenChange: (open: boolean) => {
         if (!open) dismiss()
       },
     },
@@ -173,6 +171,12 @@ function toast({ ...props }: Toast) {
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
+  
+  type UseToastReturn = {
+    toasts: ToasterToast[]
+    toast: (props: Toast) => { id: string; dismiss: () => void; update: (props: ToasterToast) => void }
+    dismiss: (toastId?: string) => void
+  }
 
   React.useEffect(() => {
     listeners.push(setState)
@@ -184,11 +188,13 @@ function useToast() {
     }
   }, [state])
 
-  return {
-    ...state,
+  const returnValue: UseToastReturn = {
+    toasts: state.toasts,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
+  
+  return returnValue
 }
 
 export { useToast, toast }

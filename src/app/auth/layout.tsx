@@ -1,34 +1,16 @@
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import Image from "next/image";
-import Link from "next/link";
+'use client';
+import { AuthProvider } from '@/context/AuthContext';
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const authBgImage = PlaceHolderImages.find(p => p.id === 'hero-banner');
-
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center">
-      {authBgImage && (
-        <Image
-          src={authBgImage.imageUrl}
-          alt="Dental Laboratory"
-          fill
-          className="object-cover"
-          data-ai-hint={authBgImage.imageHint}
-        />
-      )}
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-      <div className="relative z-10 flex w-full max-w-md flex-col items-center">
-         <Link href="/" className="mb-6 flex items-center space-x-2 text-2xl">
-            <span className="font-bold font-headline">IT Lab</span>
-          </Link>
-        <div className="w-full rounded-lg border border-border bg-card p-6 shadow-lg sm:p-8">
-          {children}
-        </div>
+    <AuthProvider>
+      <div className="bg-gray-900">
+        {children}
       </div>
-    </div>
+    </AuthProvider>
   );
 }
