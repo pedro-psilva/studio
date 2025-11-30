@@ -56,31 +56,20 @@ export default function ProductionGeneralPage() {
         const sourceColId = source.droppableId as keyof typeof columns;
         const destColId = destination.droppableId as keyof typeof columns;
         
-        const startColumn = columns[sourceColId];
-        const endColumn = columns[destColId];
-
-        if (startColumn === endColumn) {
-            const newOrders = Array.from(startColumn.orders);
-            const [removed] = newOrders.splice(source.index, 1);
-            newOrders.splice(destination.index, 0, removed);
-
-            setColumns({
-                ...columns,
-                [startColumn.id]: {...startColumn, orders: newOrders},
-            });
+        if (source.droppableId === destination.droppableId) {
+            const items = Array.from(columns[sourceColId].orders);
+            const [reorderedItem] = items.splice(source.index, 1);
+            items.splice(destination.index, 0, reorderedItem);
+            setColumns({ ...columns, [sourceColId]: { ...columns[sourceColId], orders: items } });
         } else {
-            const startOrders = Array.from(startColumn.orders);
-            const [movedOrder] = startOrders.splice(source.index, 1);
-            const newStartColumn = {...startColumn, orders: startOrders};
-
-            const endOrders = Array.from(endColumn.orders);
-            endOrders.splice(destination.index, 0, movedOrder);
-            const newEndColumn = {...endColumn, orders: endOrders};
-
+            const sourceItems = Array.from(columns[sourceColId].orders);
+            const destItems = Array.from(columns[destColId].orders);
+            const [movedItem] = sourceItems.splice(source.index, 1);
+            destItems.splice(destination.index, 0, movedItem);
             setColumns({
                 ...columns,
-                [startColumn.id]: newStartColumn,
-                [endColumn.id]: newEndColumn,
+                [sourceColId]: { ...columns[sourceColId], orders: sourceItems },
+                [destColId]: { ...columns[destColId], orders: destItems },
             });
         }
     };
