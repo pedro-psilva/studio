@@ -43,7 +43,7 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import placeholderImages from '@/lib/placeholder-images.json';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const products = [
     { name: "Zirconia Crown", code: "ZIRC-001", price: "R$ 150,00", category: "Coroas", upload: true, status: "Ativo", imageId: "product-zirconia" },
@@ -136,7 +136,7 @@ export default function ProductsPage() {
                 </TableHeader>
                 <TableBody>
                  {products.map(product => {
-                    const productImage = placeholderImages.placeholderImages.find(p => p.id === product.imageId);
+                    const productImage = PlaceHolderImages.find(p => p.id === product.imageId);
                     return (
                         <TableRow key={product.code}>
                             <TableCell className="hidden sm:table-cell">

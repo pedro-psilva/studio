@@ -8,14 +8,14 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { products, categories } from '@/lib/data';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import placeholderImages from '@/lib/placeholder-images.json';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useTranslation } from '@/hooks/use-translation';
 
 export default function HomePage() {
   const { t } = useTranslation('home');
   const featuredProducts = products.slice(0, 4);
   const otherProducts = products.slice(4, 12);
-  const heroImage = placeholderImages.placeholderImages.find(p => p.id === 'hero-banner');
+  const heroImage = PlaceHolderImages.find(p => p.id === 'hero-banner');
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -109,7 +109,7 @@ export default function HomePage() {
 
 function ProductCard({ product }: { product: any }) {
   const { t } = useTranslation('common');
-  const productImage = placeholderImages.placeholderImages.find(p => p.id === product.imageId);
+  const productImage = PlaceHolderImages.find(p => p.id === product.imageId);
   return (
     <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg hover:shadow-primary/20">
       <CardHeader className="p-0 relative">

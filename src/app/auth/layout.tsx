@@ -1,5 +1,5 @@
 import { Logo } from "@/components/icons/logo";
-import placeholderImages from '@/lib/placeholder-images.json';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from "next/image";
 import Link from "next/link";
 
@@ -8,7 +8,7 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const authBgImage = placeholderImages.placeholderImages.find(p => p.id === 'hero-banner');
+  const authBgImage = PlaceHolderImages.find(p => p.id === 'hero-banner');
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center">
