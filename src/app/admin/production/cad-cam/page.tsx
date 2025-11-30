@@ -126,6 +126,7 @@ export default function CadCamPage() {
                                                                         <DropdownMenuContent align="end" className="bg-[#1a1a1a] text-white border-[#2d2d2d]">
                                                                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
                                                                             <DropdownMenuItem className="focus:bg-[#333] focus:text-white">Ver Detalhes</DropdownMenuItem>
+                                                                            <DropdownMenuSeparator className="bg-[#2d2d2d]" />
                                                                         </DropdownMenuContent>
                                                                     </DropdownMenu>
                                                                 </div>

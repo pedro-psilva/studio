@@ -149,7 +149,6 @@ export default function ProductionGeneralPage() {
                                                                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
                                                                             <DropdownMenuItem className="focus:bg-[#333] focus:text-white">Ver Detalhes</DropdownMenuItem>
                                                                             <DropdownMenuSeparator className="bg-[#2d2d2d]" />
-                                                                            <DropdownMenuItem className="focus:bg-[#333] focustext-white">Mover para...</DropdownMenuItem>
                                                                         </DropdownMenuContent>
                                                                     </DropdownMenu>
                                                                 </div>
