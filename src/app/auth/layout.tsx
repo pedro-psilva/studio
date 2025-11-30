@@ -25,7 +25,7 @@ export default function AuthLayout({
       <div className="relative z-10 flex w-full max-w-md flex-col items-center">
          <Link href="/" className="mb-6 flex items-center space-x-2 text-2xl">
             <Logo className="h-10 w-10 text-primary" />
-            <span className="font-bold font-headline">DentalFlow</span>
+            <span className="font-bold font-headline">Itlab</span>
           </Link>
         <div className="w-full rounded-lg border border-border bg-card p-6 shadow-lg sm:p-8">
           {children}

@@ -20,7 +20,7 @@ export default function RegisterPage() {
       <CardHeader className="p-0 mb-6 text-center">
         <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
         <CardDescription>
-          Join DentalFlow to streamline your digital dentistry workflow.
+          Join Itlab to streamline your digital dentistry workflow.
         </CardDescription>
       </CardHeader>
       <form>

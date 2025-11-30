@@ -60,7 +60,7 @@ export function Header() {
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <Logo className="h-8 w-8 text-primary" />
             <span className="hidden font-bold sm:inline-block font-headline">
-              DentalFlow
+              Itlab
             </span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
@@ -82,7 +82,7 @@ export function Header() {
           <SheetContent side="left" className="w-full max-w-xs bg-background p-6">
             <Link href="/" className="mb-8 flex items-center">
               <Logo className="mr-2 h-8 w-8 text-primary" />
-              <span className="text-lg font-bold font-headline">DentalFlow</span>
+              <span className="text-lg font-bold font-headline">Itlab</span>
             </Link>
             <nav className="flex flex-col space-y-4">
               <NavLinks />

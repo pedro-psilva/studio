@@ -61,7 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <Logo className="h-8 w-8 text-primary" />
-              <span className="font-headline">DentalFlow Admin</span>
+              <span className="font-headline">Itlab Admin</span>
             </Link>
             <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
               <Bell className="h-4 w-4" />

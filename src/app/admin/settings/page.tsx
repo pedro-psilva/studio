@@ -38,11 +38,11 @@ export default function SettingsPage() {
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <Label htmlFor="company-name">Nome da Empresa</Label>
-                                        <Input id="company-name" defaultValue="DentalFlow" />
+                                        <Input id="company-name" defaultValue="Itlab" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="company-email">E-mail Oficial</Label>
-                                        <Input id="company-email" type="email" defaultValue="contato@dentalflow.com" />
+                                        <Input id="company-email" type="email" defaultValue="contato@itlab.com" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="company-whatsapp">WhatsApp</Label>
@@ -85,7 +85,7 @@ export default function SettingsPage() {
                                 </div>
                                  <div className="space-y-2">
                                     <Label htmlFor="webhook-url">URL de Webhook</Label>
-                                    <Input id="webhook-url" readOnly defaultValue="https://dentalflow.com/api/webhooks/payment" />
+                                    <Input id="webhook-url" readOnly defaultValue="https://itlab.com/api/webhooks/payment" />
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <Switch id="test-mode" />
@@ -159,7 +159,7 @@ export default function SettingsPage() {
                                 <div className="border rounded-lg p-4">
                                      <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="font-semibold">financeiro@dentalflow.com</p>
+                                            <p className="font-semibold">financeiro@itlab.com</p>
                                             <p className="text-sm text-muted-foreground">Função: Financeiro</p>
                                         </div>
                                         <Select defaultValue="finance">
@@ -177,7 +177,7 @@ export default function SettingsPage() {
                                  <div className="border rounded-lg p-4">
                                      <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="font-semibold">producao@dentalflow.com</p>
+                                            <p className="font-semibold">producao@itlab.com</p>
                                             <p className="text-sm text-muted-foreground">Função: Produção</p>
                                         </div>
                                          <Select defaultValue="production">
