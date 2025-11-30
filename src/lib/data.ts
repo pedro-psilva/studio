@@ -1,12 +1,12 @@
 import type { Product, Category, Order, User, ProductionOrder, Coupon } from './types';
 
 export const categories: Category[] = [
-  { id: 'crowns', name: 'Crowns', icon: '👑' },
-  { id: 'implants', name: 'Implants', icon: '🔩' },
-  { id: 'veneers', name: 'Veneers', icon: '✨' },
-  { id: 'dentures', name: 'Dentures', icon: '😁' },
-  { id: 'aligners', name: 'Aligners', icon: '📏' },
-  { id: 'resins', name: 'Resins', icon: '🎨' },
+  { id: 'crowns', name: 'Crowns' },
+  { id: 'implants', name: 'Implants' },
+  { id: 'veneers', name: 'Veneers' },
+  { id: 'dentures', name: 'Dentures' },
+  { id: 'aligners', name: 'Aligners' },
+  { id: 'resins', name: 'Resins' },
 ];
 
 export const products: Product[] = [
@@ -268,7 +268,7 @@ export const users: User[] = [
   {
     id: 'u2',
     name: 'Admin User',
-    email: 'admin@dentalflow.com',
+    email: 'admin@itlab.com',
     role: 'admin',
     isPJ: false,
   },

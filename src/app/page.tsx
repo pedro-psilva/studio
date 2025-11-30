@@ -136,7 +136,7 @@ function ProductCard({ product }: { product: any }) {
       </CardContent>
       <CardFooter className="flex items-center justify-between p-4 bg-background/30">
         <p className="text-lg font-bold text-primary">
-          ${product.price.toFixed(2)}
+          R$ {product.price.toFixed(2)}
         </p>
         <Button size="sm" asChild>
           <Link href={`/products/${product.id}`}>
