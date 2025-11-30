@@ -109,19 +109,8 @@ export function Header() {
           <div className="flex items-center space-x-1">
             <ThemeSwitcher />
             <LanguageSwitcher />
-             <Button asChild variant="ghost" size="icon">
-              <Link href="https://itsolutionlabdigital.com.br/" target="_blank" rel="noopener noreferrer">
-                <Info className="h-5 w-5" />
-                <span className="sr-only">Sobre Nós</span>
-              </Link>
-            </Button>
-             <Button asChild variant="ghost" size="icon">
-              <Link href="/contact">
-                <Mail className="h-5 w-5" />
-                <span className="sr-only">Contato</span>
-              </Link>
-            </Button>
-             <DropdownMenu>
+            
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <User className="h-5 w-5" />
@@ -139,6 +128,13 @@ export function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/account"><LayoutGrid className="mr-2 h-4 w-4" />Meu Painel</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                 <DropdownMenuItem asChild>
+                  <Link href="https://itsolutionlabdigital.com.br/" target="_blank" rel="noopener noreferrer"><Info className="mr-2 h-4 w-4" />Sobre Nós</Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                  <Link href="/contact"><Mail className="mr-2 h-4 w-4" />Contato</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
