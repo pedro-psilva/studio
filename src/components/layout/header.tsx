@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, Search, ShoppingCart, User, Languages } from 'lucide-react';
-import { Logo } from '../icons/logo';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
@@ -58,9 +57,8 @@ export function Header() {
       <div className="container flex h-16 items-center">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Logo className="h-8 w-8 text-primary" />
             <span className="hidden font-bold sm:inline-block font-headline">
-              Itlab
+              IT Lab
             </span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
@@ -81,8 +79,7 @@ export function Header() {
           </SheetTrigger>
           <SheetContent side="left" className="w-full max-w-xs bg-background p-6">
             <Link href="/" className="mb-8 flex items-center">
-              <Logo className="mr-2 h-8 w-8 text-primary" />
-              <span className="text-lg font-bold font-headline">Itlab</span>
+              <span className="text-lg font-bold font-headline">IT Lab</span>
             </Link>
             <nav className="flex flex-col space-y-4">
               <NavLinks />

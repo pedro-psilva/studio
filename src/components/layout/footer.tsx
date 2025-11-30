@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Logo } from '../icons/logo';
 import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react';
 import { Button } from '../ui/button';
 
@@ -38,8 +37,7 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center space-x-2">
-              <Logo className="h-8 w-8 text-primary" />
-              <span className="font-bold text-lg font-headline">Itlab</span>
+              <span className="font-bold text-lg font-headline">IT Lab</span>
             </Link>
             <p className="mt-4 text-muted-foreground max-w-xs">
               The future of digital dentistry, delivered to your clinic.
@@ -89,7 +87,7 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Itlab, Inc. All rights reserved.
+            &copy; {new Date().getFullYear()} IT Lab, Inc. All rights reserved.
           </p>
           <div className="flex items-center space-x-2 mt-4 sm:mt-0">
             {socialLinks.map((social) => (
