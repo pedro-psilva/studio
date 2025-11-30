@@ -1,6 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# Dependências
 /node_modules
 /.pnp
 .pnp.*
@@ -10,36 +8,89 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
+# Testes
 /coverage
 
-# next.js
+# Next.js
 /.next/
 /out/
 
-# production
+# Produção
 /build
 
-# misc
-.DS_Store
-*.pem
+# Arquivos de ambiente e chaves
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# debug
+# Arquivos de configuração sensíveis
+*.pem
+*.key
+*.p12
+*.crt
+*.cer
+*.p7b
+*.p7c
+*.p7s
+*.pfx
+*.csr
+*.der
+
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+firebase-debug.log
+firestore-debug.log
 
-# vercel
+# IDEs e editores
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Vercel
 .vercel
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-.genkit/*
-.env*
+# Firebase
+.firebase/
+firebase-debug-*.log
+firestore-debug-*.log
 
-# firebase
-firebase-debug.log
-firestore-debug.log
+# Outros diretórios de cache e build
+.cache/
+.temp/
+.tmp/
+dist/
+
+# Arquivos de configuração local
+.genkit/
+.next/cache/
+
+# Arquivos de histórico de comandos
+.history/
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# Arquivos de backup
+*.bak
+*.swp
+*~
