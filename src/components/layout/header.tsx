@@ -38,15 +38,6 @@ export function Header() {
           {link.label}
         </Link>
       ))}
-       <Link
-          href="/admin"
-          className={cn(
-            "text-sm font-medium transition-colors hover:text-primary",
-            pathname.startsWith('/admin') ? "text-primary" : "text-muted-foreground"
-          )}
-        >
-          {t('nav.admin')}
-        </Link>
     </>
   );
 

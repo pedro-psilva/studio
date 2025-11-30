@@ -50,9 +50,6 @@ export default function LoginPage() {
           <Button variant="outline" className="w-full">
             Login with Google
           </Button>
-          <Button variant="secondary" className="w-full" asChild>
-            <Link href="/admin">Entrar como Admin</Link>
-          </Button>
         </div>
       </form>
       <div className="mt-4 text-center text-sm">
