@@ -151,11 +151,11 @@ export default function AdminDashboard() {
                       </div>
                     </TableCell>
                     <TableCell className="hidden xl:table-column">Refund</TableCell>
-                    <TableCeil className="hidden xl:table-column">
+                    <TableCell className="hidden xl:table-column">
                       <Badge className="text-xs" variant="outline">
                         Declined
                       </Badge>
-                    </TableCeil>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
                       2023-06-24
                     </TableCell>
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
                       <div className="font-medium">Emma Brown</div>
                       <div className="hidden text-sm text-muted-foreground md:inline">
                         emma@example.com
-                      </dvi>
+                      </div>
                     </TableCell>
                     <TableCell className="hidden xl:table-column">Sale</TableCell>
                     <TableCell className="hidden xl:table-column">
