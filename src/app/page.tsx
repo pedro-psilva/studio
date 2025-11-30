@@ -1,3 +1,4 @@
+'use client';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, ShoppingCart } from 'lucide-react';
@@ -8,8 +9,10 @@ import { products, categories } from '@/lib/data';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import placeholderImages from '@/lib/placeholder-images.json';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function HomePage() {
+  const { t } = useTranslation('home');
   const featuredProducts = products.slice(0, 4);
   const otherProducts = products.slice(4, 12);
   const heroImage = placeholderImages.placeholderImages.find(p => p.id === 'hero-banner');
@@ -33,20 +36,20 @@ export default function HomePage() {
           <div className="absolute inset-0 flex items-center justify-center text-center">
             <div className="container mx-auto px-4">
               <h1 className="text-4xl font-bold tracking-tight text-white md:text-6xl lg:text-7xl font-headline">
-                Precision in Digital Dentistry
+                {t('heroTitle')}
               </h1>
               <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground md:text-xl">
-                High-quality materials and cutting-edge technology for your clinic.
+                {t('heroSubtitle')}
               </p>
               <div className="mt-8 flex justify-center gap-4">
                 <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground">
                   <Link href="/products">
-                    Shop All Products <ArrowRight className="ml-2 h-5 w-5" />
+                    {t('shopAll')} <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
                   <Link href="/account">
-                    My Account
+                    {t('myAccount')}
                   </Link>
                 </Button>
               </div>
@@ -56,14 +59,14 @@ export default function HomePage() {
 
         <section id="categories" className="py-12 md:py-20">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center tracking-tight font-headline">Shop by Category</h2>
+            <h2 className="text-3xl font-bold text-center tracking-tight font-headline">{t('shopByCategory')}</h2>
             <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
               {categories.map((category) => (
                 <Link key={category.id} href={`/products?category=${category.id}`} className="group">
                   <Card className="overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg hover:shadow-primary/20">
                     <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                       <div className="text-4xl mb-2">{category.icon}</div>
-                      <h3 className="font-semibold text-foreground">{category.name}</h3>
+                      <h3 className="font-semibold text-foreground">{t(`categories.${category.id}`)}</h3>
                     </CardContent>
                   </Card>
                 </Link>
@@ -74,7 +77,7 @@ export default function HomePage() {
 
         <section id="featured-products" className="py-12 md:py-20 bg-card">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center tracking-tight font-headline">Featured Products</h2>
+            <h2 className="text-3xl font-bold text-center tracking-tight font-headline">{t('featuredProducts')}</h2>
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {featuredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
@@ -85,7 +88,7 @@ export default function HomePage() {
 
         <section id="all-products" className="py-12 md:py-20">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center tracking-tight font-headline">Our Products</h2>
+            <h2 className="text-3xl font-bold text-center tracking-tight font-headline">{t('ourProducts')}</h2>
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {otherProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
@@ -93,7 +96,7 @@ export default function HomePage() {
             </div>
             <div className="mt-12 text-center">
               <Button asChild size="lg" variant="outline">
-                <Link href="/products">View All Products</Link>
+                <Link href="/products">{t('viewAllProducts')}</Link>
               </Button>
             </div>
           </div>
@@ -105,6 +108,7 @@ export default function HomePage() {
 }
 
 function ProductCard({ product }: { product: any }) {
+  const { t } = useTranslation('common');
   const productImage = placeholderImages.placeholderImages.find(p => p.id === product.imageId);
   return (
     <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg hover:shadow-primary/20">
@@ -138,7 +142,7 @@ function ProductCard({ product }: { product: any }) {
         <Button size="sm" asChild>
           <Link href={`/products/${product.id}`}>
             <ShoppingCart className="mr-2 h-4 w-4" />
-            Buy
+            {t('buy')}
           </Link>
         </Button>
       </CardFooter>

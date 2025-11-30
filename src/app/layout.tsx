@@ -1,15 +1,11 @@
-import type { Metadata } from 'next';
+'use client';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { Inter } from 'next/font/google'
+import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import { TranslationProvider } from '@/context/translation-context';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-body' })
-
-export const metadata: Metadata = {
-  title: 'DentalFlow',
-  description: 'Premium e-commerce for dentists and dental clinics.',
-};
+const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
 
 export default function RootLayout({
   children,
@@ -20,18 +16,27 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className={`${inter.variable} font-body antialiased`}>
         <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
         >
-          {children}
-          <Toaster />
+          <TranslationProvider>
+            {children}
+            <Toaster />
+          </TranslationProvider>
         </ThemeProvider>
       </body>
     </html>

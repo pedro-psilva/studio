@@ -12,17 +12,20 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { ThemeSwitcher } from '../theme-switcher';
 import { LanguageSwitcher } from '../language-switcher';
+import { useTranslation } from '@/hooks/use-translation';
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/products', label: 'Products' },
-  { href: '/about', label: 'About Us' },
-  { href: '/contact', label: 'Contact' },
-];
 
 export function Header() {
   const pathname = usePathname();
   const cartItemCount = 3; // Mock data
+  const { t } = useTranslation('common');
+
+  const navLinks = [
+    { href: '/', label: t('nav.home') },
+    { href: '/products', label: t('nav.products') },
+    { href: '/about', label: t('nav.about') },
+    { href: '/contact', label: t('nav.contact') },
+  ];
 
   const NavLinks = () => (
     <>
@@ -45,7 +48,7 @@ export function Header() {
             pathname.startsWith('/admin') ? "text-primary" : "text-muted-foreground"
           )}
         >
-          Admin
+          {t('nav.admin')}
         </Link>
     </>
   );
@@ -94,7 +97,7 @@ export function Header() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search products..."
+                  placeholder={t('searchPlaceholder')}
                   className="w-full bg-card pl-9 md:w-64 lg:w-96"
                 />
               </div>

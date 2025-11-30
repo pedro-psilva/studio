@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Languages } from 'lucide-react';
-import { useState } from 'react';
+import { useTranslation } from '@/hooks/use-translation';
 
 const languages = [
     { id: 'pt-BR', name: 'Português', flag: '🇧🇷' },
@@ -17,18 +17,12 @@ const languages = [
 ];
 
 export function LanguageSwitcher() {
-  const [currentLanguage, setCurrentLanguage] = useState(languages[0]);
+  const { language, setLanguage } = useTranslation('common');
 
-  // In a real app, this would also call a function to update user preferences
-  // and load new translation files.
+  const currentLanguage = languages.find(l => l.id === language) || languages[0];
+
   const handleLanguageChange = (langId: string) => {
-    const newLang = languages.find(l => l.id === langId);
-    if (newLang) {
-        setCurrentLanguage(newLang);
-        // Here you would typically call a context method or a server action
-        // to change the language globally.
-        console.log(`Language changed to: ${newLang.name}`);
-    }
+    setLanguage(langId as 'pt-BR' | 'en-US' | 'es-ES');
   };
 
   return (
