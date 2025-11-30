@@ -11,76 +11,53 @@ type Order = {
   id: string;
   client: string;
   product: string;
-  files: number;
+  entryDate: string;
   dueDate: string;
   urgency: boolean;
-  missingFiles: boolean;
-  isLate?: boolean;
+  missingInfo: boolean;
 };
 
 type KanbanColumn = {
-  id: 'received' | 'analysis' | 'production' | 'finalized' | 'shipped';
+  id: 'entry' | 'verification' | 'pending' | 'released';
   title: string;
   orders: Order[];
 };
 
 const initialColumns: Record<KanbanColumn['id'], KanbanColumn> = {
-  received: { id: 'received', title: 'Recebido', orders: [
-    { id: 'ORD-099', client: 'Clínica Sorriso Novo', product: 'Coroa de Zircônia', files: 2, dueDate: '2024-08-05', urgency: true, missingFiles: false },
-    { id: 'ORD-098', client: 'Dr. Carlos Lima', product: 'Lente E-max', files: 1, dueDate: '2024-08-04', urgency: false, missingFiles: false },
+  entry: { id: 'entry', title: 'Entrada', orders: [
+    { id: 'TRI-001', client: 'Clínica Sorriso Novo', product: 'Coroa de Zircônia', entryDate: '2024-07-31', dueDate: '2024-08-05', urgency: true, missingInfo: false },
   ]},
-  analysis: { id: 'analysis', title: 'Em Análise (Triagem)', orders: [
-     { id: 'ORD-097', client: 'Odonto Center', product: 'Guia Cirúrgico', files: 3, dueDate: '2024-08-02', urgency: false, missingFiles: false },
+  verification: { id: 'verification', title: 'Verificação de Triagem', orders: [] },
+  pending: { id: 'pending', title: 'Aguardando Complemento', orders: [
+    { id: 'TRI-002', client: 'Dr. Carlos Lima', product: 'Lente E-max', entryDate: '2024-07-30', dueDate: '2024-08-04', urgency: false, missingInfo: true },
   ]},
-  production: { id: 'production', title: 'Em Produção (CAD/CAM + Finalização)', orders: [
-    { id: 'ORD-096', client: 'Dra. Fernanda Dias', product: 'Prótese Total', files: 1, dueDate: '2024-08-10', urgency: false, missingFiles: false },
-    { id: 'ORD-095', client: 'Clínica Maxilar', product: 'Implante de Titânio', files: 0, dueDate: '2024-07-30', urgency: false, missingFiles: true },
-    { id: 'ORD-093', client: 'Orto Premium', product: 'Alinhador', files: 5, dueDate: '2024-07-25', urgency: true, missingFiles: false, isLate: true },
-  ]},
-  finalized: { id: 'finalized', title: 'Finalizado (Aguardando Expedição)', orders: [
-      { id: 'ORD-094', client: 'Sorria Bem', product: 'Alinhadores (Set)', files: 5, dueDate: '2024-07-28', urgency: false, missingFiles: false },
-  ]},
-  shipped: { id: 'shipped', title: 'Enviado', orders: []},
+  released: { id: 'released', title: 'Liberado para Produção (Saída)', orders: [] },
 };
 
-export default function ProductionGeneralPage() {
+export default function TriagePage() {
     const [columns, setColumns] = useState(initialColumns);
 
     const onDragEnd = (result: DropResult) => {
         const { source, destination } = result;
-
-        if (!destination) {
-            return;
-        }
+        if (!destination) return;
 
         const sourceColId = source.droppableId as keyof typeof columns;
         const destColId = destination.droppableId as keyof typeof columns;
-        
-        const startColumn = columns[sourceColId];
-        const endColumn = columns[destColId];
 
-        if (startColumn === endColumn) {
-            const newOrders = Array.from(startColumn.orders);
-            const [removed] = newOrders.splice(source.index, 1);
-            newOrders.splice(destination.index, 0, removed);
-
-            setColumns({
-                ...columns,
-                [startColumn.id]: {...startColumn, orders: newOrders},
-            });
+        if (sourceColId === destColId) {
+            const items = Array.from(columns[sourceColId].orders);
+            const [reorderedItem] = items.splice(source.index, 1);
+            items.splice(destination.index, 0, reorderedItem);
+            setColumns({ ...columns, [sourceColId]: { ...columns[sourceColId], orders: items } });
         } else {
-            const startOrders = Array.from(startColumn.orders);
-            const [movedOrder] = startOrders.splice(source.index, 1);
-            const newStartColumn = {...startColumn, orders: startOrders};
-
-            const endOrders = Array.from(endColumn.orders);
-            endOrders.splice(destination.index, 0, movedOrder);
-            const newEndColumn = {...endColumn, orders: endOrders};
-
+            const sourceItems = Array.from(columns[sourceColId].orders);
+            const destItems = Array.from(columns[destColId].orders);
+            const [movedItem] = sourceItems.splice(source.index, 1);
+            destItems.splice(destination.index, 0, movedItem);
             setColumns({
                 ...columns,
-                [startColumn.id]: newStartColumn,
-                [endColumn.id]: newEndColumn,
+                [sourceColId]: { ...columns[sourceColId], orders: sourceItems },
+                [destColId]: { ...columns[destColId], orders: destItems },
             });
         }
     };
@@ -88,7 +65,7 @@ export default function ProductionGeneralPage() {
     return (
         <div className="bg-[#0a0a0a] flex flex-col flex-1 h-full p-4 md:p-6 lg:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl font-semibold text-white">Kanban de Produção - Geral</h1>
+                <h1 className="text-2xl font-semibold text-white">Kanban de Produção - Triagem</h1>
             </header>
             <main className="flex-1 overflow-x-auto">
                 <DragDropContext onDragEnd={onDragEnd}>
@@ -100,7 +77,7 @@ export default function ProductionGeneralPage() {
                                         ref={provided.innerRef}
                                         {...provided.droppableProps}
                                         className={cn(
-                                            "flex flex-col w-[300px] h-full rounded-lg bg-[#1a1a1a] border border-[#2d2d2d]",
+                                            "flex flex-col w-[320px] h-full rounded-lg bg-[#1a1a1a] border border-[#2d2d2d]",
                                             snapshot.isDraggingOver && "border-[#FFD700] bg-[#1a1a1a]/80"
                                         )}
                                     >
@@ -127,9 +104,8 @@ export default function ProductionGeneralPage() {
                                                                 <div className="flex justify-between items-start mb-2">
                                                                     <span className="font-bold text-sm text-[#FFD700]">{order.id}</span>
                                                                     <div className="flex items-center gap-2">
-                                                                        {order.missingFiles && <AlertTriangle className="h-4 w-4 text-red-500" title="Arquivo Faltando"/>}
-                                                                        {order.isLate && <Badge variant="destructive" className="h-5">Atrasado</Badge>}
-                                                                        {order.urgency && !order.isLate && <Badge className="bg-orange-600 text-white h-5">Urgente</Badge>}
+                                                                        {order.missingInfo && <Badge variant="destructive" className="h-5 bg-orange-600"><AlertTriangle className="h-3 w-3 mr-1" /> Faltando Info</Badge>}
+                                                                        {order.urgency && <Badge className="bg-red-600 text-white h-5">Urgente</Badge>}
                                                                     </div>
                                                                 </div>
                                                                 <p className="font-semibold text-white mb-1">{order.client}</p>
@@ -137,30 +113,14 @@ export default function ProductionGeneralPage() {
 
                                                                 <div className="flex justify-between items-center text-xs text-gray-500">
                                                                     <div className="flex items-center gap-1.5">
-                                                                        <Paperclip className="h-3 w-3" />
-                                                                        <span>{order.files}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-1.5">
                                                                         <Clock className="h-3 w-3" />
-                                                                        <span>{new Date(order.dueDate).toLocaleDateString()}</span>
+                                                                        <span>Prazo: {new Date(order.dueDate).toLocaleDateString()}</span>
                                                                     </div>
                                                                     <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button
-                                                                                aria-haspopup="true"
-                                                                                size="icon"
-                                                                                variant="ghost"
-                                                                                className="h-6 w-6 text-gray-400 hover:text-white"
-                                                                            >
-                                                                                <MoreHorizontal className="h-4 w-4" />
-                                                                                <span className="sr-only">Ações</span>
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost" className="h-6 w-6 text-gray-400 hover:text-white"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                                         <DropdownMenuContent align="end" className="bg-[#1a1a1a] text-white border-[#2d2d2d]">
                                                                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
                                                                             <DropdownMenuItem className="focus:bg-[#333] focus:text-white">Ver Detalhes</DropdownMenuItem>
-                                                                            <DropdownMenuSeparator className="bg-[#2d2d2d]" />
-                                                                            <DropdownMenuItem className="focus:bg-[#333] focustext-white">Mover para...</DropdownMenuItem>
                                                                         </DropdownMenuContent>
                                                                     </DropdownMenu>
                                                                 </div>
@@ -169,9 +129,7 @@ export default function ProductionGeneralPage() {
                                                     </Draggable>
                                                 ))
                                             ) : (
-                                                 <div className="border-2 border-dashed border-gray-700 rounded-lg h-24 flex items-center justify-center text-gray-500">
-                                                    Nenhum pedido
-                                                </div>
+                                                <div className="border-2 border-dashed border-gray-700 rounded-lg h-24 flex items-center justify-center text-gray-500">Nenhum pedido</div>
                                             )}
                                             {provided.placeholder}
                                         </div>

@@ -14,16 +14,32 @@ import {
   Factory,
   BadgePercent,
   BellRing,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Logo } from '@/components/icons/logo';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import React from 'react';
+
 
 const navLinks = [
   { href: '/admin', label: 'Dashboard', icon: Home },
   { href: '/admin/orders', label: 'Pedidos', icon: ShoppingCart },
-  { href: '/admin/production', label: 'Produção', icon: Factory },
+  { 
+    href: '/admin/production', 
+    label: 'Produção', 
+    icon: Factory,
+    subLinks: [
+        { href: '/admin/production', label: 'Geral' },
+        { href: '/admin/production/triage', label: 'Triagem' },
+        { href: '/admin/production/cad-cam', label: 'CAD/CAM' },
+        { href: '/admin/production/finishing', label: 'Finalização' },
+        { href: '/admin/production/shipping', label: 'Expedição' },
+    ]
+  },
   { href: '/admin/products', label: 'Produtos', icon: Package },
   { href: '/admin/users', label: 'Usuários', icon: Users },
   { href: '/admin/finance', label: 'Financeiro', icon: CreditCard },
@@ -35,6 +51,8 @@ const navLinks = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  
+  const isProductionRoute = pathname.startsWith('/admin/production');
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -52,13 +70,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div className="flex-1 overflow-auto">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              {navLinks.map((link) => (
+              {navLinks.map((link) => 
+                link.subLinks ? (
+                  <Collapsible key={link.href} defaultOpen={isProductionRoute}>
+                    <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary [&[data-state=open]>svg:last-child]:rotate-90">
+                       <div className="flex items-center gap-3">
+                        <link.icon className="h-4 w-4" />
+                        {link.label}
+                      </div>
+                      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-8 my-2 flex flex-col gap-2 border-l border-border/40">
+                      {link.subLinks.map(subLink => (
+                         <Link
+                          key={subLink.href}
+                          href={subLink.href}
+                           className={cn(
+                            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                            pathname === subLink.href ? 'bg-muted text-primary' : ''
+                          )}
+                        >
+                          <ChevronRight className="h-3 w-3" />
+                          {subLink.label}
+                        </Link>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                ) : (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
                     'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                    pathname.startsWith(link.href) && (link.href !== '/admin' || pathname === '/admin') ? 'bg-muted text-primary' : ''
+                     (pathname === link.href && link.href === '/admin') || (link.href !== '/admin' && pathname.startsWith(link.href)) ? 'bg-muted text-primary' : ''
                   )}
                 >
                   <link.icon className="h-4 w-4" />
