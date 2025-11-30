@@ -30,10 +30,6 @@ export function ThemeSwitcher() {
           <Moon className="mr-2 h-4 w-4" />
           <span>Dark</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('gray')}>
-            <div className="mr-2 h-4 w-4 rounded-full bg-slate-500" />
-            <span>Gray</span>
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
