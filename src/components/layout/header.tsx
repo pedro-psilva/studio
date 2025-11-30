@@ -6,12 +6,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Menu,
   Search,
   ShoppingCart,
   User,
   Info,
   Mail,
+  UserPlus,
+  LogIn,
+  LayoutGrid,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -76,7 +87,7 @@ export function Header() {
               <span className="text-lg font-bold font-headline">IT Lab</span>
             </Link>
             <nav className="flex flex-col space-y-4">
-               <Link href="/about" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Sobre Nós</Link>
+               <Link href="https://itsolutionlabdigital.com.br/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Sobre Nós</Link>
                <Link href="/contact" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Contato</Link>
             </nav>
           </SheetContent>
@@ -99,7 +110,7 @@ export function Header() {
             <ThemeSwitcher />
             <LanguageSwitcher />
              <Button asChild variant="ghost" size="icon">
-              <Link href="/about">
+              <Link href="https://itsolutionlabdigital.com.br/" target="_blank" rel="noopener noreferrer">
                 <Info className="h-5 w-5" />
                 <span className="sr-only">Sobre Nós</span>
               </Link>
@@ -110,12 +121,28 @@ export function Header() {
                 <span className="sr-only">Contato</span>
               </Link>
             </Button>
-            <Button asChild variant="ghost" size="icon">
-              <Link href="/auth/login">
-                <User className="h-5 w-5" />
-                <span className="sr-only">Login</span>
-              </Link>
-            </Button>
+             <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">User Menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/auth/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/auth/register"><UserPlus className="mr-2 h-4 w-4" />Criar Conta</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/account"><LayoutGrid className="mr-2 h-4 w-4" />Meu Painel</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button asChild variant="ghost" size="icon" className="relative">
               <Link href="/cart">
                 <ShoppingCart className="h-5 w-5" />
