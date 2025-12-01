@@ -109,21 +109,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               ))}
             </nav>
           </div>
-          <div className="mt-auto p-4">
-            <Card>
-              <CardHeader className="p-2 pt-0 md:p-4">
-                <CardTitle>Atualize seu Plano</CardTitle>
-                <CardDescription>
-                  Desbloqueie todos os recursos e tenha acesso ilimitado à nossa plataforma.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-                <Button size="sm" className="w-full">
-                  Upgrade
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
       <div className="flex flex-col">{children}</div>
