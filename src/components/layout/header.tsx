@@ -47,8 +47,9 @@ export function Header() {
   const pathname = usePathname();
   const { user, loading, logout } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const cartItemCount = 3; // Mock data
+  const [cartItemCount, setCartItemCount] = useState(0);
   const { t } = useTranslation('common');
+
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'Usuário';
 
   const navLinks: NavLink[] = []; // Now it's properly typed
@@ -75,7 +76,30 @@ export function Header() {
       }
     };
 
+    const loadCartCount = async () => {
+      if (!user) {
+        setCartItemCount(0);
+        return;
+      }
+      try {
+        const cartRef = doc(db, 'carts', user.uid);
+        const cartSnap = await getDoc(cartRef);
+        if (!cartSnap.exists()) {
+          setCartItemCount(0);
+          return;
+        }
+        const data = cartSnap.data() as any;
+        const items = Array.isArray(data.items) ? data.items : [];
+        const count = items.reduce((acc: number, item: any) => acc + (item.quantity || 0), 0);
+        setCartItemCount(count);
+      } catch (error) {
+        console.error('Erro ao carregar quantidade do carrinho:', error);
+        setCartItemCount(0);
+      }
+    };
+
     checkAdmin();
+    loadCartCount();
   }, [user]);
 
   if (loading) {

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import {
   ShoppingCart,
   Minus,
@@ -43,6 +43,8 @@ import {
 } from "@/components/ui/accordion";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/context/AuthContext';
+import { getCart, setCart, updateCartItems, CartItemFirestore } from '@/lib/cartService';
 
 const colorOptions = {
   "VITA CLASSIC": {
@@ -70,6 +72,8 @@ export default function ProductDetailPage() {
   const params = useParams();
   const { productId } = params;
   const { t } = useTranslation('home');
+  const router = useRouter();
+  const { user } = useAuth();
 
   const product = products.find((p) => p.id === productId);
   const [quantity, setQuantity] = useState(1);
@@ -89,6 +93,34 @@ export default function ProductDetailPage() {
     : productImages[0];
     
   const category = categories.find(c => c.id === product.categoryId);
+
+  const handleNext = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+
+    const cartItem: CartItemFirestore = {
+      productId: product.id,
+      quantity,
+      shade: selectedColor || undefined,
+    };
+
+    try {
+      const existingCart = await getCart(user.uid);
+      const items = existingCart?.items ? [...existingCart.items, cartItem] : [cartItem];
+
+      if (!existingCart) {
+        await setCart(user.uid, items);
+      } else {
+        await updateCartItems(user.uid, items);
+      }
+
+      router.push('/cart');
+    } catch (error) {
+      console.error('Erro ao adicionar item ao carrinho:', error);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -200,7 +232,7 @@ export default function ProductDetailPage() {
 
                   <DialogFooter>
                     <Button variant="outline">Cancelar</Button>
-                    <Button>Próximo</Button>
+                    <Button onClick={handleNext}>Próximo</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

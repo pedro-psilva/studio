@@ -1,9 +1,10 @@
 
-'use client';
+ 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
@@ -14,39 +15,137 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { X, Plus, Minus, ShoppingCart as ShoppingCartIcon, ArrowRight } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-// Mock cart data - using products from data.ts
-const initialCartItems = [
-  {
-    ...products[0], // Zirconia Crown
-    quantity: 2,
-  },
-  {
-    ...products[1], // E-Max Veneer
-    quantity: 1,
-  },
-];
+import { useAuth } from '@/context/AuthContext';
+import { getCart, setCart, updateCartItems, CartItemFirestore } from '@/lib/cartService';
+import { createOrderFromCart, OrderItemFirestore } from '@/lib/orderService';
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [loadingCart, setLoadingCart] = useState(true);
   const { t } = useTranslation('common');
+  const { user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    const loadCart = async () => {
+      if (!user) {
+        setCartItems([]);
+        setLoadingCart(false);
+        return;
+      }
+
+      try {
+        const cart = await getCart(user.uid);
+
+        if (!cart || !cart.items || cart.items.length === 0) {
+          setCartItems([]);
+        } else {
+          const itemsWithProduct = cart.items
+            .map((item: CartItemFirestore) => {
+              const product = products.find((p) => p.id === item.productId);
+              if (!product) return null;
+              return {
+                ...product,
+                quantity: item.quantity,
+                material: item.material,
+                shade: item.shade,
+                teeth: item.teeth,
+                implantSystem: item.implantSystem,
+                stlFileUrl: item.stlFileUrl,
+              };
+            })
+            .filter(Boolean) as any[];
+
+          setCartItems(itemsWithProduct);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar carrinho:', error);
+        setCartItems([]);
+      } finally {
+        setLoadingCart(false);
+      }
+    };
+
+    loadCart();
+  }, [user]);
+
+  const syncCartToFirestore = async (items: any[]) => {
+    if (!user) return;
+
+    const firestoreItems: CartItemFirestore[] = items.map((item) => ({
+      productId: item.id,
+      quantity: item.quantity,
+      material: item.material,
+      shade: item.shade,
+      teeth: item.teeth,
+      implantSystem: item.implantSystem,
+      stlFileUrl: item.stlFileUrl,
+    }));
+
+    try {
+      const existingCart = await getCart(user.uid);
+      if (!existingCart) {
+        await setCart(user.uid, firestoreItems);
+      } else {
+        await updateCartItems(user.uid, firestoreItems);
+      }
+    } catch (error) {
+      console.error('Erro ao sincronizar carrinho:', error);
+    }
+  };
 
   const updateQuantity = (productId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    setCartItems(
-      cartItems.map((item) =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      )
+    const updatedItems = cartItems.map((item) =>
+      item.id === productId ? { ...item, quantity: newQuantity } : item
     );
+    setCartItems(updatedItems);
+    syncCartToFirestore(updatedItems);
   };
 
   const removeItem = (productId: string) => {
-    setCartItems(cartItems.filter((item) => item.id !== productId));
+    const updatedItems = cartItems.filter((item) => item.id !== productId);
+    setCartItems(updatedItems);
+    syncCartToFirestore(updatedItems);
   };
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = subtotal > 0 ? 15.00 : 0;
   const total = subtotal + shipping;
+
+  const handleCheckout = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+
+    if (cartItems.length === 0) return;
+
+    const orderItems: OrderItemFirestore[] = cartItems.map((item) => ({
+      productId: item.id,
+      quantity: item.quantity,
+      shade: item.shade,
+      material: item.material,
+      implantSystem: item.implantSystem,
+      stlFileUrl: item.stlFileUrl,
+    }));
+
+    try {
+      const order = await createOrderFromCart({
+        userId: user.uid,
+        items: orderItems,
+        subtotal,
+        shipping,
+      });
+
+      await setCart(user.uid, []);
+      setCartItems([]);
+
+      router.push(`/checkout/${order.id}`);
+    } catch (error) {
+      console.error('Erro ao finalizar compra:', error);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -58,7 +157,13 @@ export default function CartPage() {
              <p className="text-muted-foreground mt-2">Revise os itens e prossiga para a finalização da compra.</p>
           </div>
 
-          {cartItems.length === 0 ? (
+          {loadingCart ? (
+            <div className="text-center bg-card p-12 rounded-lg border border-dashed">
+              <p className="text-muted-foreground">Carregando seu carrinho...</p>
+            </div>
+          ) : (
+
+          cartItems.length === 0 ? (
              <div className="text-center bg-card p-12 rounded-lg border border-dashed">
                 <ShoppingCartIcon className="mx-auto h-16 w-16 text-muted-foreground" />
                 <h2 className="mt-6 text-2xl font-semibold">Seu carrinho está vazio</h2>
@@ -71,10 +176,10 @@ export default function CartPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
               {/* Cart Items */}
               <div className="lg:col-span-2 space-y-6">
-                {cartItems.map((item) => {
+                {cartItems.map((item, index) => {
                   const productImage = PlaceHolderImages.find(p => p.id === item.imageId);
                   return (
-                    <Card key={item.id} className="flex flex-col sm:flex-row items-center p-4 gap-4">
+                    <Card key={`${item.id}-${index}`} className="flex flex-col sm:flex-row items-center p-4 gap-4">
                       {productImage && (
                           <Image
                             src={productImage.imageUrl}
@@ -128,14 +233,14 @@ export default function CartPage() {
                             <span>Total</span>
                             <span>R$ {total.toFixed(2)}</span>
                         </div>
-                         <Button size="lg" className="w-full mt-4">
+                         <Button size="lg" className="w-full mt-4" onClick={handleCheckout}>
                             Finalizar Compra <ArrowRight className="ml-2 h-4 w-4"/>
                          </Button>
                     </CardContent>
                  </Card>
               </div>
             </div>
-          )}
+          ))}
         </div>
       </main>
       <Footer />
