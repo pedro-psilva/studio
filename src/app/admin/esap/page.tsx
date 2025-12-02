@@ -129,8 +129,8 @@ export default function EsapDashboardPage() {
                                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                                 <Tooltip />
                                 <Legend />
-                                <Bar dataKey="meta" fill="#0A4C8A" name="Meta" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="resultado" fill="#24C39E" name="Resultado" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="meta" fill="hsla(var(--primary), 0.5)" name="Meta" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="resultado" fill="hsl(var(--primary))" name="Resultado" radius={[4, 4, 0, 0]} />
                             </RechartsBarChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -147,7 +147,7 @@ export default function EsapDashboardPage() {
                                 <YAxis />
                                 <Tooltip />
                                 <Legend />
-                                <Line type="monotone" dataKey="crescimento" name="Crescimento (%)" stroke="#0A4C8A" strokeWidth={2} />
+                                <Line type="monotone" dataKey="crescimento" name="Crescimento (%)" stroke="hsl(var(--primary))" strokeWidth={2} />
                             </RechartsLineChart>
                         </ResponsiveContainer>
                     </CardContent>
