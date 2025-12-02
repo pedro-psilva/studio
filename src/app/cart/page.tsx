@@ -178,7 +178,7 @@ export default function CartPage() {
                 {cartItems.map((item) => {
                   const productImage = PlaceHolderImages.find(p => p.id === item.imageId);
                   return (
-                    <Card key={item.uniqueId} className="p-4">
+                    <Card key={item.uniqueId} className="p-4 overflow-hidden">
                       <div className="flex flex-col sm:flex-row items-start gap-4">
                         {productImage && (
                             <Image
@@ -213,7 +213,7 @@ export default function CartPage() {
                       
                       {/* Customization Details */}
                       {(item.teeth?.length > 0 || item.shade || item.stlFileUrl) && (
-                        <div className="mt-4 pt-4 border-t w-full space-y-2">
+                        <div className="mt-4 pt-4 border-t w-full space-y-3 bg-muted/50 -m-4 p-4">
                            <h4 className="text-sm font-semibold">Detalhes do Caso:</h4>
                            <div className='flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground'>
                             {item.teeth && item.teeth.length > 0 && <div><strong>Dentes:</strong> {item.teeth.join(', ')}</div>}
@@ -223,7 +223,7 @@ export default function CartPage() {
                            
                            <div className="flex gap-2 pt-2">
                                <Button variant="outline" size="sm"><CircleDot className="mr-2 h-4 w-4"/> Visualizar Caso</Button>
-                               <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4"/> Editar Caso</Button>
+                               <Button variant="outline" size="sm" onClick={() => router.push(`/products/${item.id}`)}><Edit className="mr-2 h-4 w-4"/> Editar Caso</Button>
                            </div>
                         </div>
                       )}
@@ -267,5 +267,3 @@ export default function CartPage() {
     </div>
   );
 }
-
-    

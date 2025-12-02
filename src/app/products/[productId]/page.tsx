@@ -92,11 +92,11 @@ export default function ProductDetailPage() {
   const { user } = useAuth();
 
   const product = products.find((p) => p.id === productId);
+  
+  // State for customization flow
   const [selectedImage, setSelectedImage] = useState(product?.images[0]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-
-  // State for customization flow
   const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -119,15 +119,29 @@ export default function ProductDetailPage() {
     
   const category = categories.find(c => c.id === product.categoryId);
 
+  const resetFlow = () => {
+    setCurrentStep(0);
+    setSelectedTeeth([]);
+    setSelectedColor(null);
+    setUploadedFiles([]);
+    setPatientData({ name: '', age: '', clinicalNotes: '', dentistNotes: '' });
+    setFormErrors({});
+  };
+
+  const openModal = () => {
+    resetFlow();
+    setIsModalOpen(true);
+  }
+
   const validateStep = () => {
     const errors: Record<string, string> = {};
-    if (currentStep === 0 && selectedTeeth.length === 0) {
+    if (currentStep === 0 && product.requiresStl && selectedTeeth.length === 0) {
         errors.teeth = 'Selecione ao menos 1 dente.';
     }
     if (currentStep === 2 && uploadedFiles.length === 0 && product.requiresStl) {
         errors.files = 'Envie ao menos 1 arquivo clínico.';
     }
-    if (currentStep === 3 && !patientData.name) {
+    if (currentStep === 3 && !patientData.name && product.requiresStl) {
         errors.patientName = 'O nome do paciente é obrigatório.';
     }
     setFormErrors(errors);
@@ -167,6 +181,8 @@ export default function ProductDetailPage() {
       quantity: 1, // Assuming 1 case per customization
       teeth: selectedTeeth,
       shade: selectedColor || undefined,
+      material: product.variants.materials[0] || undefined,
+      implantSystem: product.variants.implantSystems?.[0] || undefined,
       stlFileUrl, // Placeholder
       patientName: patientData.name || undefined,
     };
@@ -277,14 +293,14 @@ export default function ProductDetailPage() {
 
               <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
-                  <Button size="lg" className="w-full sm:w-auto flex-1">
+                  <Button size="lg" className="w-full sm:w-auto flex-1" onClick={openModal}>
                     <ShoppingCart className="mr-2 h-5 w-5" />
-                    Comprar
+                    {product.requiresStl ? 'Personalizar e Comprar' : 'Adicionar ao Carrinho'}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
                   <DialogHeader>
-                    <DialogTitle>Personalize seu Produto: {product.name}</DialogTitle>
+                    <DialogTitle className="text-xl">Personalize seu Produto: {product.name}</DialogTitle>
                     <DialogDescription>
                       Passo {currentStep + 1} de {STEPS.length}: {STEPS[currentStep].title}
                     </DialogDescription>
@@ -312,11 +328,11 @@ export default function ProductDetailPage() {
                                 </div>
                                 <div className="md:col-span-1 border-l pl-4">
                                     <h4 className="font-semibold mb-2">Dentes Selecionados</h4>
-                                    <div className="flex flex-wrap gap-2 mb-4">
+                                    <div className="flex flex-wrap gap-2 mb-4 min-h-[50px]">
                                         {selectedTeeth.length > 0 ? selectedTeeth.map(t => <Badge key={t}>{t}</Badge>) : <p className="text-xs text-muted-foreground">Nenhum</p>}
                                     </div>
                                     <div className="space-y-2">
-                                        <Button onClick={selectSmileTeeth} size="sm" variant="secondary" className="w-full">10 dentes do sorriso</Button>
+                                        <Button onClick={selectSmileTeeth} size="sm" variant="secondary" className="w-full">Sorriso (10 dentes)</Button>
                                         <Button onClick={clearSelection} size="sm" variant="ghost" className="w-full text-destructive">Limpar seleção</Button>
                                     </div>
                                     {formErrors.teeth && <p className="text-sm text-destructive mt-2">{formErrors.teeth}</p>}
@@ -428,26 +444,26 @@ export default function ProductDetailPage() {
                         {/* Step 5: Review */}
                         <div className={currentStep === 4 ? 'block' : 'hidden'}>
                              <h3 className="text-lg font-semibold mb-4">Revise as informações</h3>
-                             <div className="space-y-4 rounded-lg border p-4">
-                                <div className="flex justify-between"><span>Produto:</span><span className="font-medium">{product.name}</span></div>
+                             <div className="space-y-4 rounded-lg border p-4 bg-muted/50">
+                                <div className="flex justify-between items-center"><span>Produto:</span><span className="font-medium text-right">{product.name}</span></div>
                                 <Separator/>
-                                <div className="flex justify-between"><span>Dentes:</span><span className="font-medium">{selectedTeeth.join(', ')}</span></div>
-                                 <Separator/>
-                                <div className="flex justify-between"><span>Cor:</span><span className="font-medium">{selectedColor || 'Não selecionada'}</span></div>
+                                <div className="flex justify-between items-center"><span>Dentes:</span><span className="font-medium text-right">{selectedTeeth.length > 0 ? selectedTeeth.join(', ') : 'Nenhum'}</span></div>
                                 <Separator/>
-                                <div className="flex justify-between"><span>Arquivos:</span><span className="font-medium">{uploadedFiles.length} arquivo(s)</span></div>
-                                 <Separator/>
-                                <div className="flex justify-between"><span>Paciente:</span><span className="font-medium">{patientData.name || 'Não informado'}</span></div>
+                                <div className="flex justify-between items-center"><span>Cor:</span><span className="font-medium text-right">{selectedColor || 'Não selecionada'}</span></div>
+                                <Separator/>
+                                <div className="flex justify-between items-center"><span>Arquivos:</span><span className="font-medium text-right">{uploadedFiles.length} arquivo(s)</span></div>
+                                <Separator/>
+                                <div className="flex justify-between items-center"><span>Paciente:</span><span className="font-medium text-right">{patientData.name || 'Não informado'}</span></div>
                              </div>
                         </div>
                     </div>
 
-                  <DialogFooter className="pt-4 border-t">
+                  <DialogFooter className="pt-4 border-t flex-col-reverse sm:flex-row sm:justify-between">
                     <div>
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
                         <Button variant="ghost" className="ml-2">Salvar Rascunho</Button>
                     </div>
-                    <div className="flex-1 flex justify-end items-center gap-2">
+                    <div className="flex justify-end items-center gap-2">
                       <Button variant="outline" onClick={handleBack} disabled={currentStep === 0}>
                         Voltar
                       </Button>
@@ -496,5 +512,3 @@ export default function ProductDetailPage() {
     </div>
   );
 }
-
-    
