@@ -11,28 +11,36 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ResponsiveContainer, BarChart as RechartsBarChart, XAxis, YAxis, Tooltip, Legend, Bar, LineChart, Line } from 'recharts';
 
-
-const kpis = [
-  { id: 'kpi1', nome_kpi: 'Taxa de Conversão de Vendas', area: 'Comercial', indicador: 'Vendas / Visitantes', unidade_medida: '%', status: 'ok', metas: 5 },
-  { id: 'kpi2', nome_kpi: 'Faturamento Mensal', area: 'Financeiro', indicador: 'Soma de todas as vendas', unidade_medida: 'R$', status: 'ok', metas: 3 },
-  { id: 'kpi3', nome_kpi: 'Tempo Médio de Produção', area: 'Produção', indicador: 'Data de Envio - Data de Entrada', unidade_medida: 'Dias', status: 'alerta', metas: 2 },
-  { id: 'kpi4', nome_kpi: 'Satisfação do Cliente (CSAT)', area: 'Suporte', indicador: 'Nota média de avaliação', unidade_medida: '0-5', status: 'ok', metas: 1 },
-  { id: 'kpi5', nome_kpi: 'Custo por Aquisição (CAC)', area: 'Marketing', indicador: 'Investimento / Novos Clientes', unidade_medida: 'R$', status: 'critico', metas: 4 },
-];
+const kpisData = {
+    "Comercial": [
+        { id: 'kpi1', nome_kpi: 'Taxa de Conversão de Vendas', indicador: 'Vendas / Visitantes', unidade_medida: '%', status: 'ok', metas: 5 },
+    ],
+    "Financeiro": [
+        { id: 'kpi2', nome_kpi: 'Faturamento Mensal', indicador: 'Soma de todas as vendas', unidade_medida: 'R$', status: 'ok', metas: 3 },
+        { id: 'kpi5', nome_kpi: 'Custo por Aquisição (CAC)', indicador: 'Investimento / Novos Clientes', unidade_medida: 'R$', status: 'critico', metas: 4 },
+    ],
+    "Produção": [
+        { id: 'kpi3', nome_kpi: 'Tempo Médio de Produção', indicador: 'Data de Envio - Data de Entrada', unidade_medida: 'Dias', status: 'alerta', metas: 2 },
+    ],
+    "Suporte": [
+        { id: 'kpi4', nome_kpi: 'Satisfação do Cliente (CSAT)', indicador: 'Nota média de avaliação', unidade_medida: '0-5', status: 'ok', metas: 1 },
+    ],
+};
 
 const kpiByAreaData = [
-    { area: 'Comercial', count: 10 },
-    { area: 'Financeiro', count: 5 },
-    { area: 'Produção', count: 8 },
-    { area: 'Marketing', count: 12 },
-    { area: 'Suporte', count: 4 },
+    { area: 'Comercial', count: 1 },
+    { area: 'Financeiro', count: 2 },
+    { area: 'Produção', count: 1 },
+    { area: 'Suporte', count: 1 },
 ];
 
-const getStatusStyles = (status: string) => {
-    switch (status) {
-        case 'ok': return 'border-green-500/50 text-green-400';
-        case 'alerta': return 'border-yellow-500/50 text-yellow-400';
-        case 'critico': return 'border-red-500/50 text-red-400';
+const getAreaStyles = (area: string) => {
+    switch (area) {
+        case 'Comercial': return 'border-blue-500/80 text-blue-400';
+        case 'Financeiro': return 'border-green-500/80 text-green-400';
+        case 'Produção': return 'border-yellow-500/80 text-yellow-400';
+        case 'Suporte': return 'border-purple-500/80 text-purple-400';
+        case 'Marketing': return 'border-pink-500/80 text-pink-400';
         default: return 'border-gray-500/50 text-gray-400';
     }
 }
@@ -46,7 +54,7 @@ export default function KpisPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">KPIs e Indicadores</h1>
-          <p className="text-muted-foreground">Gerencie os indicadores chave de performance da sua empresa.</p>
+          <p className="text-muted-foreground">Monitore os principais indicadores de performance por área.</p>
         </div>
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
@@ -94,96 +102,63 @@ export default function KpisPage() {
 
       {/* SUMMARY CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">KPIs Ativos</CardTitle>
-                <Target className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-3xl font-bold">29</div>
-                <p className="text-xs text-muted-foreground">+2 este mês</p>
-            </CardContent>
-        </Card>
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Áreas Cobertas</CardTitle>
-                <FileText className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-3xl font-bold">5</div>
-                <p className="text-xs text-muted-foreground">Comercial, MKT, Prod, etc.</p>
-            </CardContent>
-        </Card>
-         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">KPIs com Metas</CardTitle>
-                <BarChart className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-3xl font-bold">15</div>
-                <p className="text-xs text-muted-foreground">52% do total de KPIs</p>
-            </CardContent>
-        </Card>
-         <Card className="bg-destructive/10 border-destructive/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-destructive">KPIs Críticos</CardTitle>
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-3xl font-bold text-destructive">1</div>
-                <p className="text-xs text-muted-foreground">Custo por Aquisição (CAC)</p>
-            </CardContent>
-        </Card>
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Total de KPIs</CardTitle><Target className="h-5 w-5 text-primary" /></CardHeader><CardContent><div className="text-3xl font-bold">5</div><p className="text-xs text-muted-foreground">+2 este mês</p></CardContent></Card>
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Áreas Cobertas</CardTitle><FileText className="h-5 w-5 text-primary" /></CardHeader><CardContent><div className="text-3xl font-bold">4</div><p className="text-xs text-muted-foreground">Comercial, Prod, etc.</p></CardContent></Card>
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">KPIs com Metas</CardTitle><BarChart className="h-5 w-5 text-primary" /></CardHeader><CardContent><div className="text-3xl font-bold">15</div><p className="text-xs text-muted-foreground">52% do total</p></CardContent></Card>
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">KPIs Sem Metas</CardTitle><AlertTriangle className="h-5 w-5 text-yellow-500" /></CardHeader><CardContent><div className="text-3xl font-bold">4</div><p className="text-xs text-muted-foreground">Precisam de atenção</p></CardContent></Card>
       </div>
       
       {/* MAIN CONTENT */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* KPI LIST */}
-        <div className="lg:col-span-2 space-y-4">
-             {kpis.map((kpi) => (
-                <Card key={kpi.id} className="bg-card/50 backdrop-blur-sm border-border/50 shadow-md hover:shadow-primary/20 hover:border-primary/30 transition-all duration-300">
-                    <CardContent className="p-4 flex items-center justify-between">
-                       <div className="flex items-center gap-4">
-                            <div className={`w-1.5 h-16 rounded-full ${getStatusStyles(kpi.status).replace('border-','bg-')}`}></div>
-                            <div>
-                                <p className="font-semibold text-base">{kpi.nome_kpi}</p>
-                                <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                                    <span>Área: <Badge variant="secondary">{kpi.area}</Badge></span>
-                                    <span>Unidade: <Badge variant="outline">{kpi.unidade_medida}</Badge></span>
+        <div className="lg:col-span-2 space-y-8">
+             {Object.entries(kpisData).map(([area, kpis]) => (
+                <div key={area}>
+                    <h2 className={`text-xl font-bold mb-4 pb-2 border-b-2 ${getAreaStyles(area)}`}>{area}</h2>
+                    <div className="space-y-4">
+                        {kpis.map((kpi) => (
+                            <Card key={kpi.id} className="bg-card/50 backdrop-blur-sm border-border/50 shadow-md hover:shadow-primary/20 transition-all duration-300 relative overflow-hidden group">
+                                <div className={`absolute left-0 top-0 h-full w-1.5 ${getAreaStyles(area).replace('border-','bg-').replace('/80','')}`}></div>
+                                <CardContent className="p-4 pl-6 flex items-center justify-between">
+                                <div className="flex items-center gap-4 flex-1">
+                                    <div>
+                                        <p className="font-bold text-base">{kpi.nome_kpi}</p>
+                                        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                                            <span><span className="font-semibold">Indicador:</span> {kpi.indicador}</span>
+                                            <Badge variant="outline">{kpi.unidade_medida}</Badge>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                       </div>
-                       <div className="flex items-center gap-4">
-                         <div className="text-right">
-                             <p className="text-sm font-semibold">{kpi.metas} Metas</p>
-                             <p className="text-xs text-muted-foreground">vinculadas</p>
-                         </div>
-                         <div className="w-28 h-10">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={[{v:1},{v:3},{v:2},{v:5},{v:4}]}>
-                                <Line type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <Button variant="outline" size="sm">Ver Metas</Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">Excluir</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                       </div>
-                    </CardContent>
-                </Card>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-28 h-10">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={[{v:1},{v:3},{v:2},{v:5},{v:4}]}>
+                                            <Line type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <Badge variant="secondary" className="h-8">{kpi.metas} Metas ativas</Badge>
+                                    <Button variant="outline" size="sm">Ver Metas</Button>
+                                    <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                        <DropdownMenuItem>Editar</DropdownMenuItem>
+                                        <DropdownMenuItem className="text-destructive">Excluir</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
              ))}
         </div>
-        {/* CHART */}
+        
         <div className="lg:col-span-1">
             <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-lg h-full sticky top-24">
                 <CardHeader>
@@ -203,9 +178,6 @@ export default function KpisPage() {
             </Card>
         </div>
       </div>
-
     </main>
   );
 }
-
-    
