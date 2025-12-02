@@ -1,10 +1,10 @@
 'use client';
-import { AreaChart, BarChart, File, ListFilter, MoreHorizontal, PlusCircle, Search, Trash, Edit, Eye, TrendingUp, DollarSign, Target, Briefcase, Hand, Users, LineChart as LineChartIcon, BarChart2, CheckCircle, XCircle } from 'lucide-react';
+import { AreaChart, BarChart2 as RechartsBarChart, File, ListFilter, MoreHorizontal, PlusCircle, Search, Trash, Edit, Eye, TrendingUp, DollarSign, Target, Briefcase, Hand, Users, LineChart as LineChartIcon, BarChart2, CheckCircle, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ResponsiveContainer, BarChart as RechartsBarChart, PieChart, Pie, Cell, XAxis, YAxis } from 'recharts';
+import { ResponsiveContainer, Bar, PieChart, Pie, Cell, XAxis, YAxis } from 'recharts';
 
 const kpiData = [
   { area: 'Comercial', name: 'Taxa de Conversão', indicator: 'Pedidos / Sessões', unit: '%', trend: [5, 6, 5, 7, 8], metas: 2, color: 'hsl(210, 89%, 64%)' },
@@ -83,11 +83,11 @@ export default function KpisPage() {
                                 <RechartsBarChart data={areaDistributionData} layout="vertical" margin={{ left: 20 }}>
                                      <XAxis type="number" hide />
                                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} width={80} />
-                                     <RechartsBarChart dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20}>
+                                     <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20}>
                                         {areaDistributionData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={AREA_COLORS[entry.name as keyof typeof AREA_COLORS] || 'hsl(var(--primary))'} />
                                         ))}
-                                     </RechartsBarChart>
+                                     </Bar>
                                 </RechartsBarChart>
                             </ResponsiveContainer>
                         </CardContent>
@@ -141,3 +141,5 @@ export default function KpisPage() {
         </main>
     );
 }
+
+    
