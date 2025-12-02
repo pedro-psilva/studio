@@ -16,6 +16,7 @@ import {
   BellRing,
   ChevronDown,
   ChevronRight,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,20 @@ const navLinks = [
   },
   { href: '/admin/products', label: 'Produtos', icon: Package },
   { href: '/admin/users', label: 'Usuários', icon: Users },
+  { 
+    href: '/admin/esap', 
+    label: 'ESAP', 
+    icon: TrendingUp,
+    subLinks: [
+        { href: '/admin/esap', label: 'Dashboard ESAP' },
+        { href: '/admin/esap/kpis', label: 'KPIs e Indicadores' },
+        { href: '/admin/esap/metas', label: 'Metas' },
+        { href: '/admin/esap/planos-acao', label: 'Planos de Ação' },
+        { href: '/admin/esap/acompanhamento', label: 'Acompanhamento' },
+        { href: '/admin/esap/equipe', label: 'Equipe / Responsáveis' },
+        { href: '/admin/esap/relatorios', label: 'Relatórios' },
+    ]
+  },
   { href: '/admin/finance', label: 'Financeiro', icon: CreditCard },
   { href: '/admin/reports', label: 'Relatórios', icon: LineChart },
   { href: '/admin/coupons', label: 'Cupons', icon: BadgePercent },
@@ -52,6 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   
   const isProductionRoute = pathname.startsWith('/admin/production');
+  const isEsapRoute = pathname.startsWith('/admin/esap');
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -70,7 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               {navLinks.map((link) => 
                 link.subLinks ? (
-                  <Collapsible key={link.href} defaultOpen={isProductionRoute}>
+                  <Collapsible key={link.href} defaultOpen={isProductionRoute || isEsapRoute}>
                     <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary [&[data-state=open]>svg:last-child]:rotate-90">
                        <div className="flex items-center gap-3">
                         <link.icon className="h-4 w-4" />
