@@ -1,10 +1,10 @@
 'use client';
-import { AreaChart, BarChart2 as RechartsBarChart, File, ListFilter, MoreHorizontal, PlusCircle, Search, Trash, Edit, Eye, TrendingUp, DollarSign, Target, Briefcase, Hand, Users, LineChart as LineChartIcon, BarChart2, CheckCircle, XCircle } from 'lucide-react';
+import { AreaChart, BarChart2 as RechartsBarChartIcon, File, ListFilter, MoreHorizontal, PlusCircle, Search, Trash, Edit, Eye, TrendingUp, DollarSign, Target, Briefcase, Hand, Users, LineChart as LineChartIcon, CheckCircle, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ResponsiveContainer, Bar, PieChart, Pie, Cell, XAxis, YAxis } from 'recharts';
+import { ResponsiveContainer, Bar, PieChart, Pie, Cell, XAxis, YAxis, BarChart as RechartsBarChart } from 'recharts';
 
 const kpiData = [
   { area: 'Comercial', name: 'Taxa de Conversão', indicator: 'Pedidos / Sessões', unit: '%', trend: [5, 6, 5, 7, 8], metas: 2, color: 'hsl(210, 89%, 64%)' },
@@ -25,7 +25,7 @@ const kpisByArea = kpiData.reduce((acc, kpi) => {
 
 
 const summaryCards = [
-    { title: 'Total de KPIs', value: kpiData.length, icon: BarChart2, color: 'text-primary' },
+    { title: 'Total de KPIs', value: kpiData.length, icon: RechartsBarChartIcon, color: 'text-primary' },
     { title: 'Áreas Cobertas', value: Object.keys(kpisByArea).length, icon: Briefcase, color: 'text-sky-500' },
     { title: 'KPIs com Metas Ativas', value: kpiData.filter(k => k.metas > 0).length, icon: Target, color: 'text-green-500' },
     { title: 'KPIs Sem Metas', value: kpiData.filter(k => k.metas === 0).length, icon: XCircle, color: 'text-amber-500' },
@@ -141,5 +141,3 @@ export default function KpisPage() {
         </main>
     );
 }
-
-    
