@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ResponsiveContainer, BarChart as RechartsBarChart, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, BarChart as RechartsBarChart, PieChart, Pie, Cell, XAxis, YAxis } from 'recharts';
 
 const kpiData = [
   { area: 'Comercial', name: 'Taxa de Conversão', indicator: 'Pedidos / Sessões', unit: '%', trend: [5, 6, 5, 7, 8], metas: 2, color: 'hsl(210, 89%, 64%)' },
