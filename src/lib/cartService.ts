@@ -9,6 +9,7 @@ export type CartItemFirestore = {
   teeth?: number[];
   implantSystem?: string;
   stlFileUrl?: string;
+  patientName?: string;
 };
 
 export type CartDocument = {
@@ -31,6 +32,7 @@ function toFirestoreCartItems(items: CartItemFirestore[]) {
     if (item.teeth != null) base.teeth = item.teeth;
     if (item.implantSystem != null) base.implantSystem = item.implantSystem;
     if (item.stlFileUrl != null) base.stlFileUrl = item.stlFileUrl;
+    if (item.patientName != null) base.patientName = item.patientName;
 
     return base;
   });
@@ -69,3 +71,5 @@ export async function updateCartItems(userId: string, items: CartItemFirestore[]
     updatedAt: serverTimestamp(),
   });
 }
+
+    

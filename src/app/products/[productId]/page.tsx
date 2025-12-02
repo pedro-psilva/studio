@@ -6,10 +6,7 @@ import Link from 'next/link';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import {
   ShoppingCart,
-  Minus,
-  Plus,
   ChevronLeft,
-  ChevronRight,
   UploadCloud,
   X,
   File as FileIcon,
@@ -171,7 +168,7 @@ export default function ProductDetailPage() {
       teeth: selectedTeeth,
       shade: selectedColor || undefined,
       stlFileUrl, // Placeholder
-      // Add patient data later
+      patientName: patientData.name || undefined,
     };
 
     try {
@@ -499,3 +496,5 @@ export default function ProductDetailPage() {
     </div>
   );
 }
+
+    

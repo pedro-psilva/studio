@@ -9,6 +9,8 @@ export type OrderItemFirestore = {
   material?: string;
   implantSystem?: string;
   stlFileUrl?: string;
+  teeth?: number[];
+  patientName?: string;
 };
 
 export type OrderStatus =
@@ -51,6 +53,8 @@ function mapCartItemToOrderItem(item: CartItemFirestore): OrderItemFirestore {
     material: item.material,
     implantSystem: item.implantSystem,
     stlFileUrl: item.stlFileUrl,
+    teeth: item.teeth,
+    patientName: item.patientName,
   };
 }
 
@@ -129,6 +133,9 @@ export async function createOrderFromCart(
     if (item.material != null) base.material = item.material;
     if (item.implantSystem != null) base.implantSystem = item.implantSystem;
     if (item.stlFileUrl != null) base.stlFileUrl = item.stlFileUrl;
+    if (item.teeth != null) base.teeth = item.teeth;
+    if (item.patientName != null) base.patientName = item.patientName;
+
 
     return base;
   });
@@ -185,3 +192,5 @@ export async function updateOrderPayment(
     updatedAt: serverTimestamp(),
   });
 }
+
+    

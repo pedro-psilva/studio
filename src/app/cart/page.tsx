@@ -1,4 +1,3 @@
-
  'use client';
 
 import { useState, useEffect } from 'react';
@@ -42,12 +41,13 @@ export default function CartPage() {
           setCartItems([]);
         } else {
           const itemsWithProduct = cart.items
-            .map((item: CartItemFirestore) => {
+            .map((item: CartItemFirestore, index: number) => {
               const product = products.find((p) => p.id === item.productId);
               if (!product) return null;
               return {
                 ...product,
                 ...item, // Pass all custom fields from firestore
+                uniqueId: `${item.productId}-${index}`, // Create a unique ID for each item in the cart
               };
             })
             .filter(Boolean) as any[];
@@ -76,7 +76,7 @@ export default function CartPage() {
       teeth: item.teeth,
       implantSystem: item.implantSystem,
       stlFileUrl: item.stlFileUrl,
-      // patient data should be here if saved
+      patientName: item.patientName,
     }));
 
     try {
@@ -91,20 +91,17 @@ export default function CartPage() {
     }
   };
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
+  const updateQuantity = (uniqueId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     const updatedItems = cartItems.map((item) =>
-      item.id === productId ? { ...item, quantity: newQuantity } : item
+      item.uniqueId === uniqueId ? { ...item, quantity: newQuantity } : item
     );
     setCartItems(updatedItems);
     syncCartToFirestore(updatedItems);
   };
 
-  const removeItem = (productId: string, teeth: number[]) => {
-    // Unique identifier for a customized item is product ID + teeth combination
-    const updatedItems = cartItems.filter((item) => 
-        !(item.id === productId && JSON.stringify(item.teeth) === JSON.stringify(teeth))
-    );
+  const removeItem = (uniqueId: string) => {
+    const updatedItems = cartItems.filter((item) => item.uniqueId !== uniqueId);
     setCartItems(updatedItems);
     syncCartToFirestore(updatedItems);
   };
@@ -129,7 +126,7 @@ export default function CartPage() {
       implantSystem: item.implantSystem,
       stlFileUrl: item.stlFileUrl,
       teeth: item.teeth,
-      // patient data if needed
+      patientName: item.patientName,
     }));
 
     try {
@@ -178,10 +175,10 @@ export default function CartPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
               {/* Cart Items */}
               <div className="lg:col-span-2 space-y-6">
-                {cartItems.map((item, index) => {
+                {cartItems.map((item) => {
                   const productImage = PlaceHolderImages.find(p => p.id === item.imageId);
                   return (
-                    <Card key={`${item.id}-${index}`} className="p-4">
+                    <Card key={item.uniqueId} className="p-4">
                       <div className="flex flex-col sm:flex-row items-start gap-4">
                         {productImage && (
                             <Image
@@ -194,18 +191,19 @@ export default function CartPage() {
                         )}
                         <div className="flex-1 w-full">
                           <Link href={`/products/${item.id}`} className="font-semibold hover:underline">{item.name}</Link>
+                          {item.patientName && <p className="text-sm font-medium text-primary">Paciente: {item.patientName}</p>}
                           <p className="text-sm text-muted-foreground">R$ {item.price.toFixed(2)}</p>
                            <div className="flex items-center justify-between mt-4">
                              <div className="flex items-center border rounded-md">
-                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
+                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)}>
                                  <Minus className="h-4 w-4" />
                                </Button>
                                <Input type="number" value={item.quantity} readOnly className="h-8 w-12 border-0 text-center" />
-                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity + 1)}>
                                  <Plus className="h-4 w-4" />
                                </Button>
                              </div>
-                              <Button variant="ghost" size="icon" onClick={() => removeItem(item.id, item.teeth)}>
+                              <Button variant="ghost" size="icon" onClick={() => removeItem(item.uniqueId)}>
                                 <X className="h-5 w-5 text-muted-foreground hover:text-destructive" />
                               </Button>
                            </div>
@@ -217,9 +215,11 @@ export default function CartPage() {
                       {(item.teeth?.length > 0 || item.shade || item.stlFileUrl) && (
                         <div className="mt-4 pt-4 border-t w-full space-y-2">
                            <h4 className="text-sm font-semibold">Detalhes do Caso:</h4>
-                           {item.teeth && item.teeth.length > 0 && <div className="text-xs text-muted-foreground"><strong>Dentes:</strong> {item.teeth.join(', ')}</div>}
-                           {item.shade && <div className="text-xs text-muted-foreground"><strong>Cor:</strong> <Badge variant="secondary">{item.shade}</Badge></div>}
-                           {item.stlFileUrl && <div className="text-xs text-muted-foreground flex items-center gap-1"><strong>Arquivo:</strong> <FileText className="h-3 w-3"/> {item.stlFileUrl}</div>}
+                           <div className='flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground'>
+                            {item.teeth && item.teeth.length > 0 && <div><strong>Dentes:</strong> {item.teeth.join(', ')}</div>}
+                            {item.shade && <div><strong>Cor:</strong> <Badge variant="secondary">{item.shade}</Badge></div>}
+                            {item.stlFileUrl && <div className="flex items-center gap-1"><strong>Arquivo:</strong> <FileText className="h-3 w-3"/> {item.stlFileUrl}</div>}
+                           </div>
                            
                            <div className="flex gap-2 pt-2">
                                <Button variant="outline" size="sm"><CircleDot className="mr-2 h-4 w-4"/> Visualizar Caso</Button>
@@ -267,3 +267,5 @@ export default function CartPage() {
     </div>
   );
 }
+
+    
