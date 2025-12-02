@@ -1,3 +1,4 @@
+
 'use client';
 import {
     Activity,
@@ -129,7 +130,7 @@ export default function EsapDashboardPage() {
                                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                                 <Tooltip />
                                 <Legend />
-                                <Bar dataKey="meta" fill="hsla(var(--primary), 0.5)" name="Meta" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="meta" fill="#24C39E" name="Meta" radius={[4, 4, 0, 0]} />
                                 <Bar dataKey="resultado" fill="hsl(var(--primary))" name="Resultado" radius={[4, 4, 0, 0]} />
                             </RechartsBarChart>
                         </ResponsiveContainer>
