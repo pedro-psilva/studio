@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { PlusCircle, MoreHorizontal, Calendar as CalendarIcon, Target, CheckCircle, XCircle, Activity, TrendingUp, TrendingDown } from 'lucide-react';
@@ -14,7 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ResponsiveContainer, BarChart, XAxis, YAxis, Tooltip, Bar, LineChart, Line } from 'recharts';
+import { ResponsiveContainer, BarChart, XAxis, YAxis, Tooltip, Bar, LineChart, Line, Legend } from 'recharts';
 
 const metas = [
   { id: 'm1', kpi: 'Faturamento Mensal', meta_nome: 'Aumentar faturamento em 20%', valor_meta: 50000, valor_atual: 42000, periodo: 'Mensal', responsavel: 'Ana (Comercial)', status: 'em andamento' },
