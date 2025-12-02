@@ -36,12 +36,12 @@ const kpiByAreaData = [
 
 const getAreaStyles = (area: string) => {
     switch (area) {
-        case 'Comercial': return 'border-blue-500/80 text-blue-400';
-        case 'Financeiro': return 'border-green-500/80 text-green-400';
-        case 'Produção': return 'border-yellow-500/80 text-yellow-400';
-        case 'Suporte': return 'border-purple-500/80 text-purple-400';
-        case 'Marketing': return 'border-pink-500/80 text-pink-400';
-        default: return 'border-gray-500/50 text-gray-400';
+        case 'Comercial': return { border: 'border-blue-500/80', text: 'text-blue-400', bg: 'bg-blue-500' };
+        case 'Financeiro': return { border: 'border-green-500/80', text: 'text-green-400', bg: 'bg-green-500' };
+        case 'Produção': return { border: 'border-yellow-500/80', text: 'text-yellow-400', bg: 'bg-yellow-500' };
+        case 'Suporte': return { border: 'border-purple-500/80', text: 'text-purple-400', bg: 'bg-purple-500' };
+        case 'Marketing': return { border: 'border-pink-500/80', text: 'text-pink-400', bg: 'bg-pink-500' };
+        default: return { border: 'border-gray-500/50', text: 'text-gray-400', bg: 'bg-gray-500' };
     }
 }
 
@@ -111,13 +111,15 @@ export default function KpisPage() {
       {/* MAIN CONTENT */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-             {Object.entries(kpisData).map(([area, kpis]) => (
+             {Object.entries(kpisData).map(([area, kpis]) => {
+                const areaStyle = getAreaStyles(area);
+                return (
                 <div key={area}>
-                    <h2 className={`text-xl font-bold mb-4 pb-2 border-b-2 ${getAreaStyles(area)}`}>{area}</h2>
+                    <h2 className={`text-xl font-bold mb-4 pb-2 border-b-2 ${areaStyle.border} ${areaStyle.text}`}>{area}</h2>
                     <div className="space-y-4">
                         {kpis.map((kpi) => (
                             <Card key={kpi.id} className="bg-card/50 backdrop-blur-sm border-border/50 shadow-md hover:shadow-primary/20 transition-all duration-300 relative overflow-hidden group">
-                                <div className={`absolute left-0 top-0 h-full w-1.5 ${getAreaStyles(area).replace('border-','bg-').replace('/80','')}`}></div>
+                                <div className={`absolute left-0 top-0 h-full w-1.5 ${areaStyle.bg}`}></div>
                                 <CardContent className="p-4 pl-6 flex items-center justify-between">
                                 <div className="flex items-center gap-4 flex-1">
                                     <div>
@@ -129,15 +131,15 @@ export default function KpisPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <div className="w-28 h-10">
+                                    <div className="w-28 h-10 group-hover:scale-105 transition-transform duration-300">
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={[{v:1},{v:3},{v:2},{v:5},{v:4}]}>
+                                            <LineChart data={[{v:1},{v:3},{v:2},{v:5},{v:4}]} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                                             <Line type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
                                             </LineChart>
                                         </ResponsiveContainer>
                                     </div>
                                     <Badge variant="secondary" className="h-8">{kpi.metas} Metas ativas</Badge>
-                                    <Button variant="outline" size="sm">Ver Metas</Button>
+                                    <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:border-primary">Ver Metas</Button>
                                     <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -156,7 +158,7 @@ export default function KpisPage() {
                         ))}
                     </div>
                 </div>
-             ))}
+             )})}
         </div>
         
         <div className="lg:col-span-1">
@@ -171,7 +173,7 @@ export default function KpisPage() {
                            <XAxis type="number" hide />
                            <YAxis dataKey="area" type="category" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} width={80} />
                            <Tooltip cursor={{ fill: 'hsl(var(--accent))' }} contentStyle={{ background: 'hsl(var(--background))' }} />
-                           <Bar dataKey="count" name="KPIs" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                           <Bar dataKey="count" name="KPIs" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
                         </RechartsBarChart>
                     </ResponsiveContainer>
                 </CardContent>
