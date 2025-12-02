@@ -91,7 +91,7 @@ export default function RelatoriosEsapPage() {
                                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                                 <Tooltip cursor={{ fill: 'hsl(var(--accent))' }} contentStyle={{ background: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
                                 <Legend wrapperStyle={{fontSize: "12px"}}/>
-                                <Bar dataKey="meta" fill="hsla(var(--primary), 0.5)" name="Meta" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="meta" fill="#24C39E" name="Meta" radius={[4, 4, 0, 0]} />
                                 <Bar dataKey="resultado" fill="hsl(var(--primary))" name="Resultado" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
