@@ -12,12 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { products } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { X, Plus, Minus, ShoppingCart as ShoppingCartIcon, ArrowRight } from 'lucide-react';
+import { X, Plus, Minus, ShoppingCart as ShoppingCartIcon, ArrowRight, FileText, Edit, CircleDot } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { getCart, setCart, updateCartItems, CartItemFirestore } from '@/lib/cartService';
 import { createOrderFromCart, OrderItemFirestore } from '@/lib/orderService';
+import { Badge } from '@/components/ui/badge';
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -46,12 +47,7 @@ export default function CartPage() {
               if (!product) return null;
               return {
                 ...product,
-                quantity: item.quantity,
-                material: item.material,
-                shade: item.shade,
-                teeth: item.teeth,
-                implantSystem: item.implantSystem,
-                stlFileUrl: item.stlFileUrl,
+                ...item, // Pass all custom fields from firestore
               };
             })
             .filter(Boolean) as any[];
@@ -80,6 +76,7 @@ export default function CartPage() {
       teeth: item.teeth,
       implantSystem: item.implantSystem,
       stlFileUrl: item.stlFileUrl,
+      // patient data should be here if saved
     }));
 
     try {
@@ -103,8 +100,11 @@ export default function CartPage() {
     syncCartToFirestore(updatedItems);
   };
 
-  const removeItem = (productId: string) => {
-    const updatedItems = cartItems.filter((item) => item.id !== productId);
+  const removeItem = (productId: string, teeth: number[]) => {
+    // Unique identifier for a customized item is product ID + teeth combination
+    const updatedItems = cartItems.filter((item) => 
+        !(item.id === productId && JSON.stringify(item.teeth) === JSON.stringify(teeth))
+    );
     setCartItems(updatedItems);
     syncCartToFirestore(updatedItems);
   };
@@ -128,6 +128,8 @@ export default function CartPage() {
       material: item.material,
       implantSystem: item.implantSystem,
       stlFileUrl: item.stlFileUrl,
+      teeth: item.teeth,
+      // patient data if needed
     }));
 
     try {
@@ -179,35 +181,53 @@ export default function CartPage() {
                 {cartItems.map((item, index) => {
                   const productImage = PlaceHolderImages.find(p => p.id === item.imageId);
                   return (
-                    <Card key={`${item.id}-${index}`} className="flex flex-col sm:flex-row items-center p-4 gap-4">
-                      {productImage && (
-                          <Image
-                            src={productImage.imageUrl}
-                            alt={item.name}
-                            width={120}
-                            height={120}
-                            className="w-full sm:w-32 h-32 sm:h-auto aspect-square rounded-md object-cover"
-                          />
-                      )}
-                      <div className="flex-1 w-full">
-                        <Link href={`/products/${item.id}`} className="font-semibold hover:underline">{item.name}</Link>
-                        <p className="text-sm text-muted-foreground">R$ {item.price.toFixed(2)}</p>
-                         <div className="flex items-center justify-between mt-4">
-                           <div className="flex items-center border rounded-md">
-                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
-                               <Minus className="h-4 w-4" />
-                             </Button>
-                             <Input type="number" value={item.quantity} readOnly className="h-8 w-12 border-0 text-center" />
-                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
-                               <Plus className="h-4 w-4" />
-                             </Button>
+                    <Card key={`${item.id}-${index}`} className="p-4">
+                      <div className="flex flex-col sm:flex-row items-start gap-4">
+                        {productImage && (
+                            <Image
+                              src={productImage.imageUrl}
+                              alt={item.name}
+                              width={120}
+                              height={120}
+                              className="w-full sm:w-32 h-32 sm:h-auto aspect-square rounded-md object-cover"
+                            />
+                        )}
+                        <div className="flex-1 w-full">
+                          <Link href={`/products/${item.id}`} className="font-semibold hover:underline">{item.name}</Link>
+                          <p className="text-sm text-muted-foreground">R$ {item.price.toFixed(2)}</p>
+                           <div className="flex items-center justify-between mt-4">
+                             <div className="flex items-center border rounded-md">
+                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
+                                 <Minus className="h-4 w-4" />
+                               </Button>
+                               <Input type="number" value={item.quantity} readOnly className="h-8 w-12 border-0 text-center" />
+                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                                 <Plus className="h-4 w-4" />
+                               </Button>
+                             </div>
+                              <Button variant="ghost" size="icon" onClick={() => removeItem(item.id, item.teeth)}>
+                                <X className="h-5 w-5 text-muted-foreground hover:text-destructive" />
+                              </Button>
                            </div>
-                            <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}>
-                              <X className="h-5 w-5 text-muted-foreground hover:text-destructive" />
-                            </Button>
-                         </div>
+                        </div>
+                         <p className="text-lg font-bold w-full sm:w-auto text-right">R$ {(item.price * item.quantity).toFixed(2)}</p>
                       </div>
-                       <p className="text-lg font-bold w-full sm:w-auto text-right">R$ {(item.price * item.quantity).toFixed(2)}</p>
+                      
+                      {/* Customization Details */}
+                      {(item.teeth?.length > 0 || item.shade || item.stlFileUrl) && (
+                        <div className="mt-4 pt-4 border-t w-full space-y-2">
+                           <h4 className="text-sm font-semibold">Detalhes do Caso:</h4>
+                           {item.teeth && item.teeth.length > 0 && <div className="text-xs text-muted-foreground"><strong>Dentes:</strong> {item.teeth.join(', ')}</div>}
+                           {item.shade && <div className="text-xs text-muted-foreground"><strong>Cor:</strong> <Badge variant="secondary">{item.shade}</Badge></div>}
+                           {item.stlFileUrl && <div className="text-xs text-muted-foreground flex items-center gap-1"><strong>Arquivo:</strong> <FileText className="h-3 w-3"/> {item.stlFileUrl}</div>}
+                           
+                           <div className="flex gap-2 pt-2">
+                               <Button variant="outline" size="sm"><CircleDot className="mr-2 h-4 w-4"/> Visualizar Caso</Button>
+                               <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4"/> Editar Caso</Button>
+                           </div>
+                        </div>
+                      )}
+
                     </Card>
                   );
                 })}
