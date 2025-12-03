@@ -333,7 +333,7 @@ export default function ProductDetailPage() {
                         <div className={currentStep === 1 ? 'block' : 'hidden'}>
                             <h3 className="text-lg font-semibold mb-4">SELECIONE A COR DESEJADA</h3>
                             <RadioGroup value={selectedColor || ""} onValueChange={setSelectedColor}>
-                                <Accordion type="multiple" className="w-full" defaultValue={['VITA CLASSIC']}>
+                                <Accordion type="single" collapsible className="w-full" defaultValue={'VITA CLASSIC'}>
                                     {Object.entries(colorOptions).map(([system, subGroups]) => (
                                     <AccordionItem value={system} key={system}>
                                         <AccordionTrigger className="text-md font-medium">{system}</AccordionTrigger>
