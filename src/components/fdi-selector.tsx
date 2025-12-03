@@ -28,6 +28,63 @@ interface ArcadaProps {
   onToothClick: (tooth: number) => void;
 }
 
+// --- Reusable Tooth Shape SVG ---
+
+function ToothIcon({ isSelected }: { isSelected: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 50 50"
+      className={cn(
+        "absolute inset-0 h-full w-full transition-all duration-200",
+        isSelected ? "fill-primary stroke-primary" : "fill-card stroke-border group-hover:stroke-primary",
+      )}
+    >
+      <path
+        d="M10 15 C 5 20, 5 30, 10 35 L 15 45 C 20 50, 30 50, 35 45 L 40 35 C 45 30, 45 20, 40 15 L 35 5 C 30 0, 20 0, 15 5 Z"
+        strokeWidth="2"
+      />
+      <path
+        d="M15 5 C 18 10, 22 12, 25 12 C 28 12, 32 10, 35 5"
+        strokeWidth="2"
+        fill="none"
+        className={cn(isSelected ? "stroke-primary-foreground/50" : "stroke-border group-hover:stroke-primary/50")}
+      />
+    </svg>
+  );
+}
+
+
+// --- Reusable Tooth Button Component ---
+
+function ToothButton({ tooth, isSelected, onClick, style }: ToothButtonProps) {
+  return (
+    <button
+      type="button"
+      style={style}
+      className={cn(
+        'group absolute h-10 w-10 transition-transform duration-200 hover:scale-110',
+        isSelected && 'scale-110'
+      )}
+      onClick={() => onClick(tooth)}
+    >
+      <div className="relative flex h-full w-full items-center justify-center">
+        <ToothIcon isSelected={isSelected} />
+        <span
+          className={cn(
+            "relative z-10 text-xs font-semibold transition-colors duration-200",
+            isSelected ? "text-primary-foreground" : "text-card-foreground"
+          )}
+        >
+          {tooth}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+
+// --- Anatomical Arcade Components ---
+
 const upperArcadePositions: ToothPosition[] = [
   { tooth: 11, top: 15, left: 190 }, { tooth: 21, top: 15, left: 225 },
   { tooth: 12, top: 22, left: 165 }, { tooth: 22, top: 22, left: 250 },
@@ -50,29 +107,6 @@ const lowerArcadePositions: ToothPosition[] = [
     { tooth: 48, top: 20, left: 105 },  { tooth: 38, top: 20, left: 310 },
 ];
 
-
-const smileTeeth = [13, 12, 11, 21, 22, 23, 33, 32, 31, 41, 42, 43];
-
-// --- Reusable Tooth Button Component ---
-
-function ToothButton({ tooth, isSelected, onClick, style }: ToothButtonProps) {
-  return (
-    <button
-      type="button"
-      style={style}
-      className={cn(
-        'absolute h-[38px] w-[38px] rounded-full border border-border bg-card text-xs font-semibold flex items-center justify-center transition-all duration-200 text-card-foreground',
-        'hover:border-primary hover:scale-110',
-        isSelected && 'bg-primary text-primary-foreground border-primary scale-110 shadow-lg'
-      )}
-      onClick={() => onClick(tooth)}
-    >
-      {tooth}
-    </button>
-  );
-}
-
-// --- Anatomical Arcade Components ---
 
 function ArcadaSuperiorFDI({ positions, selectedTeeth, onToothClick }: ArcadaProps) {
     return (
@@ -112,6 +146,8 @@ interface SeletorInterativoFDIProps {
   initialSelection?: number[];
   onNext: (selection: number[]) => void;
 }
+
+const smileTeeth = [15, 14, 13, 12, 11, 21, 22, 23, 24, 25];
 
 export function SeletorInterativoFDI({
   initialSelection = [],
