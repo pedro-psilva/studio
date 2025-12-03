@@ -6,18 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-// Definindo os dentes em blocos para facilitar a curvatura
-const upperArch = {
-  left: [18, 17, 16, 15, 14, 13, 12, 11],
-  right: [21, 22, 23, 24, 25, 26, 27, 28],
-};
+const teethPositions = [
+    { tooth: 18, top: 185, left: 60 }, { tooth: 17, top: 150, left: 65 }, { tooth: 16, top: 115, left: 75 }, { tooth: 15, top: 85, left: 90 }, { tooth: 14, top: 60, left: 110 }, { tooth: 13, top: 42, left: 135 }, { tooth: 12, top: 28, left: 160 }, { tooth: 11, top: 20, left: 185 },
+    { tooth: 21, top: 28, left: 215 }, { tooth: 22, top: 42, left: 240 }, { tooth: 23, top: 56, left: 265 }, { tooth: 24, top: 60, left: 290 }, { tooth: 25, top: 85, left: 310 }, { tooth: 26, top: 115, left: 325 }, { tooth: 27, top: 150, left: 335 }, { tooth: 28, top: 185, left: 340 },
+    { tooth: 48, top: 585, left: 60 }, { tooth: 47, top: 550, left: 65 }, { tooth: 46, top: 515, left: 75 }, { tooth: 45, top: 485, left: 90 }, { tooth: 44, top: 460, left: 110 }, { tooth: 43, top: 440, left: 135 }, { tooth: 42, top: 425, left: 160 }, { tooth: 41, top: 415, left: 185 },
+    { tooth: 31, top: 425, left: 215 }, { tooth: 32, top: 440, left: 240 }, { tooth: 33, top: 455, left: 265 }, { tooth: 34, top: 460, left: 290 }, { tooth: 35, top: 485, left: 310 }, { tooth: 36, top: 515, left: 325 }, { tooth: 37, top: 550, left: 335 }, { tooth: 38, top: 585, left: 340 },
+];
 
-const lowerArch = {
-  left: [48, 47, 46, 45, 44, 43, 42, 41],
-  right: [31, 32, 33, 34, 35, 36, 37, 38],
-};
-
-const smileTeeth = [13, 12, 11, 21, 22, 23, 43, 42, 41, 31, 32, 33];
+const smileTeeth = [13, 12, 11, 21, 22, 23, 33, 32, 31, 41, 42, 43];
 
 interface SeletorInterativoFDIProps {
   initialSelection?: number[];
@@ -41,12 +37,7 @@ export function SeletorInterativoFDI({
   };
 
   const selectSmile = () => {
-    // Seleciona apenas os dentes do sorriso que existem nos dados da arcada
-    const validSmileTeeth = smileTeeth.filter(t => 
-        upperArch.left.includes(t) || upperArch.right.includes(t) ||
-        lowerArch.left.includes(t) || lowerArch.right.includes(t)
-    );
-    setSelectedTeeth(validSmileTeeth);
+    setSelectedTeeth(smileTeeth.sort((a,b) => a-b));
   };
 
   const clearSelection = () => {
@@ -57,63 +48,23 @@ export function SeletorInterativoFDI({
     onNext(selectedTeeth);
   };
 
-  const getToothTransform = (arch: 'upper' | 'lower', tooth: number) => {
-      const isUpper = arch === 'upper';
-      const isLeft = tooth.toString().startsWith('1') || tooth.toString().startsWith('4');
-      const position = isLeft ? (isUpper ? upperArch.left.indexOf(tooth) : lowerArch.left.indexOf(tooth)) : (isUpper ? upperArch.right.indexOf(tooth) : lowerArch.right.indexOf(tooth));
-
-      const angleStep = 10;
-      let angle = 0;
-      lettranslateX = 0;
-      let translateY = 0;
-
-      if (isUpper) {
-          angle = isLeft ? -40 + position * angleStep : 40 - position * angleStep;
-          translateY = (8 - position) * 1.5;
-          if (position > 4) translateY = (position) * 1.5;
-
-      } else { // lower
-          angle = isLeft ? 40 - position * angleStep : -40 + position * angleStep;
-          translateY = (position) * 1.5;
-           if (position > 4) translateY = (8 - position) * 1.5;
-      }
-      
-      const adjustedTranslateY = isUpper ? Math.sin(Math.abs(angle) * Math.PI / 180) * 50 : Math.sin(Math.abs(angle) * Math.PI / 180) * -50;
-
-      return {
-          transform: `rotate(${angle}deg) translateY(${isUpper ? '-' : ''}9rem)`,
-      };
-  }
-
   return (
-    <div className="flex flex-col md:flex-row gap-8 w-full p-4 h-full">
+    <div className="flex flex-col md:flex-row gap-8 w-full p-4 h-full items-center md:items-start">
       {/* Visual Selector */}
-      <div className="flex-1 flex flex-col items-center justify-center py-8">
-          <div className="w-full max-w-lg mx-auto relative">
-              {/* Upper Arch */}
-              <div className="relative h-48 flex justify-center items-start">
-                  <div className="absolute top-0 h-40 w-[26rem] bg-muted/30 rounded-t-[13rem] border-b border-border/50" />
-                  <div className="absolute top-0 flex items-start">
-                      {upperArch.left.concat(upperArch.right).map((tooth, i) => (
-                           <div key={tooth} className="absolute origin-bottom-center h-40 w-10 text-center" style={getToothTransform('upper', tooth)}>
-                            <ToothButton tooth={tooth} isSelected={selectedTeeth.includes(tooth)} onClick={toggleTooth} />
-                           </div>
-                      ))}
-                  </div>
-              </div>
-              
-              {/* Lower Arch */}
-              <div className="relative h-48 flex justify-center items-end mt-4">
-                  <div className="absolute bottom-0 h-40 w-[26rem] bg-muted/30 rounded-b-[13rem] border-t border-border/50" />
-                  <div className="absolute bottom-0 flex items-end">
-                      {lowerArch.left.concat(lowerArch.right).map((tooth, i) => (
-                          <div key={tooth} className="absolute origin-top-center h-40 w-10 text-center" style={getToothTransform('lower', tooth)}>
-                             <ToothButton tooth={tooth} isSelected={selectedTeeth.includes(tooth)} onClick={toggleTooth} />
-                          </div>
-                      ))}
-                  </div>
-              </div>
-          </div>
+      <div className="flex-1 flex flex-col items-center justify-center py-4">
+        <div 
+          className="relative w-[420px] h-[620px]"
+        >
+          {teethPositions.map(({ tooth, top, left }) => (
+            <ToothButton
+              key={tooth}
+              tooth={tooth}
+              isSelected={selectedTeeth.includes(tooth)}
+              onClick={toggleTooth}
+              style={{ top: `${top}px`, left: `${left}px` }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Side Panel */}
@@ -166,23 +117,22 @@ interface ToothButtonProps {
   tooth: number;
   isSelected: boolean;
   onClick: (tooth: number) => void;
-  className?: string;
+  style: React.CSSProperties;
 }
 
-function ToothButton({ tooth, isSelected, onClick, className }: ToothButtonProps) {
+function ToothButton({ tooth, isSelected, onClick, style }: ToothButtonProps) {
   return (
-    <Button
-      variant={isSelected ? 'default' : 'outline'}
-      size="sm"
+    <button
+      type="button"
+      style={style}
       className={cn(
-        'h-9 w-9 p-0 rounded-md transition-all duration-200 ease-in-out z-10',
+        'absolute h-[38px] w-[38px] rounded-full border border-[#999] bg-[#E5E5E5] text-black text-xs font-semibold flex items-center justify-center transition-all duration-200',
         'hover:border-primary hover:scale-110',
-        isSelected && 'shadow-lg shadow-primary/30',
-        className
+        isSelected && 'bg-primary text-primary-foreground border-primary scale-110 shadow-lg'
       )}
       onClick={() => onClick(tooth)}
     >
       {tooth}
-    </Button>
+    </button>
   );
 }
