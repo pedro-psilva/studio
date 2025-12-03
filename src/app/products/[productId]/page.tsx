@@ -1,414 +1,334 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { notFound, useParams, useRouter } from 'next/navigation';
-import {
-  ShoppingCart,
-  ChevronLeft,
-  UploadCloud,
-  X,
-  File as FileIcon,
-  ChevronsRight,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { products, categories } from '@/lib/data';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useTranslation } from '@/hooks/use-translation';
-import { Separator } from '@/components/ui/separator';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '@/context/AuthContext';
-import { getCart, setCart, updateCartItems, CartItemFirestore } from '@/lib/cartService';
-import { Progress } from '@/components/ui/progress';
-import { SeletorInterativoFDI } from '@/components/fdi-selector';
-
-
-const colorOptions = {
-  "VITA CLASSIC": {
-    "Tonalidades A": ["A1", "A2", "A3", "A3.5", "A4"],
-    "Tonalidades B": ["B1", "B2", "B3", "B4"],
-    "Tonalidades C": ["C1", "C2", "C3", "C4"],
-    "Tonalidades D": ["D1", "D2", "D3", "D4"],
-  },
-  "DENTES CLAREADOS": {
-    "e.max Cad": ["BL1", "BL2", "BL3", "BL4"],
-    "Rosetta": ["W1", "W2", "W3", "W4"],
-  },
-  "VITA 3D MASTER": {
-    "Tonalidades 0": ["0M1", "0M2", "0M3"],
-    "Tonalidades 1": ["1M1", "1M2"],
-    "Tonalidades 2": ["2L2.5", "2M1", "2M2", "2M3", "2R2.5"],
-    "Tonalidades 3": ["3L2.5", "3M1", "3M2", "3M3", "3R1.5", "3R2.5"],
-    "Tonalidades 4": ["4L2.5", "4R2.5", "4R1.5", "4M1", "4M2", "4M3"],
-    "Tonalidades 5": ["5M1", "5M2", "5M3"],
-  }
-};
-
-const teethData = {
-    upper: [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28],
-    lower: [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38],
-};
-
-const STEPS = [
-    { id: 'teeth', title: 'Seleção de Dentes' },
-    { id: 'color', title: 'Cor e Material' },
-    { id: 'files', title: 'Upload de Arquivos' },
-    { id: 'patient', title: 'Ficha do Paciente' },
-    { id: 'review', title: 'Revisão' },
-];
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound, useParams } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
+import { useTranslation } from "@/hooks/use-translation";
+import { Separator } from "@/components/ui/separator";
+import type { ServiceDocument } from "@/lib/serviceService";
+import { getService } from "@/lib/serviceService";
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const { productId } = params;
-  const { t } = useTranslation('home');
-  const router = useRouter();
-  const { user } = useAuth();
+  const { productId } = params as { productId: string };
+  const { t } = useTranslation("home");
 
-  const product = products.find((p) => p.id === productId);
-  
-  // State for customization flow
-  const [selectedImage, setSelectedImage] = useState(product?.images[0]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [patientData, setPatientData] = useState({ name: '', age: '', clinicalNotes: '', dentistNotes: '' });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [service, setService] = useState<ServiceDocument | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const progress = useMemo(() => ((currentStep + 1) / STEPS.length) * 100, [currentStep]);
-  
-  if (!product) {
+  useEffect(() => {
+    let isMounted = true;
+
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getService(productId);
+        if (!isMounted) return;
+        if (!data || !data.ativo || data.visibilidade !== "publico") {
+          notFound();
+          return;
+        }
+        setService(data);
+      } catch (err: any) {
+        if (!isMounted) return;
+        setError(err?.message ?? "Erro ao carregar produto");
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [productId]);
+
+  if (!loading && !service && !error) {
     notFound();
   }
-
-  const productImages = product.images
-    .map((imageId) => PlaceHolderImages.find((p) => p.id === imageId))
-    .filter(Boolean) as any[];
-
-  const mainImage = selectedImage
-    ? PlaceHolderImages.find((p) => p.id === selectedImage)
-    : productImages[0];
-    
-  const category = categories.find(c => c.id === product.categoryId);
-
-  const resetFlow = () => {
-    setCurrentStep(0);
-    setSelectedTeeth([]);
-    setSelectedColor(null);
-    setUploadedFiles([]);
-    setPatientData({ name: '', age: '', clinicalNotes: '', dentistNotes: '' });
-    setFormErrors({});
-  };
-
-  const openModal = () => {
-    resetFlow();
-    setIsModalOpen(true);
-  }
-
-  const validateStep = () => {
-    const errors: Record<string, string> = {};
-    if (currentStep === 0 && product.requiresStl && selectedTeeth.length === 0) {
-        errors.teeth = 'Selecione ao menos 1 dente.';
-    }
-    if (currentStep === 2 && uploadedFiles.length === 0 && product.requiresStl) {
-        errors.files = 'Envie ao menos 1 arquivo clínico.';
-    }
-    if (currentStep === 3 && !patientData.name && product.requiresStl) {
-        errors.patientName = 'O nome do paciente é obrigatório.';
-    }
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-
-  const handleNext = () => {
-    if (validateStep()) {
-        if (currentStep < STEPS.length - 1) {
-            setCurrentStep(currentStep + 1);
-        } else {
-            handleAddToCart();
-        }
-    }
-  };
-
-  const handleTeethNext = (selection: number[]) => {
-    setSelectedTeeth(selection);
-    if(selection.length === 0 && product.requiresStl) {
-        setFormErrors({ teeth: 'Selecione ao menos 1 dente.' });
-        return;
-    }
-    setFormErrors({});
-    setCurrentStep(currentStep + 1);
-  };
-
-  const handleBack = () => {
-    if (currentStep > 0) {
-        setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleAddToCart = async () => {
-    if (!user) {
-      router.push('/auth/login');
-      return;
-    }
-
-    if (!validateStep()) return;
-
-    // TODO: Handle file upload to Firebase Storage and get URLs
-    const stlFileUrl = uploadedFiles.length > 0 ? uploadedFiles[0].name : undefined;
-
-    const cartItem: CartItemFirestore = {
-      productId: product.id,
-      quantity: 1, // Assuming 1 case per customization
-      teeth: selectedTeeth,
-      shade: selectedColor || undefined,
-      material: product.variants.materials[0] || undefined,
-      implantSystem: product.variants.implantSystems?.[0] || undefined,
-      stlFileUrl, // Placeholder
-      patientName: patientData.name || undefined,
-    };
-
-    try {
-      const existingCart = await getCart(user.uid);
-      const items = existingCart?.items ? [...existingCart.items, cartItem] : [cartItem];
-
-      if (!existingCart) {
-        await setCart(user.uid, items);
-      } else {
-        await updateCartItems(user.uid, items);
-      }
-      setIsModalOpen(false);
-      router.push('/cart');
-    } catch (error) {
-      console.error('Erro ao adicionar item ao carrinho:', error);
-    }
-  };
-  
-  const toggleTooth = (tooth: number) => {
-    setSelectedTeeth(prev => 
-        prev.includes(tooth) ? prev.filter(t => t !== tooth) : [...prev, tooth].sort((a,b) => a-b)
-    );
-  };
-
-  const selectSmileTeeth = () => {
-    setSelectedTeeth([15, 14, 13, 12, 11, 21, 22, 23, 24, 25]);
-  };
-  
-  const clearSelection = () => {
-    setSelectedTeeth([]);
-  };
-
-  const handleFileDrop = (e: React.DragEvent<HTMLLabelElement>) => {
-    e.preventDefault();
-    const files = Array.from(e.dataTransfer.files);
-    setUploadedFiles(prev => [...prev, ...files]);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files ? Array.from(e.target.files) : [];
-    setUploadedFiles(prev => [...prev, ...files]);
-  };
-  
-  const removeFile = (fileName: string) => {
-      setUploadedFiles(prev => prev.filter(f => f.name !== fileName));
-  }
-
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1 py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
-            {/* Image Gallery */}
-            <div>
-              <div className="mb-4">
-                {mainImage && (
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <p className="text-muted-foreground">Carregando produto...</p>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-16">
+              <p className="text-destructive">{error}</p>
+            </div>
+          ) : service ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+              {/* Imagem */}
+              <div>
+                <div className="mb-4">
+                  {service.imagemUrl ? (
                     <Image
-                        src={mainImage.imageUrl}
-                        alt={product.name}
-                        width={800}
-                        height={600}
-                        className="w-full aspect-square md:aspect-[4/3] rounded-lg object-cover border"
+                      src={service.imagemUrl}
+                      alt={service.nome}
+                      width={800}
+                      height={600}
+                      className="w-full aspect-square md:aspect-[4/3] rounded-lg object-cover border"
                     />
-                )}
+                  ) : (
+                    <div className="w-full aspect-square md:aspect-[4/3] rounded-lg border bg-muted flex items-center justify-center text-sm text-muted-foreground">
+                      Sem imagem disponível
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                {productImages.map((img) => (
-                  <button
-                    key={img.id}
-                    onClick={() => setSelectedImage(img.id)}
-                    className={`rounded-lg overflow-hidden border-2 ${selectedImage === img.id ? 'border-primary' : 'border-transparent'}`}
+
+              {/* Informações */}
+              <div>
+                <div className="mb-4">
+                  <Link
+                    href="/products"
+                    className="text-sm text-muted-foreground hover:text-primary flex items-center mb-2"
                   >
-                    <Image
-                      src={img.imageUrl}
-                      alt={product.name}
-                      width={200}
-                      height={150}
-                      className="w-full h-20 object-cover"
-                    />
-                  </button>
-                ))}
+                    {/* ChevronLeft removido para simplificar */}
+                    Voltar para produtos
+                  </Link>
+                  {service.tituloPromocional && (
+                    <Badge variant="outline">{service.tituloPromocional}</Badge>
+                  )}
+                </div>
+
+                <h1 className="text-3xl md:text-4xl font-bold font-headline mb-2">
+                  {service.nome}
+                </h1>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Código: {service.codigo}
+                </p>
+                <p className="text-3xl font-bold text-primary mb-4">
+                  R$ {service.precoBase.toFixed(2)}
+                </p>
+
+                {service.prazoEntrega > 0 && (
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Prazo estimado de entrega: {service.prazoEntrega} dia(s)
+                  </p>
+                )}
+
+                {service.descricao && (
+                  <p className="text-muted-foreground mb-6 whitespace-pre-line">
+                    {service.descricao}
+                  </p>
+                )}
+
+                <Separator className="my-6" />
+
+                {service.tags && service.tags.length > 0 && (
+                  <div className="mb-4 space-y-2">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Indicações / tags
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                      {service.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {service.arquivosNecessarios &&
+                  service.arquivosNecessarios.length > 0 && (
+                    <div className="mb-4 space-y-2">
+                      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                        Arquivos necessários
+                      </h2>
+                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                        {service.arquivosNecessarios.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                {service.arquivosOpcionais &&
+                  service.arquivosOpcionais.length > 0 && (
+                    <div className="mb-4 space-y-2">
+                      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                        Arquivos opcionais
+                      </h2>
+                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                        {service.arquivosOpcionais.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                {service.fluxoProducao && service.fluxoProducao.length > 0 && (
+                  <div className="mt-6">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                      Fluxo de produção
+                    </h2>
+                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      {service.fluxoProducao.map((step, index) => (
+                  </div>
+                </div>
+                {/* Step 5: Review */}
+                <div className={currentStep === 4 ? 'block' : 'hidden'}>
+                  <h3 className="text-lg font-semibold mb-4">Revise as informações</h3>
+                  <div className="space-y-4 rounded-lg border p-4 bg-muted/50">
+                    <div className="flex justify-between items-center"><span>Produto:</span><span className="font-medium text-right">{product.name}</span></div>
+                    <Separator/>
+                    <div className="flex justify-between items-center"><span>Dentes:</span><span className="font-medium text-right">{selectedTeeth.length > 0 ? selectedTeeth.join(', ') : 'Nenhum'}</span></div>
+                    <Separator/>
+                    <div className="flex justify-between items-center"><span>Cor:</span><span className="font-medium text-right">{selectedColor || 'Não selecionada'}</span></div>
+                    <Separator/>
+                    <div className="flex justify-between items-center"><span>Arquivos:</span><span className="font-medium text-right">{uploadedFiles.length} arquivo(s)</span></div>
+                    <Separator/>
+                    <div className="flex justify-between items-center"><span>Paciente:</span><span className="font-medium text-right">{patientData.name || 'Não informado'}</span></div>
+                  </div>
+                </div>
               </div>
             </div>
+          ) : null}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+  const { productId } = params as { productId: string };
+  const { t } = useTranslation("home");
 
-            {/* Product Info */}
-            <div>
-              <div className="mb-4">
-                <Link href="/products" className="text-sm text-muted-foreground hover:text-primary flex items-center mb-2">
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Voltar para produtos
-                </Link>
-                {category && <Badge variant="outline">{t(`categories.${category.id}`)}</Badge>}
+  const [service, setService] = useState<ServiceDocument | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getService(productId);
+        if (!isMounted) return;
+        if (!data || !data.ativo || data.visibilidade !== "publico") {
+          notFound();
+          return;
+        }
+        setService(data);
+      } catch (err: any) {
+        if (!isMounted) return;
+        setError(err?.message ?? "Erro ao carregar produto");
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [productId]);
+
+  if (!loading && !service && !error) {
+    notFound();
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="flex-1 py-12 md:py-16">
+        <div className="container mx-auto px-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <p className="text-muted-foreground">Carregando produto...</p>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-16">
+              <p className="text-destructive">{error}</p>
+            </div>
+          ) : service ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+              {/* Imagem */}
+              <div>
+                <div className="mb-4">
+                  {service.imagemUrl ? (
+                    <Image
+                      src={service.imagemUrl}
+                      alt={service.nome}
+                      width={800}
+                      height={600}
+                      className="w-full aspect-square md:aspect-[4/3] rounded-lg object-cover border"
+                    />
+                  ) : (
+                    <div className="w-full aspect-square md:aspect-[4/3] rounded-lg border bg-muted flex items-center justify-center text-sm text-muted-foreground">
+                      Sem imagem disponível
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <h1 className="text-3xl md:text-4xl font-bold font-headline mb-2">{product.name}</h1>
-              <p className="text-sm text-muted-foreground mb-4">Código: {product.code}</p>
-              <p className="text-3xl font-bold text-primary mb-6">
-                R$ {product.price.toFixed(2)}
-              </p>
-              
-              <p className="text-muted-foreground mb-6">{product.description}</p>
+              {/* Informações */}
+              <div>
+                <div className="mb-4">
+                  <Link
+                    href="/products"
+                    className="text-sm text-muted-foreground hover:text-primary flex items-center mb-2"
+                  >
+                    {/* ChevronLeft removido para simplificar */}
+                    Voltar para produtos
+                  </Link>
+                  {service.tituloPromocional && (
+                    <Badge variant="outline">{service.tituloPromocional}</Badge>
+                  )}
+                </div>
 
-              <Separator className="my-6" />
+                <h1 className="text-3xl md:text-4xl font-bold font-headline mb-2">
+                  {service.nome}
+                </h1>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Código: {service.codigo}
+                </p>
+                <p className="text-3xl font-bold text-primary mb-4">
+                  R$ {service.precoBase.toFixed(2)}
+                </p>
 
-              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="w-full sm:w-auto flex-1" onClick={openModal}>
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    {product.requiresStl ? 'Personalizar e Comprar' : 'Adicionar ao Carrinho'}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl">Personalize seu Produto: {product.name}</DialogTitle>
-                    <DialogDescription>
-                      Passo {currentStep + 1} de {STEPS.length}: {STEPS[currentStep].title}
-                    </DialogDescription>
-                    <Progress value={progress} className="mt-2" />
-                  </DialogHeader>
-                  
-                    <div className="flex-1 overflow-y-auto pr-6 -mr-6">
-                        {/* Step 1: Teeth Selection */}
-                        <div className={currentStep === 0 ? 'block' : 'hidden'}>
-                           <SeletorInterativoFDI
-                             initialSelection={selectedTeeth}
-                             onNext={handleTeethNext}
-                           />
-                           {formErrors.teeth && <p className="text-sm text-destructive mt-2 text-center">{formErrors.teeth}</p>}
-                        </div>
+                {service.prazoEntrega > 0 && (
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Prazo estimado de entrega: {service.prazoEntrega} dia(s)
+                  </p>
+                )}
 
-                        {/* Step 2: Color Selection */}
-                        <div className={currentStep === 1 ? 'block' : 'hidden'}>
-                            <h3 className="text-lg font-semibold mb-4">SELECIONE A COR DESEJADA</h3>
-                            <RadioGroup value={selectedColor || ""} onValueChange={setSelectedColor}>
-                                <Accordion type="single" collapsible className="w-full" defaultValue={'VITA CLASSIC'}>
-                                    {Object.entries(colorOptions).map(([system, subGroups]) => (
-                                    <AccordionItem value={system} key={system}>
-                                        <AccordionTrigger className="text-md font-medium">{system}</AccordionTrigger>
-                                        <AccordionContent>
-                                        <div className="pl-4">
-                                        <Accordion type="multiple" className="w-full" defaultValue={Object.keys(subGroups)}>
-                                            {Object.entries(subGroups).map(([groupName, colors]) => (
-                                            <AccordionItem value={groupName} key={groupName}>
-                                                <AccordionTrigger className="text-sm">{groupName}</AccordionTrigger>
-                                                <AccordionContent>
-                                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-2">
-                                                    {colors.map((color) => (
-                                                    <Label key={color} htmlFor={color} className={`flex items-center justify-center p-3 rounded-md border-2 cursor-pointer transition-colors ${selectedColor === color ? 'border-primary bg-primary/10' : 'border-muted'}`}>
-                                                        <RadioGroupItem value={color} id={color} className="sr-only" />
-                                                        <span>{color}</span>
-                                                    </Label>
-                                                    ))}
-                                                </div>
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                            ))}
-                                        </Accordion>
-                                        </div>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                    ))}
-                                </Accordion>
-                            </RadioGroup>
-                        </div>
+                {service.descricao && (
+                  <p className="text-muted-foreground mb-6 whitespace-pre-line">
+                    {service.descricao}
+                  </p>
+                )}
 
-                         {/* Step 3: File Upload */}
-                         <div className={currentStep === 2 ? 'block' : 'hidden'}>
-                            <h3 className="text-lg font-semibold mb-4">Upload de Arquivos Clínicos</h3>
-                            <div className="space-y-4">
-                                <label 
-                                    htmlFor="file-upload" 
-                                    className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted"
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={handleFileDrop}
-                                >
-                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />
-                                        <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Clique para enviar</span> ou arraste e solte</p>
-                                        <p className="text-xs text-muted-foreground">Arquivos STL, PLY, OBJ (MAX. 100MB)</p>
-                                    </div>
-                                    <input id="file-upload" type="file" className="hidden" multiple onChange={handleFileChange} />
-                                </label>
-                                {formErrors.files && <p className="text-sm text-destructive mt-2">{formErrors.files}</p>}
-
-                                {uploadedFiles.length > 0 && (
-                                    <div className="space-y-2">
-                                        <h4 className="font-semibold">Arquivos Carregados:</h4>
-                                        <ul className="space-y-2">
-                                            {uploadedFiles.map((file, i) => (
-                                                <li key={i} className="flex items-center justify-between p-2 rounded-md bg-muted">
-                                                    <div className="flex items-center gap-2">
-                                                        <FileIcon className="h-5 w-5 text-muted-foreground" />
-                                                        <span className="text-sm">{file.name}</span>
-                                                    </div>
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(file.name)}>
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Step 4: Patient Form */}
-                        <div className={currentStep === 3 ? 'block' : 'hidden'}>
-                            <h3 className="text-lg font-semibold mb-4">Ficha do Paciente</h3>
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {service.tags && service.tags.length > 0 && (
+                  <div className="mb-4 space-y-2">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Indicações / tags
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                      {service.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary">
+                          {tag}
+                        </Badge>
+                      ))}
                                     <div>
                                         <Label htmlFor="patient-name">Nome do Paciente</Label>
                                         <Input id="patient-name" value={patientData.name} onChange={(e) => setPatientData(p => ({...p, name: e.target.value}))} className={formErrors.patientName ? 'border-destructive' : ''} />
