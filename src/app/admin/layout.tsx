@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Bell,
   Home,
@@ -17,12 +17,16 @@ import {
   ChevronDown,
   ChevronRight,
   TrendingUp,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 
 const navLinks = [
@@ -65,9 +69,53 @@ const navLinks = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [verifying, setVerifying] = useState(true);
   
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      router.replace('/');
+      return;
+    }
+
+    const checkAdminStatus = async () => {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists() && userSnap.data()?.tipo === 'admin') {
+          setIsAdmin(true);
+        } else {
+          router.replace('/');
+        }
+      } catch (error) {
+        console.error('Error verifying admin status:', error);
+        router.replace('/');
+      } finally {
+        setVerifying(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user, authLoading, router]);
+
   const isProductionRoute = pathname.startsWith('/admin/production');
   const isEsapRoute = pathname.startsWith('/admin/esap');
+
+  if (verifying || authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null; 
+  }
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">

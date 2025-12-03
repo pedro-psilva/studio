@@ -8,24 +8,18 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LayoutGrid, LogOut } from 'lucide-react';
 
 export function UserMenu() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      router.push('/auth/login');
-    } catch (error) {
-      console.error('Erro ao sair:', error);
-    }
-  };
 
   if (!user) {
     return (
@@ -55,27 +49,28 @@ export function UserMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
-        <div className="flex items-center gap-3 p-2">
-          <Avatar>
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {userInitial}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <p className="text-sm font-medium">{displayName}</p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{displayName}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {user.email}
+            </p>
           </div>
-        </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/perfil" className="w-full cursor-pointer">
-            Meu Perfil
+          <Link href="/account" className="w-full cursor-pointer">
+            <LayoutGrid className="mr-2 h-4 w-4" />
+            <span>Minha Conta</span>
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem 
-          onClick={handleSignOut}
+          onClick={logout}
           className="cursor-pointer text-red-600 focus:text-red-600"
         >
-          Sair
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sair</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
