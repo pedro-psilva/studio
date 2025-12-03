@@ -49,6 +49,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/AuthContext';
 import { getCart, setCart, updateCartItems, CartItemFirestore } from '@/lib/cartService';
 import { Progress } from '@/components/ui/progress';
+import { SeletorInterativoFDI } from '@/components/fdi-selector';
+
 
 const colorOptions = {
   "VITA CLASSIC": {
@@ -157,6 +159,16 @@ export default function ProductDetailPage() {
             handleAddToCart();
         }
     }
+  };
+
+  const handleTeethNext = (selection: number[]) => {
+    setSelectedTeeth(selection);
+    if(selection.length === 0 && product.requiresStl) {
+        setFormErrors({ teeth: 'Selecione ao menos 1 dente.' });
+        return;
+    }
+    setFormErrors({});
+    setCurrentStep(currentStep + 1);
   };
 
   const handleBack = () => {
@@ -310,34 +322,12 @@ export default function ProductDetailPage() {
                     <div className="flex-1 overflow-y-auto pr-6 -mr-6">
                         {/* Step 1: Teeth Selection */}
                         <div className={currentStep === 0 ? 'block' : 'hidden'}>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div className="md:col-span-3">
-                                    <h3 className="font-semibold mb-4 text-center">Selecione os dentes (Padrão FDI)</h3>
-                                    {/* Upper Arch */}
-                                    <div className="flex justify-center items-center gap-1 bg-muted/50 p-2 rounded-t-full">
-                                        {teethData.upper.map(tooth => (
-                                            <Button key={tooth} variant={selectedTeeth.includes(tooth) ? 'default' : 'outline'} size="sm" className="h-8 w-8 p-0" onClick={() => toggleTooth(tooth)}>{tooth}</Button>
-                                        ))}
-                                    </div>
-                                    {/* Lower Arch */}
-                                    <div className="flex justify-center items-center gap-1 bg-muted/50 p-2 rounded-b-full mt-2">
-                                        {teethData.lower.map(tooth => (
-                                            <Button key={tooth} variant={selectedTeeth.includes(tooth) ? 'default' : 'outline'} size="sm" className="h-8 w-8 p-0" onClick={() => toggleTooth(tooth)}>{tooth}</Button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="md:col-span-1 border-l pl-4">
-                                    <h4 className="font-semibold mb-2">Dentes Selecionados</h4>
-                                    <div className="flex flex-wrap gap-2 mb-4 min-h-[50px]">
-                                        {selectedTeeth.length > 0 ? selectedTeeth.map(t => <Badge key={t}>{t}</Badge>) : <p className="text-xs text-muted-foreground">Nenhum</p>}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Button onClick={selectSmileTeeth} size="sm" variant="secondary" className="w-full">Sorriso (10 dentes)</Button>
-                                        <Button onClick={clearSelection} size="sm" variant="ghost" className="w-full text-destructive">Limpar seleção</Button>
-                                    </div>
-                                    {formErrors.teeth && <p className="text-sm text-destructive mt-2">{formErrors.teeth}</p>}
-                                </div>
-                            </div>
+                           <SeletorInterativoFDI
+                             initialSelection={selectedTeeth}
+                             onNext={handleTeethNext}
+                             onBack={handleBack}
+                           />
+                           {formErrors.teeth && <p className="text-sm text-destructive mt-2 text-center">{formErrors.teeth}</p>}
                         </div>
 
                         {/* Step 2: Color Selection */}
@@ -463,15 +453,17 @@ export default function ProductDetailPage() {
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
                         <Button variant="ghost" className="ml-2">Salvar Rascunho</Button>
                     </div>
-                    <div className="flex justify-end items-center gap-2">
-                      <Button variant="outline" onClick={handleBack} disabled={currentStep === 0}>
-                        Voltar
-                      </Button>
-                      <Button onClick={handleNext}>
-                        {currentStep === STEPS.length - 1 ? 'Concluir e Adicionar ao Carrinho' : 'Avançar'}
-                        <ChevronsRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
+                    { currentStep > 0 && 
+                        <div className="flex justify-end items-center gap-2">
+                            <Button variant="outline" onClick={handleBack} disabled={currentStep === 0}>
+                                Voltar
+                            </Button>
+                            <Button onClick={handleNext}>
+                                {currentStep === STEPS.length - 1 ? 'Concluir e Adicionar ao Carrinho' : 'Avançar'}
+                                <ChevronsRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </div>
+                    }
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
