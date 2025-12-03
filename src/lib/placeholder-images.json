@@ -15,13 +15,13 @@
     {
       "id": "product-zirconia-2",
       "description": "Multiple zirconia crowns showing translucency",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816839-01c5f3b7f83b?q=80&w=1974&auto=format&fit=crop",
+      "imageUrl": "https://images.unsplash.com/photo-1629905680197-d891a2432d5f?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "zirconia crowns"
     },
     {
       "id": "product-zirconia-3",
       "description": "Close-up of a zirconia crown's texture",
-      "imageUrl": "https://images.unsplash.com/photo-1643662173390-74350a5f6e98?q=80&w=2070&auto=format&fit=crop",
+      "imageUrl": "https://images.unsplash.com/photo-1629905680054-e8f0b3dd6f83?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "tooth texture"
     },
     {
@@ -51,7 +51,7 @@
     {
       "id": "product-implant-2",
       "description": "Dental implant being placed in a jaw model",
-      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?q=80&w=2070&auto=format&fit=crop",
+      "imageUrl": "https://images.unsplash.com/photo-1516572882294-858e239c4a45?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "implant surgery"
     },
     {
@@ -93,13 +93,13 @@
     {
       "id": "product-pfm",
       "description": "A porcelain-fused-to-metal crown",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816744-80c9b04040f2?q=80&w=1974&auto=format&fit=crop",
+      "imageUrl": "https://images.unsplash.com/photo-1629905680054-e8f0b3dd6f83?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "PFM crown"
     },
     {
       "id": "product-pfm-2",
       "description": "Cross-section of a PFM crown showing the metal substructure",
-      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?q=80&w=2070&auto=format&fit=crop",
+      "imageUrl": "https://images.unsplash.com/photo-1629905680197-d891a2432d5f?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "dental cross-section"
     },
     {
@@ -111,7 +111,7 @@
     {
       "id": "product-abutment-2",
       "description": "Zirconia and titanium abutments side by side",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816839-01c5f3b7f83b?q=80&w=1974&auto=format&fit=crop",
+      "imageUrl": "https://images.unsplash.com/photo-1619451428282-960f5c015b67?q=80&w=1935&auto=format&fit=crop",
       "imageHint": "dental components"
     },
     {
@@ -123,25 +123,25 @@
     {
       "id": "product-nightguard",
       "description": "A clear acrylic night guard",
-      "imageUrl": "https://images.unsplash.com/photo-1619451428282-960f5c015b67?q=80&w=1935&auto=format&fit=crop",
+      "imageUrl": "https://images.unsplash.com/photo-1628135894226-737754d24498?q=80&w=1964&auto=format&fit=crop",
       "imageHint": "night guard"
     },
     {
       "id": "product-bridge",
       "description": "A three-unit dental bridge on a model",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816744-80c9b04040f2?q=80&w=1974&auto=format&fit=crop",
+      "imageUrl": "https://images.unsplash.com/photo-1629905680054-e8f0b3dd6f83?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "dental bridge"
     },
     {
       "id": "product-bridge-2",
       "description": "A Maryland bridge with wings",
-      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?q=80&w=2070&auto=format&fit=crop",
+      "imageUrl": "https://images.unsplash.com/photo-1629905680197-d891a2432d5f?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "maryland bridge"
     },
     {
       "id": "product-waxup",
       "description": "A diagnostic wax-up on a stone model",
-      "imageUrl": "https://images.unsplash.com/photo-1588776217646-c7306b6b7a1e?q=80&w=2070&auto=format&fit=crop",
+      "imageUrl": "https://images.unsplash.com/photo-1599329124495-998b16f3e4b3?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "diagnostic waxup"
     },
     {
