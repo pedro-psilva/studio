@@ -177,9 +177,11 @@ export default function CartPage() {
               <div className="lg:col-span-2 space-y-6">
                 {cartItems.map((item) => {
                   const productImage = PlaceHolderImages.find(p => p.id === item.imageId);
+                  const isCustom = item.requiresStl;
+
                   return (
-                    <Card key={item.uniqueId} className="p-4 overflow-hidden">
-                      <div className="flex flex-col sm:flex-row items-start gap-4">
+                    <Card key={item.uniqueId} className="overflow-hidden">
+                      <div className="flex flex-col sm:flex-row items-start gap-4 p-4">
                         {productImage && (
                             <Image
                               src={productImage.imageUrl}
@@ -195,11 +197,11 @@ export default function CartPage() {
                           <p className="text-sm text-muted-foreground">R$ {item.price.toFixed(2)}</p>
                            <div className="flex items-center justify-between mt-4">
                              <div className="flex items-center border rounded-md">
-                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)}>
+                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)} disabled={isCustom}>
                                  <Minus className="h-4 w-4" />
                                </Button>
                                <Input type="number" value={item.quantity} readOnly className="h-8 w-12 border-0 text-center" />
-                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity + 1)}>
+                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity + 1)} disabled={isCustom}>
                                  <Plus className="h-4 w-4" />
                                </Button>
                              </div>
@@ -212,16 +214,16 @@ export default function CartPage() {
                       </div>
                       
                       {/* Customization Details */}
-                      {(item.teeth?.length > 0 || item.shade || item.stlFileUrl) && (
-                        <div className="mt-4 pt-4 border-t w-full space-y-3 bg-muted/50 -m-4 p-4">
-                           <h4 className="text-sm font-semibold">Detalhes do Caso:</h4>
-                           <div className='flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground'>
+                      {isCustom && (
+                        <div className="bg-muted/50 px-4 py-3 border-t">
+                           <h4 className="text-sm font-semibold mb-3">Detalhes do Caso Clínico:</h4>
+                           <div className='grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mb-4'>
                             {item.teeth && item.teeth.length > 0 && <div><strong>Dentes:</strong> {item.teeth.join(', ')}</div>}
                             {item.shade && <div><strong>Cor:</strong> <Badge variant="secondary">{item.shade}</Badge></div>}
-                            {item.stlFileUrl && <div className="flex items-center gap-1"><strong>Arquivo:</strong> <FileText className="h-3 w-3"/> {item.stlFileUrl}</div>}
+                            {item.stlFileUrl && <div className="flex items-center gap-1 col-span-2"><strong>Arquivo:</strong> <FileText className="h-3 w-3"/> {item.stlFileUrl}</div>}
                            </div>
                            
-                           <div className="flex gap-2 pt-2">
+                           <div className="flex gap-2">
                                <Button variant="outline" size="sm"><CircleDot className="mr-2 h-4 w-4"/> Visualizar Caso</Button>
                                <Button variant="outline" size="sm" onClick={() => router.push(`/products/${item.id}`)}><Edit className="mr-2 h-4 w-4"/> Editar Caso</Button>
                            </div>

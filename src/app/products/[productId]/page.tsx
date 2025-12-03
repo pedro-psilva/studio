@@ -325,7 +325,6 @@ export default function ProductDetailPage() {
                            <SeletorInterativoFDI
                              initialSelection={selectedTeeth}
                              onNext={handleTeethNext}
-                             onBack={handleBack}
                            />
                            {formErrors.teeth && <p className="text-sm text-destructive mt-2 text-center">{formErrors.teeth}</p>}
                         </div>
@@ -448,23 +447,27 @@ export default function ProductDetailPage() {
                         </div>
                     </div>
 
-                  <DialogFooter className="pt-4 border-t flex-col-reverse sm:flex-row sm:justify-between">
-                    <div>
-                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        <Button variant="ghost" className="ml-2">Salvar Rascunho</Button>
-                    </div>
-                    { currentStep > 0 && 
-                        <div className="flex justify-end items-center gap-2">
-                            <Button variant="outline" onClick={handleBack} disabled={currentStep === 0}>
-                                Voltar
-                            </Button>
-                            <Button onClick={handleNext}>
-                                {currentStep === STEPS.length - 1 ? 'Concluir e Adicionar ao Carrinho' : 'Avançar'}
-                                <ChevronsRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        </div>
-                    }
-                  </DialogFooter>
+                    <DialogFooter className="pt-4 mt-auto border-t">
+                      <div className="flex justify-between w-full">
+                          <div>
+                              <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                              <Button variant="outline" className="ml-2">Salvar Rascunho</Button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                              {currentStep > 0 && (
+                                  <Button variant="outline" onClick={handleBack}>
+                                      Voltar
+                                  </Button>
+                              )}
+                              {currentStep !== 0 && (
+                                  <Button onClick={handleNext}>
+                                      {currentStep === STEPS.length - 1 ? 'Concluir e Adicionar ao Carrinho' : 'Avançar'}
+                                      <ChevronsRight className="ml-2 h-4 w-4" />
+                                  </Button>
+                              )}
+                          </div>
+                      </div>
+                    </DialogFooter>
                 </DialogContent>
               </Dialog>
 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { ChevronsRight } from 'lucide-react';
 
 // --- Types and Data ---
 
@@ -28,25 +29,20 @@ interface ArcadaProps {
 }
 
 const upperArcadePositions: ToothPosition[] = [
-  // Top of the arch
   { tooth: 11, top: 15, left: 190 }, { tooth: 21, top: 15, left: 225 },
   { tooth: 12, top: 22, left: 165 }, { tooth: 22, top: 22, left: 250 },
   { tooth: 13, top: 40, left: 145 }, { tooth: 23, top: 40, left: 270 },
-  // Canines and premolars
   { tooth: 14, top: 65, left: 130 }, { tooth: 24, top: 65, left: 285 },
   { tooth: 15, top: 95, left: 120 }, { tooth: 25, top: 95, left: 295 },
-  // Molars
   { tooth: 16, top: 130, left: 110 }, { tooth: 26, top: 130, left: 305 },
   { tooth: 17, top: 165, left: 105 }, { tooth: 27, top: 165, left: 310 },
   { tooth: 18, top: 200, left: 105 }, { tooth: 28, top: 200, left: 310 },
 ];
 
 const lowerArcadePositions: ToothPosition[] = [
-    // Incisors
     { tooth: 41, top: 210, left: 190 }, { tooth: 31, top: 210, left: 225 },
     { tooth: 42, top: 195, left: 165 }, { tooth: 32, top: 195, left: 250 },
     { tooth: 43, top: 175, left: 145 }, { tooth: 33, top: 175, left: 270 },
-    // Canines, Premolars, Molars (left side)
     { tooth: 44, top: 150, left: 130 }, { tooth: 34, top: 150, left: 285 },
     { tooth: 45, top: 120, left: 120 }, { tooth: 35, top: 120, left: 295 },
     { tooth: 46, top: 85, left: 110 },  { tooth: 36, top: 85, left: 305 },
@@ -65,9 +61,9 @@ function ToothButton({ tooth, isSelected, onClick, style }: ToothButtonProps) {
       type="button"
       style={style}
       className={cn(
-        'absolute h-[38px] w-[38px] rounded-full border border-[#999] bg-[#E5E5E5] text-xs font-semibold flex items-center justify-center transition-all duration-200 text-[#333]',
+        'absolute h-[38px] w-[38px] rounded-full border border-border bg-card text-xs font-semibold flex items-center justify-center transition-all duration-200 text-card-foreground',
         'hover:border-primary hover:scale-110',
-        isSelected && 'bg-blue-500 text-white border-blue-500 scale-110 shadow-lg'
+        isSelected && 'bg-primary text-primary-foreground border-primary scale-110 shadow-lg'
       )}
       onClick={() => onClick(tooth)}
     >
@@ -115,13 +111,11 @@ function ArcadaInferiorFDI({ positions, selectedTeeth, onToothClick }: ArcadaPro
 interface SeletorInterativoFDIProps {
   initialSelection?: number[];
   onNext: (selection: number[]) => void;
-  onBack: () => void;
 }
 
 export function SeletorInterativoFDI({
   initialSelection = [],
   onNext,
-  onBack,
 }: SeletorInterativoFDIProps) {
   const [selectedTeeth, setSelectedTeeth] = useState<number[]>(initialSelection);
 
@@ -173,7 +167,7 @@ export function SeletorInterativoFDI({
             <div className="min-h-[100px] rounded-md border border-dashed p-2 flex flex-wrap gap-2 justify-center items-start">
               {selectedTeeth.length > 0 ? (
                 selectedTeeth.map((tooth) => (
-                  <Badge key={tooth} variant="default" className="text-base bg-blue-500">
+                  <Badge key={tooth} variant="default" className="text-base bg-primary">
                     {tooth}
                   </Badge>
                 ))
@@ -194,16 +188,10 @@ export function SeletorInterativoFDI({
         
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={onBack} className="flex-1">
-                Voltar
-            </Button>
             <Button onClick={handleNext} className="flex-1">
-                Avançar
+                Avançar <ChevronsRight className="ml-2 h-4 w-4" />
             </Button>
         </div>
-         <Button variant="ghost" className="w-full mt-2 text-muted-foreground">
-            Salvar Rascunho
-        </Button>
       </div>
     </div>
   );
