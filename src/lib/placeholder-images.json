@@ -3,151 +3,151 @@
     {
       "id": "hero-banner",
       "description": "Modern and clean dental clinic laboratory",
-      "imageUrl": "https://images.unsplash.com/photo-1588776217646-c7306b6b7a1e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjBsYWJvcmF0b3J5fGVufDB8fHx8MTc2NDQ2MjYwMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1588776217646-c7306b6b7a1e?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "dental laboratory"
     },
     {
       "id": "product-zirconia",
       "description": "A single zirconia crown on a model",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816744-80c9b04040f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjB6aXJjb25pYSUyMGNyb3dufGVufDB8fHx8MTc2NTI0NDExOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1631557816744-80c9b04040f2?q=80&w=1974&auto=format&fit=crop",
       "imageHint": "zirconia crown"
     },
     {
       "id": "product-zirconia-2",
       "description": "Multiple zirconia crowns showing translucency",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816839-01c5f3b7f83b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkZW50YWwlMjB6aXJjb25pYSUyMGNyb3dufGVufDB8fHx8MTc2NTI0NDExOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1631557816839-01c5f3b7f83b?q=80&w=1974&auto=format&fit=crop",
       "imageHint": "zirconia crowns"
     },
     {
       "id": "product-zirconia-3",
       "description": "Close-up of a zirconia crown's texture",
-      "imageUrl": "https://images.unsplash.com/photo-1643662173390-74350a5f6e98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxkZW50YWwlMjBjb21wb25lbnRzfGVufDB8fHx8MTc2NDQ2MjYwMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1643662173390-74350a5f6e98?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "tooth texture"
     },
     {
       "id": "product-emax",
       "description": "E-Max veneers on a dental model",
-      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjB2ZW5lZXJzfGVufDB8fHx8MTc2NTI0NDM1MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "dental veneers"
     },
     {
       "id": "product-emax-2",
       "description": "Single E-Max veneer showing its thinness",
-      "imageUrl": "https://images.unsplash.com/photo-1643662173390-74350a5f6e98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxkZW50YWwlMjBjb21wb25lbnRzfGVufDB8fHx8MTc2NDQ2MjYwMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1643662173390-74350a5f6e98?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "porcelain veneer"
     },
     {
       "id": "product-emax-3",
       "description": "Smile with E-Max veneers",
-      "imageUrl": "https://images.unsplash.com/photo-1599329124495-998b16f3e4b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwZXJmZWN0JTIwc21pbGV8ZW58MHx8fHwxNzY1MjQ0NTUyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1599329124495-998b16f3e4b3?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "perfect smile"
     },
     {
       "id": "product-implant",
       "description": "A titanium dental implant screw",
-      "imageUrl": "https://images.unsplash.com/photo-1600170311833-c2cf5280ce49?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjBpbXBsYW50fGVufDB8fHx8MTc2NDM5OTQxN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1600170311833-c2cf5280ce49?q=80&w=1932&auto=format&fit=crop",
       "imageHint": "dental implant"
     },
     {
       "id": "product-implant-2",
       "description": "Dental implant being placed in a jaw model",
-      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjB2ZW5lZXJzfGVufDB8fHx8MTc2NTI0NDM1MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "implant surgery"
     },
     {
       "id": "product-denture",
       "description": "A full upper denture",
-      "imageUrl": "https://images.unsplash.com/photo-1579762635992-a84812386219?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmdWxsJTIwZGVudHVyZXxlbnwwfHx8fDE3NjUyNDQ4NzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1579762635992-a84812386219?q=80&w=1935&auto=format&fit=crop",
       "imageHint": "full denture"
     },
     {
       "id": "product-denture-2",
       "description": "Set of upper and lower dentures",
-      "imageUrl": "https://images.unsplash.com/photo-1599329124495-998b16f3e4b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwZXJmZWN0JTIwc21pbGV8ZW58MHx8fHwxNzY1MjQ0NTUyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1599329124495-998b16f3e4b3?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "denture set"
     },
     {
       "id": "product-aligner",
       "description": "A clear dental aligner",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816744-80c9b04040f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjB6aXJjb25pYSUyMGNyb3dufGVufDB8fHx8MTc2NTI0NDExOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1639454724496-5d63f53c1f57?q=80&w=1935&auto=format&fit=crop",
       "imageHint": "clear aligner"
     },
     {
       "id": "product-aligner-2",
       "description": "A person wearing clear dental aligners",
-      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjB2ZW5lZXJzfGVufDB8fHx8MTc2NTI0NDM1MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1637684896798-2d33b2a54e52?q=80&w=1935&auto=format&fit=crop",
       "imageHint": "invisalign smile"
     },
     {
       "id": "product-resin",
       "description": "A kit of composite resins in various shades",
-      "imageUrl": "https://images.unsplash.com/photo-1606811261389-9a4a4b1f453c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjb21wb3NpdGUlMjByZXNpbnxlbnwwfHx8fDE3NjUyNDUyMjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1606811261389-9a4a4b1f453c?q=80&w=1935&auto=format&fit=crop",
       "imageHint": "composite resin"
     },
     {
       "id": "product-resin-2",
       "description": "Dentist applying composite resin to a tooth",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816839-01c5f3b7f83b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkZW50YWwlMjB6aXJjb25pYSUyMGNyb3dufGVufDB8fHx8MTc2NTI0NDExOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1619451428282-960f5c015b67?q=80&w=1935&auto=format&fit=crop",
       "imageHint": "dental filling"
     },
     {
       "id": "product-pfm",
       "description": "A porcelain-fused-to-metal crown",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816744-80c9b04040f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjB6aXJjb25pYSUyMGNyb3dufGVufDB8fHx8MTc2NTI0NDExOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1631557816744-80c9b04040f2?q=80&w=1974&auto=format&fit=crop",
       "imageHint": "PFM crown"
     },
     {
       "id": "product-pfm-2",
       "description": "Cross-section of a PFM crown showing the metal substructure",
-      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjB2ZW5lZXJzfGVufDB8fHx8MTc2NTI0NDM1MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "dental cross-section"
     },
     {
       "id": "product-abutment",
       "description": "A custom titanium abutment for an implant",
-      "imageUrl": "https://images.unsplash.com/photo-1600170311833-c2cf5280ce49?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjBpbXBsYW50fGVufDB8fHx8MTc2NDM5OTQxN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1600170311833-c2cf5280ce49?q=80&w=1932&auto=format&fit=crop",
       "imageHint": "dental abutment"
     },
     {
       "id": "product-abutment-2",
       "description": "Zirconia and titanium abutments side by side",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816839-01c5f3b7f83b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkZW50YWwlMjB6aXJjb25pYSUyMGNyb3dufGVufDB8fHx8MTc2NTI0NDExOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1631557816839-01c5f3b7f83b?q=80&w=1974&auto=format&fit=crop",
       "imageHint": "dental components"
     },
     {
       "id": "product-guide",
       "description": "A 3D printed surgical guide for implant surgery",
-      "imageUrl": "https://images.unsplash.com/photo-1588776217646-c7306b6b7a1e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjBsYWJvcmF0b3J5fGVufDB8fHx8MTc2NDQ2MjYwMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1666214278381-85f23a93c72d?q=80&w=1974&auto=format&fit=crop",
       "imageHint": "surgical guide"
     },
     {
       "id": "product-nightguard",
       "description": "A clear acrylic night guard",
-      "imageUrl": "https://images.unsplash.com/photo-1579762635992-a84812386219?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmdWxsJTIwZGVudHVyZXxlbnwwfHx8fDE3NjUyNDQ4NzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1619451428282-960f5c015b67?q=80&w=1935&auto=format&fit=crop",
       "imageHint": "night guard"
     },
     {
       "id": "product-bridge",
       "description": "A three-unit dental bridge on a model",
-      "imageUrl": "https://images.unsplash.com/photo-1631557816744-80c9b04040f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjB6aXJjb25pYSUyMGNyb3dufGVufDB8fHx8MTc2NTI0NDExOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1631557816744-80c9b04040f2?q=80&w=1974&auto=format&fit=crop",
       "imageHint": "dental bridge"
     },
     {
       "id": "product-bridge-2",
       "description": "A Maryland bridge with wings",
-      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjB2ZW5lZXJzfGVufDB8fHx8MTc2NTI0NDM1MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1628045399557-880026a147b3?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "maryland bridge"
     },
     {
       "id": "product-waxup",
       "description": "A diagnostic wax-up on a stone model",
-      "imageUrl": "https://images.unsplash.com/photo-1588776217646-c7306b6b7a1e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZW50YWwlMjBsYWJvcmF0b3J5fGVufDB8fHx8MTc2NDQ2MjYwMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1588776217646-c7306b6b7a1e?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "diagnostic waxup"
     },
     {
       "id": "avatar-1",
       "description": "Avatar of Dr. John Doe",
-      "imageUrl": "https://images.unsplash.com/photo-1590086782792-42dd2350140d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYWxlJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzY0MzM5ODc4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1590086782792-42dd2350140d?q=80&w=1974&auto=format&fit=crop",
       "imageHint": "male portrait"
     }
   ]
