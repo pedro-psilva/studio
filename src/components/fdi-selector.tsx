@@ -56,45 +56,64 @@ export function SeletorInterativoFDI({
   const handleNext = () => {
     onNext(selectedTeeth);
   };
-  
-  // Função para aplicar classes de margem para criar a curva
-  const getToothClass = (arch: 'upper' | 'lower', tooth: number) => {
-    const index = (arch === 'upper' ? upperArch.left.includes(tooth) ? upperArch.left.indexOf(tooth) : (15 - upperArch.right.indexOf(tooth)) : lowerArch.left.includes(tooth) ? lowerArch.left.indexOf(tooth) : (15 - lowerArch.right.indexOf(tooth)) );
-    const marginClasses = [
-        'mt-0', 'mt-1', 'mt-3', 'mt-4', 'mt-5', 'mt-6', 'mt-7', 'mt-8',
-        'mt-8', 'mt-7', 'mt-6', 'mt-5', 'mt-4', 'mt-3', 'mt-1', 'mt-0'
-    ];
-    return arch === 'upper' ? marginClasses[index] : `-${marginClasses[index]}`;
-  }
 
+  const getToothTransform = (arch: 'upper' | 'lower', tooth: number) => {
+      const isUpper = arch === 'upper';
+      const isLeft = tooth.toString().startsWith('1') || tooth.toString().startsWith('4');
+      const position = isLeft ? (isUpper ? upperArch.left.indexOf(tooth) : lowerArch.left.indexOf(tooth)) : (isUpper ? upperArch.right.indexOf(tooth) : lowerArch.right.indexOf(tooth));
+
+      const angleStep = 10;
+      let angle = 0;
+      lettranslateX = 0;
+      let translateY = 0;
+
+      if (isUpper) {
+          angle = isLeft ? -40 + position * angleStep : 40 - position * angleStep;
+          translateY = (8 - position) * 1.5;
+          if (position > 4) translateY = (position) * 1.5;
+
+      } else { // lower
+          angle = isLeft ? 40 - position * angleStep : -40 + position * angleStep;
+          translateY = (position) * 1.5;
+           if (position > 4) translateY = (8 - position) * 1.5;
+      }
+      
+      const adjustedTranslateY = isUpper ? Math.sin(Math.abs(angle) * Math.PI / 180) * 50 : Math.sin(Math.abs(angle) * Math.PI / 180) * -50;
+
+      return {
+          transform: `rotate(${angle}deg) translateY(${isUpper ? '-' : ''}9rem)`,
+      };
+  }
 
   return (
     <div className="flex flex-col md:flex-row gap-8 w-full p-4 h-full">
       {/* Visual Selector */}
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-xl mx-auto relative">
-          
-          {/* Upper Arch */}
-          <div className="relative h-40 flex justify-center items-start">
-             <div className="absolute top-0 h-28 w-full bg-muted/30 rounded-t-[100px] border-b border-border/50"></div>
-             <div className="absolute top-0 flex items-start">
-                {upperArch.left.map((tooth, i) => <ToothButton key={tooth} tooth={tooth} isSelected={selectedTeeth.includes(tooth)} onClick={toggleTooth} className={getToothClass('upper', tooth)} />)}
-                <div className="w-1 h-10 bg-border/50 self-end mb-1 mx-1" />
-                {upperArch.right.map((tooth, i) => <ToothButton key={tooth} tooth={tooth} isSelected={selectedTeeth.includes(tooth)} onClick={toggleTooth} className={getToothClass('upper', tooth)} />)}
-             </div>
-          </div>
-          
-          {/* Lower Arch */}
-          <div className="relative h-40 flex justify-center items-end mt-4">
-             <div className="absolute bottom-0 h-28 w-full bg-muted/30 rounded-b-[100px] border-t border-border/50"></div>
-              <div className="absolute bottom-0 flex items-end">
-                {lowerArch.left.map((tooth) => <ToothButton key={tooth} tooth={tooth} isSelected={selectedTeeth.includes(tooth)} onClick={toggleTooth} className={getToothClass('lower', tooth)} />)}
-                <div className="w-1 h-10 bg-border/50 self-start mt-1 mx-1" />
-                {lowerArch.right.map((tooth) => <ToothButton key={tooth} tooth={tooth} isSelected={selectedTeeth.includes(tooth)} onClick={toggleTooth} className={getToothClass('lower', tooth)} />)}
+      <div className="flex-1 flex flex-col items-center justify-center py-8">
+          <div className="w-full max-w-lg mx-auto relative">
+              {/* Upper Arch */}
+              <div className="relative h-48 flex justify-center items-start">
+                  <div className="absolute top-0 h-40 w-[26rem] bg-muted/30 rounded-t-[13rem] border-b border-border/50" />
+                  <div className="absolute top-0 flex items-start">
+                      {upperArch.left.concat(upperArch.right).map((tooth, i) => (
+                           <div key={tooth} className="absolute origin-bottom-center h-40 w-10 text-center" style={getToothTransform('upper', tooth)}>
+                            <ToothButton tooth={tooth} isSelected={selectedTeeth.includes(tooth)} onClick={toggleTooth} />
+                           </div>
+                      ))}
+                  </div>
+              </div>
+              
+              {/* Lower Arch */}
+              <div className="relative h-48 flex justify-center items-end mt-4">
+                  <div className="absolute bottom-0 h-40 w-[26rem] bg-muted/30 rounded-b-[13rem] border-t border-border/50" />
+                  <div className="absolute bottom-0 flex items-end">
+                      {lowerArch.left.concat(lowerArch.right).map((tooth, i) => (
+                          <div key={tooth} className="absolute origin-top-center h-40 w-10 text-center" style={getToothTransform('lower', tooth)}>
+                             <ToothButton tooth={tooth} isSelected={selectedTeeth.includes(tooth)} onClick={toggleTooth} />
+                          </div>
+                      ))}
+                  </div>
               </div>
           </div>
-
-        </div>
       </div>
 
       {/* Side Panel */}
