@@ -39,11 +39,11 @@ function ToothIcon({ isSelected }: { isSelected: boolean }) {
         isSelected ? "fill-primary stroke-primary" : "fill-card stroke-border group-hover:stroke-primary",
       )}
     >
-      <path
-        d="M10 15 C 5 20, 5 30, 10 35 L 15 45 C 20 50, 30 50, 35 45 L 40 35 C 45 30, 45 20, 40 15 L 35 5 C 30 0, 20 0, 15 5 Z"
+      <path 
+        d="M10 15 C 10 5, 40 5, 40 15 L 40 35 C 45 45, 35 50, 25 50 C 15 50, 5 45, 10 35 Z" 
         strokeWidth="2"
       />
-      <path
+       <path
         d="M15 5 C 18 10, 22 12, 25 12 C 28 12, 32 10, 35 5"
         strokeWidth="2"
         fill="none"
@@ -147,7 +147,7 @@ interface SeletorInterativoFDIProps {
   onNext: (selection: number[]) => void;
 }
 
-const smileTeeth = [15, 14, 13, 12, 11, 21, 22, 23, 24, 25];
+const smileTeeth = [13, 12, 11, 21, 22, 23, 33, 32, 31, 41, 42, 43];
 
 export function SeletorInterativoFDI({
   initialSelection = [],
