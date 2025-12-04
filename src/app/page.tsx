@@ -19,6 +19,18 @@ export default function HomePage() {
   const [services, setServices] = useState<ServiceDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
+  // Banners seguem a mesma ideia dos produtos: usamos URLs públicas das imagens
+  // armazenadas no Storage (sem chamar APIs de listagem via JS, evitando CORS).
+  const bannerUrls = useMemo(
+    () => [
+      'https://firebasestorage.googleapis.com/v0/b/studio-1776798305-10e02.firebasestorage.app/o/banner%2FBanner-1.png?alt=media&token=d78a80e3-0ecf-43e5-9664-5203bdd197ab',
+      'https://firebasestorage.googleapis.com/v0/b/studio-1776798305-10e02.firebasestorage.app/o/banner%2FBanner-2.png?alt=media&token=5046ffa1-0d19-4ccb-a07b-b9cb4a6673af',
+      'https://firebasestorage.googleapis.com/v0/b/studio-1776798305-10e02.firebasestorage.app/o/banner%2FBanner-3.png?alt=media&token=c023b09f-ef98-423f-9ab8-aaaa5195b6b8',
+    ],
+    []
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -47,6 +59,16 @@ export default function HomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (bannerUrls.length === 0) return;
+
+    const id = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % bannerUrls.length);
+    }, 8000); // 8s por banner
+
+    return () => clearInterval(id);
+  }, [bannerUrls.length]);
+
   const featuredServices = useMemo(
     () => services.slice(0, 4),
     [services]
@@ -61,8 +83,22 @@ export default function HomePage() {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
-        <section className="relative h-[60vh] w-full bg-gradient-to-br from-primary via-primary/70 to-background">
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        <section className="relative h-[60vh] w-full overflow-hidden">
+          {bannerUrls.length > 0 ? (
+            <>
+              <Image
+                src={bannerUrls[currentBannerIndex]}
+                alt={`Banner ${currentBannerIndex + 1}`}
+                fill
+                className="object-cover"
+                sizes="100vw"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/10" />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/70 to-background" />
+          )}
           <div className="absolute inset-0 flex items-center justify-center text-center">
             <div className="container mx-auto px-4">
               <h1 className="text-4xl font-bold tracking-tight text-white md:text-6xl lg:text-7xl font-headline">

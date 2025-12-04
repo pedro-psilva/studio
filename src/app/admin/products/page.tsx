@@ -55,8 +55,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import type { ServiceDocument } from '@/lib/serviceService';
-import { createService, listServices } from '@/lib/serviceService';
+import { createService, deleteService, listServices, updateService } from '@/lib/serviceService';
 import { storage } from '@/lib/firebase';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
@@ -99,12 +100,14 @@ function generateServiceCode(name: string): string {
 }
 
 export default function ProductsPage() {
+  const { toast } = useToast();
   const [services, setServices] = useState<ServiceDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilterEnabled, setStatusFilterEnabled] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
 
   const [newActive, setNewActive] = useState(true);
   const [newVisibility, setNewVisibility] = useState<'publico' | 'interno'>('publico');
@@ -120,6 +123,9 @@ export default function ProductsPage() {
   const [newArquivosOpcionais, setNewArquivosOpcionais] = useState('');
   const [newCustomFieldsText, setNewCustomFieldsText] = useState('');
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [newImageFile2, setNewImageFile2] = useState<File | null>(null);
+  const [newImageFile3, setNewImageFile3] = useState<File | null>(null);
+  const [newImageFile4, setNewImageFile4] = useState<File | null>(null);
   const [newPromoTitle, setNewPromoTitle] = useState('');
   const [newColor, setNewColor] = useState('#4F46E5');
 
@@ -171,8 +177,64 @@ export default function ProductsPage() {
     return result;
   }, [services, statusFilterEnabled, searchTerm]);
 
-  async function handleCreateService() {
+  function resetFormState() {
+    setNewActive(true);
+    setNewVisibility('publico');
+    setNewPriceVisibility('exibido');
+    setNewName('');
+    setNewDescription('');
+    setNewPrice('');
+    setNewPrazoEntrega('7');
+    setNewFluxoProducao([]);
+    setNewTags('');
+    setNewArquivosNecessarios('');
+    setNewArquivosOpcionais('');
+    setNewCustomFieldsText('');
+    setNewImageFile(null);
+    setNewImageFile2(null);
+    setNewImageFile3(null);
+    setNewImageFile4(null);
+    setNewPromoTitle('');
+    setNewColor('#4F46E5');
+  }
+
+  function openCreateDialog() {
+    setEditingServiceId(null);
+    resetFormState();
+    setIsCreateDialogOpen(true);
+  }
+
+  function openEditDialog(service: ServiceDocument) {
+    setEditingServiceId(service.id);
+    setNewActive(service.ativo);
+    setNewVisibility(service.visibilidade);
+    setNewPriceVisibility(service.visibilidadePreco);
+    setNewName(service.nome);
+    setNewDescription(service.descricao ?? '');
+    setNewPrice(service.precoBase.toFixed(2).replace('.', ','));
+    setNewPrazoEntrega(String(service.prazoEntrega));
+    setNewFluxoProducao(service.fluxoProducao ?? []);
+    setNewTags((service.tags ?? []).join(', '));
+    setNewArquivosNecessarios((service.arquivosNecessarios ?? []).join(', '));
+    setNewArquivosOpcionais((service.arquivosOpcionais ?? []).join(', '));
+    setNewCustomFieldsText(
+      (service.camposPersonalizados ?? [])
+        .map((field) => field.label)
+        .join('\n')
+    );
+    setNewImageFile(null);
+    setNewPromoTitle(service.tituloPromocional ?? '');
+    setNewColor(service.corRepresentacao ?? '#4F46E5');
+    setIsCreateDialogOpen(true);
+  }
+
+  async function handleSaveService() {
     if (!newName.trim() || !newPrice.trim()) {
+      toast({
+        title: 'Dados incompletos',
+        description: 'Preencha pelo menos o nome e o preço base.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -228,57 +290,241 @@ export default function ProductsPage() {
       });
     }
 
-    let imageUrl = '';
-    if (newImageFile) {
-      const fileRef = ref(
-        storage,
-        `services-images/${Date.now()}-${newImageFile.name}`
-      );
-      const snapshot = await uploadBytes(fileRef, newImageFile);
-      imageUrl = await getDownloadURL(snapshot.ref);
+    try {
+      const existing = editingServiceId
+        ? services.find((s) => s.id === editingServiceId)
+        : null;
+
+      // código base para nomear pasta/arquivo no Storage
+      const generatedCode = !editingServiceId
+        ? generateServiceCode(newName.trim())
+        : existing?.codigo ?? generateServiceCode(newName.trim());
+
+      let imageUrl = existing?.imagemUrl ?? '';
+      let imagensSecundarias = existing?.imagensSecundarias ?? [];
+
+      // upload das imagens (se houver arquivos novos) direto no Firebase Storage
+      if (newImageFile) {
+        const fileRef = ref(
+          storage,
+          `services-images/${generatedCode}/hero-${Date.now()}-${newImageFile.name}`
+        );
+        const snapshot = await uploadBytes(fileRef, newImageFile);
+        imageUrl = await getDownloadURL(snapshot.ref);
+      }
+
+      const secundarias: string[] = [...imagensSecundarias];
+
+      if (newImageFile2) {
+        const fileRef = ref(
+          storage,
+          `services-images/${generatedCode}/close-${Date.now()}-${newImageFile2.name}`
+        );
+        const snapshot = await uploadBytes(fileRef, newImageFile2);
+        const url = await getDownloadURL(snapshot.ref);
+        secundarias[0] = url;
+      }
+
+      if (newImageFile3) {
+        const fileRef = ref(
+          storage,
+          `services-images/${generatedCode}/tecnica-${Date.now()}-${newImageFile3.name}`
+        );
+        const snapshot = await uploadBytes(fileRef, newImageFile3);
+        const url = await getDownloadURL(snapshot.ref);
+        secundarias[1] = url;
+      }
+
+      if (newImageFile4) {
+        const fileRef = ref(
+          storage,
+          `services-images/${generatedCode}/clinica-${Date.now()}-${newImageFile4.name}`
+        );
+        const snapshot = await uploadBytes(fileRef, newImageFile4);
+        const url = await getDownloadURL(snapshot.ref);
+        secundarias[2] = url;
+      }
+
+      imagensSecundarias = secundarias.filter(Boolean);
+
+      if (!editingServiceId) {
+        const payload = {
+          ativo: newActive,
+          visibilidade: newVisibility,
+          nome: newName.trim(),
+          codigo: generatedCode,
+          descricao: newDescription.trim(),
+          precoBase: priceNumber,
+          visibilidadePreco: newPriceVisibility,
+          prazoEntrega: prazoNumber,
+          fluxoProducao: newFluxoProducao,
+          tags,
+          arquivosNecessarios,
+          arquivosOpcionais,
+          camposPersonalizados,
+          imagemUrl: imageUrl,
+          imagensSecundarias,
+          tituloPromocional: newPromoTitle.trim(),
+          corRepresentacao: newColor.trim() || '#4F46E5',
+        };
+
+        const created = await createService(payload);
+        setServices((prev) => [created, ...prev]);
+
+        toast({
+          title: 'Produto criado',
+          description: 'O produto/serviço foi criado com sucesso.',
+        });
+      } else {
+        await updateService(editingServiceId, {
+          ativo: newActive,
+          visibilidade: newVisibility,
+          nome: newName.trim(),
+          descricao: newDescription.trim(),
+          precoBase: priceNumber,
+          visibilidadePreco: newPriceVisibility,
+          prazoEntrega: prazoNumber,
+          fluxoProducao: newFluxoProducao,
+          tags,
+          arquivosNecessarios,
+          arquivosOpcionais,
+          camposPersonalizados,
+          imagemUrl: imageUrl,
+          imagensSecundarias,
+          tituloPromocional: newPromoTitle.trim(),
+          corRepresentacao: newColor.trim() || '#4F46E5',
+        });
+
+        setServices((prev) =>
+          prev.map((service) =>
+            service.id === editingServiceId
+              ? {
+                  ...service,
+                  ativo: newActive,
+                  visibilidade: newVisibility,
+                  nome: newName.trim(),
+                  descricao: newDescription.trim(),
+                  precoBase: priceNumber,
+                  visibilidadePreco: newPriceVisibility,
+                  prazoEntrega: prazoNumber,
+                  fluxoProducao: newFluxoProducao,
+                  tags,
+                  arquivosNecessarios,
+                  arquivosOpcionais,
+                  camposPersonalizados,
+                  imagemUrl: imageUrl,
+                  imagensSecundarias,
+                  tituloPromocional: newPromoTitle.trim(),
+                  corRepresentacao: newColor.trim() || '#4F46E5',
+                }
+              : service
+          )
+        );
+
+        toast({
+          title: 'Produto atualizado',
+          description: 'As alterações foram salvas com sucesso.',
+        });
+      }
+
+      resetFormState();
+      setEditingServiceId(null);
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: 'Erro ao salvar produto',
+        description: 'Ocorreu um erro ao salvar. Tente novamente.',
+        variant: 'destructive',
+      });
     }
+  }
 
-    const generatedCode = generateServiceCode(newName.trim());
+  async function handleDuplicateService(service: ServiceDocument) {
+    try {
+      const payload = {
+        ativo: service.ativo,
+        visibilidade: service.visibilidade,
+        nome: `${service.nome} (cópia)`,
+        codigo: generateServiceCode(service.nome),
+        descricao: service.descricao,
+        precoBase: service.precoBase,
+        visibilidadePreco: service.visibilidadePreco,
+        prazoEntrega: service.prazoEntrega,
+        fluxoProducao: service.fluxoProducao ?? [],
+        tags: service.tags ?? [],
+        arquivosNecessarios: service.arquivosNecessarios ?? [],
+        arquivosOpcionais: service.arquivosOpcionais ?? [],
+        camposPersonalizados: service.camposPersonalizados ?? [],
+        imagemUrl: service.imagemUrl,
+        imagensSecundarias: service.imagensSecundarias ?? [],
+        tituloPromocional: service.tituloPromocional,
+        corRepresentacao: service.corRepresentacao,
+      };
 
-    const payload = {
-      ativo: newActive,
-      visibilidade: newVisibility,
-      nome: newName.trim(),
-      codigo: generatedCode,
-      descricao: newDescription.trim(),
-      precoBase: priceNumber,
-      visibilidadePreco: newPriceVisibility,
-      prazoEntrega: prazoNumber,
-      fluxoProducao: newFluxoProducao,
-      tags,
-      arquivosNecessarios,
-      arquivosOpcionais,
-      camposPersonalizados,
-      imagemUrl: imageUrl,
-      tituloPromocional: newPromoTitle.trim(),
-      corRepresentacao: newColor.trim() || '#4F46E5',
-    };
+      const created = await createService(payload);
+      setServices((prev) => [created, ...prev]);
 
-    const created = await createService(payload);
+      toast({
+        title: 'Produto duplicado',
+        description: 'Uma cópia do produto foi criada.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao duplicar',
+        description: 'Não foi possível duplicar o produto.',
+        variant: 'destructive',
+      });
+    }
+  }
 
-    setServices((prev) => [created, ...prev]);
+  async function handleArchiveService(service: ServiceDocument) {
+    try {
+      await updateService(service.id, { ativo: false });
+      setServices((prev) =>
+        prev.map((item) =>
+          item.id === service.id
+            ? {
+                ...item,
+                ativo: false,
+              }
+            : item
+        )
+      );
 
-    setNewName('');
-    setNewDescription('');
-    setNewPrice('');
-    setNewPrazoEntrega('7');
-    setNewFluxoProducao([]);
-    setNewTags('');
-    setNewArquivosNecessarios('');
-    setNewArquivosOpcionais('');
-    setNewCustomFieldsText('');
-    setNewImageFile(null);
-    setNewPromoTitle('');
-    setNewColor('#4F46E5');
-    setNewActive(true);
-    setNewVisibility('publico');
-    setNewPriceVisibility('exibido');
-    setIsCreateDialogOpen(false);
+      toast({
+        title: 'Produto arquivado',
+        description: 'O produto foi marcado como inativo.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao arquivar',
+        description: 'Não foi possível arquivar o produto.',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function handleDeleteService(service: ServiceDocument) {
+    const confirmed = window.confirm(
+      `Tem certeza que deseja excluir o produto "${service.nome}"? Essa ação não pode ser desfeita.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteService(service.id);
+      setServices((prev) => prev.filter((item) => item.id !== service.id));
+
+      toast({
+        title: 'Produto excluído',
+        description: 'O produto foi removido com sucesso.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao excluir',
+        description: 'Não foi possível excluir o produto.',
+        variant: 'destructive',
+      });
+    }
   }
 
   return (
@@ -331,7 +577,11 @@ export default function ProductsPage() {
                 </DropdownMenu>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="h-8 gap-1">
+                    <Button
+                      size="sm"
+                      className="h-8 gap-1"
+                      onClick={openCreateDialog}
+                    >
                       <PlusCircle className="h-3.5 w-3.5" />
                       <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                         Adicionar Produto
@@ -340,7 +590,9 @@ export default function ProductsPage() {
                   </DialogTrigger>
                   <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Novo produto/serviço</DialogTitle>
+                      <DialogTitle>
+                        {editingServiceId ? 'Editar produto/serviço' : 'Novo produto/serviço'}
+                      </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between space-x-2">
@@ -492,7 +744,7 @@ export default function ProductsPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="imagemArquivo">Imagem do produto</Label>
+                        <Label htmlFor="imagemArquivo">Foto 1 — Hero Estético</Label>
                         <Input
                           id="imagemArquivo"
                           type="file"
@@ -504,9 +756,47 @@ export default function ProductsPage() {
                           }
                         />
                         <p className="text-xs text-muted-foreground">
-                          A imagem será enviada para o armazenamento e o link
-                          salvo no serviço.
+                          Imagem principal do produto, usada como destaque.
                         </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="imagemArquivo2">Foto 2 — Close-up do Material</Label>
+                        <Input
+                          id="imagemArquivo2"
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) =>
+                            setNewImageFile2(
+                              event.target.files?.[0] ?? null
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="imagemArquivo3">Foto 3 — Técnica / CAD-CAM</Label>
+                        <Input
+                          id="imagemArquivo3"
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) =>
+                            setNewImageFile3(
+                              event.target.files?.[0] ?? null
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="imagemArquivo4">Foto 4 — Aplicação Clínica</Label>
+                        <Input
+                          id="imagemArquivo4"
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) =>
+                            setNewImageFile4(
+                              event.target.files?.[0] ?? null
+                            )
+                          }
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="tituloPromocional">Título promocional</Label>
@@ -550,12 +840,16 @@ export default function ProductsPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setIsCreateDialogOpen(false)}
+                          onClick={() => {
+                            setIsCreateDialogOpen(false);
+                            setEditingServiceId(null);
+                            resetFormState();
+                          }}
                         >
                           Cancelar
                         </Button>
-                        <Button type="button" onClick={handleCreateService}>
-                          Salvar
+                        <Button type="button" onClick={handleSaveService}>
+                          {editingServiceId ? 'Salvar alterações' : 'Salvar'}
                         </Button>
                       </div>
                     </div>
@@ -649,21 +943,27 @@ export default function ProductsPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                <DropdownMenuItem disabled>
-                                  Editar (em breve)
+                                <DropdownMenuItem
+                                  onClick={() => openEditDialog(service)}
+                                >
+                                  Editar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem disabled>
-                                  Duplicar (em breve)
+                                <DropdownMenuItem
+                                  onClick={() => handleDuplicateService(service)}
+                                >
+                                  Duplicar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem disabled>
-                                  Arquivar (em breve)
+                                <DropdownMenuItem
+                                  onClick={() => handleArchiveService(service)}
+                                >
+                                  Arquivar
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  disabled
                                   className="text-destructive"
+                                  onClick={() => handleDeleteService(service)}
                                 >
-                                  Excluir (em breve)
+                                  Excluir
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>

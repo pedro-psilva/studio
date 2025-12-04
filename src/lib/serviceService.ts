@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, query, updateDoc, where, serverTimestamp, type QueryDocumentSnapshot, type DocumentData } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where, serverTimestamp, type QueryDocumentSnapshot, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export type ServiceVisibility = 'publico' | 'interno';
@@ -28,6 +28,7 @@ export type ServiceDocument = {
   arquivosOpcionais: string[];
   camposPersonalizados: CustomField[];
   imagemUrl: string;
+  imagensSecundarias: string[];
   tituloPromocional: string;
   corRepresentacao: string;
   createdAt: Date;
@@ -49,6 +50,7 @@ export type CreateServiceParams = {
   arquivosOpcionais: string[];
   camposPersonalizados: CustomField[];
   imagemUrl: string;
+  imagensSecundarias: string[];
   tituloPromocional: string;
   corRepresentacao: string;
 };
@@ -76,6 +78,7 @@ function mapServiceData(data: any): ServiceDocument {
     arquivosOpcionais: data.arquivosOpcionais ?? [],
     camposPersonalizados: data.camposPersonalizados ?? [],
     imagemUrl: data.imagemUrl,
+    imagensSecundarias: data.imagensSecundarias ?? [],
     tituloPromocional: data.tituloPromocional,
     corRepresentacao: data.corRepresentacao,
     createdAt: data.createdAt?.toDate?.() ?? new Date(),
@@ -149,4 +152,9 @@ export async function updateService(serviceId: string, data: UpdateServiceParams
     ...data,
     updatedAt: serverTimestamp(),
   });
+}
+
+export async function deleteService(serviceId: string): Promise<void> {
+  const ref = doc(db, COLLECTION_NAME, serviceId);
+  await deleteDoc(ref);
 }

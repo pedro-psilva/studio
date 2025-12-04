@@ -9,8 +9,6 @@ import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { products } from '@/lib/data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { X, Plus, Minus, ShoppingCart as ShoppingCartIcon, ArrowRight, FileText, Edit, CircleDot } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,13 +16,42 @@ import { useAuth } from '@/context/AuthContext';
 import { getCart, setCart, updateCartItems, CartItemFirestore } from '@/lib/cartService';
 import { createOrderFromCart, OrderItemFirestore } from '@/lib/orderService';
 import { Badge } from '@/components/ui/badge';
+import { getService, type ServiceDocument } from '@/lib/serviceService';
+
+type CartItemWithService = CartItemFirestore & {
+  uniqueId: string;
+  service: ServiceDocument;
+};
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [cartItems, setCartItems] = useState<CartItemWithService[]>([]);
   const [loadingCart, setLoadingCart] = useState(true);
   const { t } = useTranslation('common');
   const { user } = useAuth();
   const router = useRouter();
+
+  const handleEditCase = (item: CartItemWithService) => {
+    if (typeof window !== 'undefined') {
+      const key = `editCase:${item.productId}:${item.uniqueId}`;
+      const payload = {
+        productId: item.productId,
+        quantity: item.quantity,
+        selectedTeeth: item.teeth ?? [],
+        selectedColor: item.shade ?? null,
+        patientName: item.patientName ?? '',
+        stlFileUrl: item.stlFileUrl ?? null,
+      };
+
+      try {
+        window.localStorage.setItem(key, JSON.stringify(payload));
+        window.sessionStorage.setItem('editCaseKey', key);
+      } catch (e) {
+        console.error('Erro ao preparar edição de caso:', e);
+      }
+    }
+
+    router.push(`/products/${item.productId}?editCase=1`);
+  };
 
   useEffect(() => {
     const loadCart = async () => {
@@ -40,19 +67,26 @@ export default function CartPage() {
         if (!cart || !cart.items || cart.items.length === 0) {
           setCartItems([]);
         } else {
-          const itemsWithProduct = cart.items
-            .map((item: CartItemFirestore, index: number) => {
-              const product = products.find((p) => p.id === item.productId);
-              if (!product) return null;
-              return {
-                ...product,
-                ...item, // Pass all custom fields from firestore
-                uniqueId: `${item.productId}-${index}`, // Create a unique ID for each item in the cart
-              };
-            })
-            .filter(Boolean) as any[];
+          const itemsWithService: CartItemWithService[] = (
+            await Promise.all(
+              cart.items.map(async (item, index) => {
+                try {
+                  const service = await getService(item.productId);
+                  if (!service) return null;
+                  return {
+                    ...item,
+                    uniqueId: `${item.productId}-${index}`,
+                    service,
+                  } as CartItemWithService;
+                } catch (e) {
+                  console.error('Erro ao carregar serviço para item do carrinho:', e);
+                  return null;
+                }
+              })
+            )
+          ).filter(Boolean) as CartItemWithService[];
 
-          setCartItems(itemsWithProduct);
+          setCartItems(itemsWithService);
         }
       } catch (error) {
         console.error('Erro ao carregar carrinho:', error);
@@ -65,11 +99,11 @@ export default function CartPage() {
     loadCart();
   }, [user]);
 
-  const syncCartToFirestore = async (items: any[]) => {
+  const syncCartToFirestore = async (items: CartItemWithService[]) => {
     if (!user) return;
 
     const firestoreItems: CartItemFirestore[] = items.map((item) => ({
-      productId: item.id,
+      productId: item.productId,
       quantity: item.quantity,
       material: item.material,
       shade: item.shade,
@@ -106,7 +140,10 @@ export default function CartPage() {
     syncCartToFirestore(updatedItems);
   };
 
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = cartItems.reduce(
+    (acc, item) => acc + (item.service.precoBase ?? 0) * item.quantity,
+    0
+  );
   const shipping = subtotal > 0 ? 15.00 : 0;
   const total = subtotal + shipping;
 
@@ -119,7 +156,7 @@ export default function CartPage() {
     if (cartItems.length === 0) return;
 
     const orderItems: OrderItemFirestore[] = cartItems.map((item) => ({
-      productId: item.id,
+      productId: item.productId,
       quantity: item.quantity,
       shade: item.shade,
       material: item.material,
@@ -176,25 +213,26 @@ export default function CartPage() {
               {/* Cart Items */}
               <div className="lg:col-span-2 space-y-6">
                 {cartItems.map((item) => {
-                  const productImage = PlaceHolderImages.find(p => p.id === item.imageId);
-                  const isCustom = item.requiresStl;
+                  const isCustom = Array.isArray(item.service.arquivosNecessarios) && item.service.arquivosNecessarios.length > 0;
 
                   return (
                     <Card key={item.uniqueId} className="overflow-hidden">
                       <div className="flex flex-col sm:flex-row items-start gap-4 p-4">
-                        {productImage && (
-                            <Image
-                              src={productImage.imageUrl}
-                              alt={item.name}
-                              width={120}
-                              height={120}
-                              className="w-full sm:w-32 h-32 sm:h-auto aspect-square rounded-md object-cover"
-                            />
+                        {item.service.imagemUrl && (
+                          <Image
+                            src={item.service.imagemUrl}
+                            alt={item.service.nome}
+                            width={120}
+                            height={120}
+                            className="w-full sm:w-32 h-32 sm:h-auto aspect-square rounded-md object-cover"
+                          />
                         )}
                         <div className="flex-1 w-full">
-                          <Link href={`/products/${item.id}`} className="font-semibold hover:underline">{item.name}</Link>
+                          <Link href={`/products/${item.productId}`} className="font-semibold hover:underline">
+                            {item.service.nome}
+                          </Link>
                           {item.patientName && <p className="text-sm font-medium text-primary">Paciente: {item.patientName}</p>}
-                          <p className="text-sm text-muted-foreground">R$ {item.price.toFixed(2)}</p>
+                          <p className="text-sm text-muted-foreground">R$ {item.service.precoBase.toFixed(2)}</p>
                            <div className="flex items-center justify-between mt-4">
                              <div className="flex items-center border rounded-md">
                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)} disabled={isCustom}>
@@ -210,7 +248,7 @@ export default function CartPage() {
                               </Button>
                            </div>
                         </div>
-                         <p className="text-lg font-bold w-full sm:w-auto text-right">R$ {(item.price * item.quantity).toFixed(2)}</p>
+                         <p className="text-lg font-bold w-full sm:w-auto text-right">R$ {(item.service.precoBase * item.quantity).toFixed(2)}</p>
                       </div>
                       
                       {/* Customization Details */}
@@ -224,8 +262,13 @@ export default function CartPage() {
                            </div>
                            
                            <div className="flex gap-2">
-                               <Button variant="outline" size="sm"><CircleDot className="mr-2 h-4 w-4"/> Visualizar Caso</Button>
-                               <Button variant="outline" size="sm" onClick={() => router.push(`/products/${item.id}`)}><Edit className="mr-2 h-4 w-4"/> Editar Caso</Button>
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               onClick={() => handleEditCase(item)}
+                             >
+                               <Edit className="mr-2 h-4 w-4" /> Editar Caso
+                             </Button>
                            </div>
                         </div>
                       )}
