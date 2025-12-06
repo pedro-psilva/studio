@@ -323,8 +323,12 @@ export default function ProductDetailPage() {
 
   const productName = service ? tProducts(`${service.codigo}.name`) || service.nome : '...';
   const productDescription = service ? tProducts(`${service.codigo}.description`) || service.descricao : '...';
-  const productTags = service ? (tProducts(`${service.codigo}.tags`) as unknown as string[]) || service.tags : [];
-  const productFlow = service ? (tProducts(`${service.codigo}.productionFlow`) as unknown as string[]) || service.fluxoProducao : [];
+  
+  const translatedTags = service ? tProducts(`${service.codigo}.tags`) : null;
+  const productTags = Array.isArray(translatedTags) ? translatedTags : (service?.tags ?? []);
+
+  const translatedFlow = service ? tProducts(`${service.codigo}.productionFlow`) : null;
+  const productFlow = Array.isArray(translatedFlow) ? translatedFlow : (service?.fluxoProducao ?? []);
 
   return (
     <div className="flex min-h-screen flex-col">
