@@ -2,27 +2,7 @@
 import Link from 'next/link';
 import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react';
 import { Button } from '../ui/button';
-
-const footerLinks = {
-  shop: [
-    { href: '/products?category=crowns', label: 'Crowns & Bridges' },
-    { href: '/products?category=implants', label: 'Implants' },
-    { href: '/products?category=veneers', label: 'Veneers' },
-    { href: '/products?category=dentures', label: 'Dentures' },
-  ],
-  company: [
-    { href: '/about', label: 'About Us' },
-    { href: '/contact', label: 'Contact' },
-    { href: '/shipping', label: 'Shipping Policy' },
-    { href: '/privacy', label: 'Privacy Policy' },
-  ],
-  account: [
-    { href: '/account', label: 'My Account' },
-    { href: '/account/orders', label: 'My Orders' },
-    { href: '/auth/login', label: 'Login' },
-    { href: '/auth/register', label: 'Register' },
-  ],
-};
+import { useTranslation } from '@/hooks/use-translation';
 
 const socialLinks = [
   { href: '#', icon: Facebook, name: 'Facebook' },
@@ -32,6 +12,29 @@ const socialLinks = [
 ];
 
 export function Footer() {
+  const { t } = useTranslation('footer');
+
+  const footerLinks = {
+    shop: [
+      { href: '/products?category=crowns', label: t('links.crowns') },
+      { href: '/products?category=implants', label: t('links.implants') },
+      { href: '/products?category=veneers', label: t('links.veneers') },
+      { href: '/products?category=dentures', label: t('links.dentures') },
+    ],
+    company: [
+      { href: '/about', label: t('links.about') },
+      { href: '/contact', label: t('links.contact') },
+      { href: '/shipping', label: t('links.shipping') },
+      { href: '/privacy', label: t('links.privacy') },
+    ],
+    account: [
+      { href: '/account', label: t('links.myAccount') },
+      { href: '/account/orders', label: t('links.myOrders') },
+      { href: '/auth/login', label: t('links.login') },
+      { href: '/auth/register', label: t('links.register') },
+    ],
+  };
+
   return (
     <footer className="bg-card text-card-foreground border-t border-border/40">
       <div className="container mx-auto px-4 py-12">
@@ -41,12 +44,12 @@ export function Footer() {
               <span className="font-bold text-lg font-headline">IT Lab</span>
             </Link>
             <p className="mt-4 text-muted-foreground max-w-xs">
-              The future of digital dentistry, delivered to your clinic.
+              {t('tagline')}
             </p>
           </div>
 
           <div>
-            <h3 className="font-semibold tracking-wider text-foreground">Shop</h3>
+            <h3 className="font-semibold tracking-wider text-foreground">{t('headings.shop')}</h3>
             <ul className="mt-4 space-y-2">
               {footerLinks.shop.map((link) => (
                 <li key={link.href}>
@@ -59,7 +62,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="font-semibold tracking-wider text-foreground">Company</h3>
+            <h3 className="font-semibold tracking-wider text-foreground">{t('headings.company')}</h3>
             <ul className="mt-4 space-y-2">
               {footerLinks.company.map((link) => (
                 <li key={link.href}>
@@ -72,7 +75,7 @@ export function Footer() {
           </div>
           
           <div>
-            <h3 className="font-semibold tracking-wider text-foreground">Account</h3>
+            <h3 className="font-semibold tracking-wider text-foreground">{t('headings.account')}</h3>
             <ul className="mt-4 space-y-2">
               {footerLinks.account.map((link) => (
                 <li key={link.href}>
@@ -88,7 +91,7 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} IT Lab, Inc. All rights reserved.
+            &copy; {new Date().getFullYear()} IT Lab, Inc. {t('copyright')}
           </p>
           <div className="flex items-center space-x-2 mt-4 sm:mt-0">
             {socialLinks.map((social) => (

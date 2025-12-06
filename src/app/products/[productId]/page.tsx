@@ -92,6 +92,7 @@ export default function ProductDetailPage() {
   const params = useParams();
   const { productId } = params as { productId: string };
   const { t, formatCurrency } = useTranslation("home");
+  const { t: tProduct } = useTranslation('product');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -423,7 +424,7 @@ export default function ProductDetailPage() {
                     className="text-sm text-muted-foreground hover:text-primary flex items-center mb-2"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Voltar para produtos
+                    {tProduct('backToProducts')}
                   </Link>
                   {service.tituloPromocional && (
                     <Badge variant="outline">{service.tituloPromocional}</Badge>
@@ -434,7 +435,7 @@ export default function ProductDetailPage() {
                   {service.nome}
                 </h1>
                 <p className="text-sm text-muted-foreground mb-2">
-                  Código: {service.codigo}
+                  {tProduct('code')}: {service.codigo}
                 </p>
                 <p className="text-3xl font-bold text-primary mb-4">
                   {formatCurrency(service.precoBase)}
@@ -442,7 +443,7 @@ export default function ProductDetailPage() {
 
                 {service.prazoEntrega > 0 && (
                   <p className="text-sm text-muted-foreground mb-4">
-                    Prazo estimado de entrega: {service.prazoEntrega} dia(s)
+                    {tProduct('deliveryTime')}: {service.prazoEntrega} {tProduct('days')}
                   </p>
                 )}
 
@@ -462,18 +463,18 @@ export default function ProductDetailPage() {
                     >
                       <ShoppingCart className="mr-2 h-5 w-5" />
                       {requiresStl
-                        ? "Personalizar e Comprar"
-                        : "Adicionar ao Carrinho"}
+                        ? tProduct('customizeAndBuy')
+                        : tProduct('addToCart')}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
                       <DialogTitle className="text-xl">
-                        Personalize seu Produto: {service.nome}
+                        {tProduct('modal.title')}: {service.nome}
                       </DialogTitle>
                       <DialogDescription>
-                        Passo {currentStep + 1} de {STEPS.length}:{" "}
-                        {STEPS[currentStep].title}
+                        {tProduct('modal.step', { current: currentStep + 1, total: STEPS.length })}:{" "}
+                        {tProduct(`modal.steps.${STEPS[currentStep].id}`)}
                       </DialogDescription>
                       <Progress value={progress} className="mt-2" />
                     </DialogHeader>
@@ -491,7 +492,7 @@ export default function ProductDetailPage() {
                       {/* Step 2: Color Selection */}
                       <div className={currentStep === 1 ? "block" : "hidden"}>
                         <h3 className="text-lg font-semibold mb-4">
-                          SELECIONE A COR DESEJADA
+                          {tProduct('modal.color.title')}
                         </h3>
                         <Accordion type="single" collapsible defaultValue="VITA CLASSIC">
                           {Object.entries(colorOptions).map(([system, subGroups]) => (
@@ -542,7 +543,7 @@ export default function ProductDetailPage() {
                         className={currentStep === 2 ? "block" : "hidden"}
                       >
                         <h3 className="text-lg font-semibold mb-4">
-                          Upload de Arquivos Clínicos
+                          {tProduct('modal.files.title')}
                         </h3>
                         <div className="space-y-4">
                           <label
@@ -555,12 +556,12 @@ export default function ProductDetailPage() {
                               <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />
                               <p className="mb-2 text-sm text-muted-foreground">
                                 <span className="font-semibold">
-                                  Clique para enviar
+                                  {tProduct('modal.files.clickToUpload')}
                                 </span>{" "}
-                                ou arraste e solte
+                                {tProduct('modal.files.orDragAndDrop')}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                Arquivos STL, PLY, OBJ (MAX. 100MB)
+                                {tProduct('modal.files.fileTypes')}
                               </p>
                             </div>
                             <input
@@ -573,7 +574,7 @@ export default function ProductDetailPage() {
                           </label>
                           {existingStlFileName && uploadedFiles.length === 0 && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              Arquivo atual no caso: <span className="font-medium">{existingStlFileName}</span>. Envie um novo arquivo se desejar substituir.
+                              {tProduct('modal.files.currentFile')}: <span className="font-medium">{existingStlFileName}</span>. {tProduct('modal.files.uploadToReplace')}
                             </p>
                           )}
                           {formErrors.files && (
@@ -585,7 +586,7 @@ export default function ProductDetailPage() {
                           {uploadedFiles.length > 0 && (
                             <div className="space-y-2">
                               <h4 className="font-semibold">
-                                Arquivos Carregados:
+                                {tProduct('modal.files.uploadedFiles')}:
                               </h4>
                               <ul className="space-y-2">
                                 {uploadedFiles.map((file, i) => (
@@ -618,13 +619,13 @@ export default function ProductDetailPage() {
                         className={currentStep === 3 ? "block" : "hidden"}
                       >
                         <h3 className="text-lg font-semibold mb-4">
-                          Ficha do Paciente
+                          {tProduct('modal.patient.title')}
                         </h3>
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <Label htmlFor="patient-name">
-                                Nome do Paciente
+                                {tProduct('modal.patient.name')}
                               </Label>
                               <Input
                                 id="patient-name"
@@ -648,7 +649,7 @@ export default function ProductDetailPage() {
                               )}
                             </div>
                             <div>
-                              <Label htmlFor="patient-age">Idade</Label>
+                              <Label htmlFor="patient-age">{tProduct('modal.patient.age')}</Label>
                               <Input
                                 id="patient-age"
                                 type="number"
@@ -664,11 +665,11 @@ export default function ProductDetailPage() {
                           </div>
                           <div>
                             <Label htmlFor="clinical-notes">
-                              Observações Clínicas
+                              {tProduct('modal.patient.clinicalNotes')}
                             </Label>
                             <Textarea
                               id="clinical-notes"
-                              placeholder="Ex: Paciente com histórico de bruxismo..."
+                              placeholder={tProduct('modal.patient.clinicalNotesPlaceholder')}
                               value={patientData.clinicalNotes}
                               onChange={(e) =>
                                 setPatientData((p) => ({
@@ -680,11 +681,11 @@ export default function ProductDetailPage() {
                           </div>
                           <div>
                             <Label htmlFor="dentist-notes">
-                              Observações do Dentista
+                              {tProduct('modal.patient.dentistNotes')}
                             </Label>
                             <Textarea
                               id="dentist-notes"
-                              placeholder="Ex: Favor conferir o ponto de contato..."
+                              placeholder={tProduct('modal.patient.dentistNotesPlaceholder')}
                               value={patientData.dentistNotes}
                               onChange={(e) =>
                                 setPatientData((p) => ({
@@ -702,43 +703,43 @@ export default function ProductDetailPage() {
                         className={currentStep === 4 ? "block" : "hidden"}
                       >
                         <h3 className="text-lg font-semibold mb-4">
-                          Revise as informações
+                          {tProduct('modal.review.title')}
                         </h3>
                         <div className="space-y-4 rounded-lg border p-4 bg-muted/50">
                           <div className="flex justify-between items-center">
-                            <span>Produto:</span>
+                            <span>{tProduct('modal.review.product')}:</span>
                             <span className="font-medium text-right">
                               {service.nome}
                             </span>
                           </div>
                           <Separator />
                           <div className="flex justify-between items-center">
-                            <span>Dentes:</span>
+                            <span>{tProduct('modal.review.teeth')}:</span>
                             <span className="font-medium text-right">
                               {selectedTeeth.length > 0
                                 ? selectedTeeth.join(", ")
-                                : "Nenhum"}
+                                : tProduct('modal.review.none')}
                             </span>
                           </div>
                           <Separator />
                           <div className="flex justify-between items-center">
-                            <span>Cor:</span>
+                            <span>{tProduct('modal.review.color')}:</span>
                             <span className="font-medium text-right">
-                              {selectedColor || "Não selecionada"}
+                              {selectedColor || tProduct('modal.review.notSelected')}
                             </span>
                           </div>
                           <Separator />
                           <div className="flex justify-between items-center">
-                            <span>Arquivos:</span>
+                            <span>{tProduct('modal.review.files')}:</span>
                             <span className="font-medium text-right">
-                              {uploadedFiles.length > 0 ? `${uploadedFiles.length} novo(s)` : (existingStlFileName ? '1 existente' : 'Nenhum')}
+                              {uploadedFiles.length > 0 ? `${uploadedFiles.length} ${tProduct('modal.review.newFiles')}` : (existingStlFileName ? `1 ${tProduct('modal.review.existingFile')}`: tProduct('modal.review.none'))}
                             </span>
                           </div>
                           <Separator />
                           <div className="flex justify-between items-center">
-                            <span>Paciente:</span>
+                            <span>{tProduct('modal.review.patient')}:</span>
                             <span className="font-medium text-right">
-                              {patientData.name || "Não informado"}
+                              {patientData.name || tProduct('modal.review.notInformed')}
                             </span>
                           </div>
                         </div>
@@ -753,20 +754,20 @@ export default function ProductDetailPage() {
                         <div className="flex items-center gap-2">
                           {currentStep > 0 && (
                             <Button variant="outline" onClick={handleBack}>
-                              Voltar
+                              {tProduct('modal.buttons.back')}
                             </Button>
                           )}
 
                           {currentStep < STEPS.length - 1 && (
                             <Button onClick={() => handleNext()}>
-                              Avançar
+                              {tProduct('modal.buttons.next')}
                               <ChevronsRight className="ml-2 h-4 w-4" />
                             </Button>
                           )}
                           
                           {currentStep === STEPS.length - 1 && (
                             <Button onClick={handleAddToCart}>
-                              Adicionar ao carrinho
+                              {tProduct('modal.buttons.addToCart')}
                             </Button>
                           )}
                         </div>
@@ -777,7 +778,7 @@ export default function ProductDetailPage() {
 
                 {requiresStl && (
                   <Badge variant="destructive" className="mt-4">
-                    Necessário Envio de Arquivo STL
+                    {tProduct('requiresStlUpload')}
                   </Badge>
                 )}
 
@@ -786,7 +787,7 @@ export default function ProductDetailPage() {
                 {service.tags && service.tags.length > 0 && (
                   <div className="mb-4 space-y-2">
                     <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                      Indicações / tags
+                      {tProduct('tags')}
                     </h2>
                     <div className="flex flex-wrap gap-2">
                       {service.tags.map((tag) => (
@@ -802,7 +803,7 @@ export default function ProductDetailPage() {
                   service.arquivosNecessarios.length > 0 && (
                     <div className="mb-4 space-y-2">
                       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                        Arquivos necessários
+                        {tProduct('requiredFiles')}
                       </h2>
                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                         {service.arquivosNecessarios.map((item) => (
@@ -816,7 +817,7 @@ export default function ProductDetailPage() {
                   service.arquivosOpcionais.length > 0 && (
                     <div className="mb-4 space-y-2">
                       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                        Arquivos opcionais
+                        {tProduct('optionalFiles')}
                       </h2>
                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                         {service.arquivosOpcionais.map((item) => (
@@ -829,7 +830,7 @@ export default function ProductDetailPage() {
                 {service.fluxoProducao && service.fluxoProducao.length > 0 && (
                 <div className="mt-6">
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                    Fluxo de produção
+                    {tProduct('productionFlow')}
                   </h2>
                   <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                     {service.fluxoProducao.map((step, index) => (

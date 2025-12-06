@@ -216,6 +216,7 @@ export default function HomePage() {
 
 function ProductCard({ service }: { service: ServiceDocument }) {
   const { t, formatCurrency } = useTranslation("common");
+  const { t: tHome } = useTranslation("home");
   const requiresUpload = (service.arquivosNecessarios ?? []).length > 0;
 
   return (
@@ -241,7 +242,7 @@ function ProductCard({ service }: { service: ServiceDocument }) {
             variant="destructive"
             className="absolute top-2 right-2 text-[11px]"
           >
-            Upload obrigatório
+            {tHome('productCard.requiresUpload')}
           </Badge>
         )}
       </CardHeader>
@@ -250,7 +251,7 @@ function ProductCard({ service }: { service: ServiceDocument }) {
           <Link href={`/products/${service.id}`}>{service.nome}</Link>
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-1">
-          Código: {service.codigo}
+          {tHome('productCard.code')}: {service.codigo}
         </p>
         {service.descricao && (
           <p className="text-sm text-muted-foreground mt-2 line-clamp-3">

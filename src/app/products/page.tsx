@@ -22,6 +22,7 @@ import { listServices } from "@/lib/serviceService";
 
 export default function ProductsPage() {
   const { t } = useTranslation("home");
+  const { t: tCommon, formatCurrency } = useTranslation("common");
   const [services, setServices] = useState<ServiceDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,8 +74,7 @@ export default function ProductsPage() {
               {t("ourProducts")}
             </h1>
             <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-              Explore nossa seleção completa de produtos e serviços odontológicos
-              digitais.
+              {t('productsPage.subtitle')}
             </p>
           </div>
 
@@ -82,11 +82,11 @@ export default function ProductsPage() {
             {/* Filters Sidebar */}
             <aside className="md:col-span-1">
               <div className="sticky top-24">
-                <h2 className="text-2xl font-bold mb-6 font-headline">Filtros</h2>
+                <h2 className="text-2xl font-bold mb-6 font-headline">{t('productsPage.filters')}</h2>
 
                 {/* Price Filter */}
                 <div>
-                  <h3 className="font-semibold mb-4 text-lg">Faixa de Preço</h3>
+                  <h3 className="font-semibold mb-4 text-lg">{t('productsPage.priceRange')}</h3>
                   <Slider
                     defaultValue={priceRange}
                     min={0}
@@ -97,8 +97,8 @@ export default function ProductsPage() {
                     }
                   />
                   <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                    <span>R$ {priceRange[0]}</span>
-                    <span>R$ {priceRange[1]}</span>
+                    <span>{formatCurrency(priceRange[0])}</span>
+                    <span>{formatCurrency(priceRange[1])}</span>
                   </div>
                 </div>
               </div>
@@ -108,7 +108,7 @@ export default function ProductsPage() {
             <div className="md:col-span-3">
               {loading ? (
                 <div className="flex items-center justify-center h-full text-center bg-card p-8 rounded-lg">
-                  <p className="text-muted-foreground">Carregando produtos...</p>
+                  <p className="text-muted-foreground">{t('productsPage.loading')}</p>
                 </div>
               ) : error ? (
                 <div className="flex items-center justify-center h-full text-center bg-card p-8 rounded-lg">
@@ -123,10 +123,10 @@ export default function ProductsPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center bg-card p-8 rounded-lg">
                   <p className="text-xl font-semibold">
-                    Nenhum produto encontrado
+                    {t('productsPage.noProductsFound')}
                   </p>
                   <p className="text-muted-foreground mt-2">
-                    Ajuste os filtros para encontrar o que procura.
+                    {t('productsPage.adjustFilters')}
                   </p>
                 </div>
               )}
@@ -141,6 +141,7 @@ export default function ProductsPage() {
 
 function ProductCard({ service }: { service: ServiceDocument }) {
   const { t, formatCurrency } = useTranslation("common");
+  const { t: tHome } = useTranslation("home");
 
   const requiresUpload = (service.arquivosNecessarios ?? []).length > 0;
 
@@ -158,7 +159,7 @@ function ProductCard({ service }: { service: ServiceDocument }) {
             />
           ) : (
             <div className="w-full h-48 bg-muted flex items-center justify-center text-xs text-muted-foreground">
-              Sem imagem
+              {tHome('productCard.noImage')}
             </div>
           )}
         </Link>
@@ -167,7 +168,7 @@ function ProductCard({ service }: { service: ServiceDocument }) {
             variant="destructive"
             className="absolute top-2 right-2 text-[11px]"
           >
-            Upload obrigatório
+            {tHome('productCard.requiresUpload')}
           </Badge>
         )}
       </CardHeader>
@@ -176,7 +177,7 @@ function ProductCard({ service }: { service: ServiceDocument }) {
           <Link href={`/products/${service.id}`}>{service.nome}</Link>
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-1">
-          Código: {service.codigo}
+          {tHome('productCard.code')}: {service.codigo}
         </p>
         {service.descricao && (
           <p className="text-sm text-muted-foreground mt-2 line-clamp-3">
