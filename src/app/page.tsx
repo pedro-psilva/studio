@@ -215,9 +215,14 @@ export default function HomePage() {
 }
 
 function ProductCard({ service }: { service: ServiceDocument }) {
-  const { t, formatCurrency } = useTranslation("common");
-  const { t: tHome } = useTranslation("home");
+  const { t: tCommon, formatCurrency } = useTranslation('common');
+  const { t: tHome } = useTranslation('home');
+  const { t: tProducts } = useTranslation('products');
+
   const requiresUpload = (service.arquivosNecessarios ?? []).length > 0;
+  
+  const productName = tProducts(`${service.codigo}.name`) || service.nome;
+  const productDescription = tProducts(`${service.codigo}.description`) || service.descricao;
 
   return (
     <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg hover:shadow-primary/20">
@@ -226,14 +231,14 @@ function ProductCard({ service }: { service: ServiceDocument }) {
           {service.imagemUrl ? (
             <Image
               src={service.imagemUrl}
-              alt={service.nome}
+              alt={productName}
               width={400}
               height={300}
               className="w-full h-48 object-cover"
             />
           ) : (
             <div className="w-full h-48 bg-muted flex items-center justify-center text-xs text-muted-foreground">
-              Sem imagem
+              {tHome('productCard.noImage')}
             </div>
           )}
         </Link>
@@ -248,14 +253,14 @@ function ProductCard({ service }: { service: ServiceDocument }) {
       </CardHeader>
       <CardContent className="flex-1 p-4">
         <CardTitle className="text-lg font-semibold line-clamp-2">
-          <Link href={`/products/${service.id}`}>{service.nome}</Link>
+          <Link href={`/products/${service.id}`}>{productName}</Link>
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-1">
           {tHome('productCard.code')}: {service.codigo}
         </p>
-        {service.descricao && (
+        {productDescription && (
           <p className="text-sm text-muted-foreground mt-2 line-clamp-3">
-            {service.descricao}
+            {productDescription}
           </p>
         )}
       </CardContent>
@@ -266,7 +271,7 @@ function ProductCard({ service }: { service: ServiceDocument }) {
         <Button size="sm" asChild>
           <Link href={`/products/${service.id}`}>
             <ShoppingCart className="mr-2 h-4 w-4" />
-            {t("buy")}
+            {tCommon("buy")}
           </Link>
         </Button>
       </CardFooter>

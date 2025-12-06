@@ -91,8 +91,9 @@ const STEPS = [
 export default function ProductDetailPage() {
   const params = useParams();
   const { productId } = params as { productId: string };
-  const { t, formatCurrency } = useTranslation("home");
+  const { t: tHome, formatCurrency } = useTranslation("home");
   const { t: tProduct } = useTranslation('product');
+  const { t: tProducts } = useTranslation('products');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -320,6 +321,11 @@ export default function ProductDetailPage() {
     notFound();
   }
 
+  const productName = service ? tProducts(`${service.codigo}.name`) || service.nome : '...';
+  const productDescription = service ? tProducts(`${service.codigo}.description`) || service.descricao : '...';
+  const productTags = service ? (tProducts(`${service.codigo}.tags`) as unknown as string[]) || service.tags : [];
+  const productFlow = service ? (tProducts(`${service.codigo}.productionFlow`) as unknown as string[]) || service.fluxoProducao : [];
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -362,7 +368,7 @@ export default function ProductDetailPage() {
                       >
                         <Image
                           src={current}
-                          alt={service.nome}
+                          alt={productName}
                           fill
                           className="object-cover transition-transform duration-300 group-hover:scale-105"
                         />
@@ -387,7 +393,7 @@ export default function ProductDetailPage() {
                             >
                               <Image
                                 src={src}
-                                alt={`${service.nome} - miniatura ${index + 1}`}
+                                alt={`${productName} - miniatura ${index + 1}`}
                                 fill
                                 className="object-cover"
                               />
@@ -404,7 +410,7 @@ export default function ProductDetailPage() {
                           <div className="relative max-w-4xl w-full aspect-video">
                             <Image
                               src={current}
-                              alt={service.nome}
+                              alt={productName}
                               fill
                               className="object-contain"
                             />
@@ -432,7 +438,7 @@ export default function ProductDetailPage() {
                 </div>
 
                 <h1 className="text-3xl md:text-4xl font-bold font-headline mb-2">
-                  {service.nome}
+                  {productName}
                 </h1>
                 <p className="text-sm text-muted-foreground mb-2">
                   {tProduct('code')}: {service.codigo}
@@ -447,9 +453,9 @@ export default function ProductDetailPage() {
                   </p>
                 )}
 
-                {service.descricao && (
+                {productDescription && (
                   <p className="text-muted-foreground mb-6 whitespace-pre-line">
-                    {service.descricao}
+                    {productDescription}
                   </p>
                 )}
 
@@ -470,7 +476,7 @@ export default function ProductDetailPage() {
                   <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
                       <DialogTitle className="text-xl">
-                        {tProduct('modal.title')}: {service.nome}
+                        {tProduct('modal.title')}: {productName}
                       </DialogTitle>
                       <DialogDescription>
                         {tProduct('modal.step', { current: currentStep + 1, total: STEPS.length })}:{" "}
@@ -494,7 +500,7 @@ export default function ProductDetailPage() {
                         <h3 className="text-lg font-semibold mb-4">
                           {tProduct('modal.color.title')}
                         </h3>
-                        <Accordion type="single" collapsible defaultValue="VITA CLASSIC">
+                        <Accordion type="single" collapsible defaultValue="VITA CLASSIC" className="w-full">
                           {Object.entries(colorOptions).map(([system, subGroups]) => (
                             <AccordionItem value={system} key={system}>
                               <AccordionTrigger>{system}</AccordionTrigger>
@@ -709,7 +715,7 @@ export default function ProductDetailPage() {
                           <div className="flex justify-between items-center">
                             <span>{tProduct('modal.review.product')}:</span>
                             <span className="font-medium text-right">
-                              {service.nome}
+                              {productName}
                             </span>
                           </div>
                           <Separator />
@@ -784,13 +790,13 @@ export default function ProductDetailPage() {
 
                 <Separator className="my-6" />
 
-                {service.tags && service.tags.length > 0 && (
+                {productTags && productTags.length > 0 && (
                   <div className="mb-4 space-y-2">
                     <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                       {tProduct('tags')}
                     </h2>
                     <div className="flex flex-wrap gap-2">
-                      {service.tags.map((tag) => (
+                      {productTags.map((tag: string) => (
                         <Badge key={tag} variant="secondary">
                           {tag}
                         </Badge>
@@ -827,13 +833,13 @@ export default function ProductDetailPage() {
                     </div>
                   )}
 
-                {service.fluxoProducao && service.fluxoProducao.length > 0 && (
+                {productFlow && productFlow.length > 0 && productFlow[0] !== "N/A" && (
                 <div className="mt-6">
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
                     {tProduct('productionFlow')}
                   </h2>
                   <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    {service.fluxoProducao.map((step, index) => (
+                    {productFlow.map((step, index) => (
                       <span
                         key={`${step}-${index}`}
                         className="rounded-full border px-3 py-1"

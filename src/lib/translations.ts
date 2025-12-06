@@ -127,6 +127,80 @@ export const translations = {
                 register: "Cadastrar"
             },
             copyright: "Todos os direitos reservados."
+        },
+        products: {
+          "ZIRC-001-C72B": {
+            name: "Coroa de Zircônia",
+            description: "Coroa de zircônia multicamadas de alta translucidez, perfeita para resultados estéticos e funcionais.",
+            tags: ["Estética", "Resistência", "Coroas Unitárias"],
+            productionFlow: ["Modelagem", "Fresagem", "Sinterização", "Acabamento"]
+          },
+          "EMAX-V01-B5A1": {
+            name: "Lente E-Max",
+            description: "Lente de dissilicato de lítio para estética máxima.",
+            tags: ["Alta Estética", "Lentes de Contato", "Facetas"],
+            productionFlow: ["Enceramento", "Injeção", "Maquiagem", "Glaze"]
+          },
+           "TI-IMP-001-9F3E": {
+            name: "Implante de Titânio",
+            description: "Implante de titânio Grau 5 com superfície SLA para osseointegração aprimorada.",
+            tags: ["Implante", "Titânio", "Cirurgia"],
+            productionFlow: ["Usinagem", "Tratamento de Superfície", "Esterilização"]
+          },
+           "DENT-F01-A4B2": {
+            name: "Prótese Total",
+            description: "Prótese total em acrílico de alto impacto com dentes premium.",
+            tags: ["Prótese Removível", "Reabilitação Total"],
+            productionFlow: ["Modelagem", "Articulação", "Acrilização", "Polimento"]
+          },
+           "ALIGN-01-D6C3": {
+            name: "Conjunto de Alinhadores",
+            description: "Conjunto completo de alinhadores transparentes personalizados para tratamento ortodôntico.",
+            tags: ["Ortodontia", "Estética", "Invisível"],
+            productionFlow: ["Setup Virtual", "Impressão 3D", "Estampagem", "Recorte a Laser"]
+          },
+           "COMP-R01-E8D4": {
+            name: "Kit de Resina Composta",
+            description: "Kit de resina composta universal para restaurações anteriores e posteriores.",
+            tags: ["Restauração", "Clínica", "Material"],
+            productionFlow: ["N/A"]
+          },
+           "PFM-C01-F2A5": {
+            name: "Coroa Metalocerâmica",
+            description: "Coroa de porcelana fundida sobre metal para um equilíbrio entre resistência e estética.",
+            tags: ["PFM", "Resistência", "Tradicional"],
+            productionFlow: ["Estrutura Metálica", "Aplicação de Porcelana", "Glaze"]
+          },
+           "CUST-ABUT-01-1B9F": {
+            name: "Abutment Personalizado",
+            description: "Abutment personalizado em CAD/CAM para um encaixe perfeito da restauração do implante.",
+            tags: ["Implante", "Prótese sobre Implante", "CAD/CAM"],
+            productionFlow: ["Desenho CAD", "Usinagem CAM", "Acabamento"]
+          },
+           "SURG-G01-3C8E": {
+            name: "Guia Cirúrgico",
+            description: "Guia cirúrgico impresso em 3D para colocação precisa de implantes.",
+            tags: ["Cirurgia Guiada", "Implante", "Impressão 3D"],
+            productionFlow: ["Planejamento", "Impressão 3D", "Pós-processamento"]
+          },
+           "NG-01-5E6D": {
+            name: "Placa de Bruxismo",
+            description: "Placa de mordida personalizada para bruxismo e apertamento.",
+            tags: ["Bruxismo", "Oclusão", "Placa Miorrelaxante"],
+            productionFlow: ["Modelagem", "Estampagem a Vácuo", "Ajuste e Polimento"]
+          },
+           "MB-01-7A4B": {
+            name: "Ponte Maryland",
+            description: "Ponte adesiva, uma opção conservadora para substituir um único dente.",
+            tags: ["Prótese Fixa", "Adesiva", "Conservador"],
+            productionFlow: ["Desenho CAD", "Fresagem", "Maquiagem", "Glaze"]
+          },
+           "WAX-01-9D2C": {
+            name: "Enceramento Diagnóstico",
+            description: "Enceramento diagnóstico digital ou analógico para planejamento de tratamento.",
+            tags: ["Planejamento", "Diagnóstico", "Estética"],
+            productionFlow: ["Escaneamento", "Desenho Digital", "Impressão 3D (Opcional)"]
+          }
         }
     },
     'en-US': {
@@ -257,6 +331,80 @@ export const translations = {
                 register: "Register"
             },
             copyright: "All rights reserved."
+        },
+        products: {
+          "ZIRC-001-C72B": {
+            name: "Zirconia Crown",
+            description: "High-translucency multilayered zirconia crown, perfect for aesthetic and functional results.",
+            tags: ["Aesthetic", "Strength", "Single Crowns"],
+            productionFlow: ["Modeling", "Milling", "Sintering", "Finishing"]
+          },
+          "EMAX-V01-B5A1": {
+            name: "E-Max Veneer",
+            description: "Lithium disilicate glass-ceramic veneer for ultimate aesthetics.",
+            tags: ["High-Aesthetics", "Veneers", "Facings"],
+            productionFlow: ["Wax-up", "Pressing", "Staining", "Glaze"]
+          },
+          "TI-IMP-001-9F3E": {
+            name: "Titanium Implant",
+            description: "Grade 5 titanium implant with an SLA surface for enhanced osseointegration.",
+            tags: ["Implant", "Titanium", "Surgery"],
+            productionFlow: ["Machining", "Surface Treatment", "Sterilization"]
+          },
+          "DENT-F01-A4B2": {
+            name: "Full Denture",
+            description: "High-impact acrylic full denture with premium teeth.",
+            tags: ["Removable Prosthesis", "Full Rehabilitation"],
+            productionFlow: ["Modeling", "Articulation", "Acrylic Packing", "Polishing"]
+          },
+          "ALIGN-01-D6C3": {
+            name: "Aligner Set",
+            description: "Complete set of custom clear aligners for orthodontic treatment.",
+            tags: ["Orthodontics", "Aesthetic", "Invisible"],
+            productionFlow: ["Virtual Setup", "3D Printing", "Thermoforming", "Laser Trimming"]
+          },
+          "COMP-R01-E8D4": {
+            name: "Composite Resin Kit",
+            description: "Universal composite resin kit for anterior and posterior restorations.",
+            tags: ["Restoration", "Clinical", "Material"],
+            productionFlow: ["N/A"]
+          },
+          "PFM-C01-F2A5": {
+            name: "PFM Crown",
+            description: "Porcelain-fused-to-metal crown for a balance of strength and aesthetics.",
+            tags: ["PFM", "Strength", "Traditional"],
+            productionFlow: ["Metal Framework", "Porcelain Application", "Glaze"]
+          },
+          "CUST-ABUT-01-1B9F": {
+            name: "Custom Abutment",
+            description: "CAD/CAM custom abutment for a perfect implant restoration fit.",
+            tags: ["Implant", "Implant Prosthesis", "CAD/CAM"],
+            productionFlow: ["CAD Design", "CAM Machining", "Finishing"]
+          },
+          "SURG-G01-3C8E": {
+            name: "Surgical Guide",
+            description: "3D printed surgical guide for precise implant placement.",
+            tags: ["Guided Surgery", "Implant", "3D Printing"],
+            productionFlow: ["Planning", "3D Printing", "Post-processing"]
+          },
+          "NG-01-5E6D": {
+            name: "Night Guard",
+            description: "Custom-fit night guard for bruxism and clenching.",
+            tags: ["Bruxism", "Occlusion", "Splint"],
+            productionFlow: ["Modeling", "Vacuum Forming", "Adjustment & Polishing"]
+          },
+          "MB-01-7A4B": {
+            name: "Maryland Bridge",
+            description: "Resin-bonded bridge, a conservative option for replacing a single tooth.",
+            tags: ["Fixed Prosthesis", "Adhesive", "Conservative"],
+            productionFlow: ["CAD Design", "Milling", "Staining", "Glaze"]
+          },
+          "WAX-01-9D2C": {
+            name: "Diagnostic Wax-Up",
+            description: "Digital or analog diagnostic wax-up for treatment planning.",
+            tags: ["Planning", "Diagnostic", "Aesthetic"],
+            productionFlow: ["Scanning", "Digital Design", "3D Printing (Optional)"]
+          }
         }
     },
     'es-ES': {
@@ -387,6 +535,80 @@ export const translations = {
                 register: "Registrarse"
             },
             copyright: "Todos los derechos reservados."
+        },
+        products: {
+          "ZIRC-001-C72B": {
+            name: "Corona de Zirconio",
+            description: "Corona de zirconio multicapa de alta translucidez, perfecta para resultados estéticos y funcionales.",
+            tags: ["Estética", "Resistencia", "Coronas Unitarias"],
+            productionFlow: ["Modelado", "Fresado", "Sinterización", "Acabado"]
+          },
+          "EMAX-V01-B5A1": {
+            name: "Carilla E-Max",
+            description: "Carilla de disilicato de litio para una estética máxima.",
+            tags: ["Alta Estética", "Carillas", "Facetas"],
+            productionFlow: ["Encerado", "Inyección", "Maquillaje", "Glaseado"]
+          },
+          "TI-IMP-001-9F3E": {
+            name: "Implante de Titanio",
+            description: "Implante de titanio Grado 5 con superficie SLA para una mejor osteointegración.",
+            tags: ["Implante", "Titanio", "Cirugía"],
+            productionFlow: ["Mecanizado", "Tratamiento de Superficie", "Esterilización"]
+          },
+          "DENT-F01-A4B2": {
+            name: "Prótesis Completa",
+            description: "Prótesis completa de acrílico de alto impacto con dientes de primera calidad.",
+            tags: ["Prótesis Removible", "Rehabilitación Total"],
+            productionFlow: ["Modelado", "Articulación", "Acrilado", "Pulido"]
+          },
+          "ALIGN-01-D6C3": {
+            name: "Juego de Alineadores",
+            description: "Juego completo de alineadores transparentes personalizados para tratamiento de ortodoncia.",
+            tags: ["Ortodoncia", "Estética", "Invisible"],
+            productionFlow: ["Setup Virtual", "Impresión 3D", "Termoformado", "Recorte Láser"]
+          },
+          "COMP-R01-E8D4": {
+            name: "Kit de Resina Compuesta",
+            description: "Kit de resina compuesta universal para restauraciones anteriores y posteriores.",
+            tags: ["Restauración", "Clínica", "Material"],
+            productionFlow: ["N/A"]
+          },
+          "PFM-C01-F2A5": {
+            name: "Corona Metal-Cerámica",
+            description: "Corona de porcelana fusionada a metal para un equilibrio entre resistencia y estética.",
+            tags: ["PFM", "Resistencia", "Tradicional"],
+            productionFlow: ["Estructura Metálica", "Aplicación de Porcelana", "Glaseado"]
+          },
+          "CUST-ABUT-01-1B9F": {
+            name: "Pilar Personalizado",
+            description: "Pilar personalizado en CAD/CAM para un ajuste perfecto de la restauración del implante.",
+            tags: ["Implante", "Prótesis sobre Implante", "CAD/CAM"],
+            productionFlow: ["Diseño CAD", "Mecanizado CAM", "Acabado"]
+          },
+          "SURG-G01-3C8E": {
+            name: "Guía Quirúrgica",
+            description: "Guía quirúrgica impresa en 3D para la colocación precisa de implantes.",
+            tags: ["Cirugía Guiada", "Implante", "Impresión 3D"],
+            productionFlow: ["Planificación", "Impresión 3D", "Post-procesado"]
+          },
+          "NG-01-5E6D": {
+            name: "Férula de Descarga",
+            description: "Férula de mordida personalizada para bruxismo y apretamiento.",
+            tags: ["Bruxismo", "Oclusión", "Férula Miorrelajante"],
+            productionFlow: ["Modelado", "Termoformado al Vacío", "Ajuste y Pulido"]
+          },
+          "MB-01-7A4B": {
+            name: "Puente Maryland",
+            description: "Puente adhesivo, una opción conservadora para reemplazar un solo diente.",
+            tags: ["Prótesis Fija", "Adhesiva", "Conservador"],
+            productionFlow: ["Diseño CAD", "Fresado", "Maquillaje", "Glaseado"]
+          },
+          "WAX-01-9D2C": {
+            name: "Encerado Diagnóstico",
+            description: "Encerado diagnóstico digital o analógico para la planificación del tratamiento.",
+            tags: ["Planificación", "Diagnóstico", "Estética"],
+            productionFlow: ["Escaneado", "Diseño Digital", "Impresión 3D (Opcional)"]
+          }
         }
     }
 };
