@@ -13,11 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Progress } from '@/components/ui/progress';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ResponsiveContainer, BarChart, XAxis, YAxis, Tooltip, Bar, LineChart, Line, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, XAxis, YAxis, Tooltip, Bar, Legend } from 'recharts';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
-const metas = [
+const initialMetas = [
   { id: 'm1', kpi: 'Faturamento Mensal', meta_nome: 'Aumentar faturamento em 20%', valor_meta: 50000, valor_atual: 42000, periodo: 'Mensal', responsavel: 'Ana (Comercial)', status: 'em andamento' },
   { id: 'm2', kpi: 'Tempo Médio de Produção', meta_nome: 'Reduzir para 4 dias', valor_meta: 4, valor_atual: 4, periodo: 'Trimestral', responsavel: 'Carlos (Produção)', status: 'concluído' },
   { id: 'm3', kpi: 'Taxa de Conversão', meta_nome: 'Atingir 5% de conversão', valor_meta: 5, valor_atual: 3.8, periodo: 'Mensal', responsavel: 'Beatriz (Marketing)', status: 'atrasado' },
@@ -44,6 +46,43 @@ const metaVsRealData = [
 export default function MetasPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [date, setDate] = useState<Date>();
+  const [metas, setMetas] = useState(initialMetas);
+  const [newMeta, setNewMeta] = useState({ kpi: '', meta_nome: '', valor_meta: '', periodo: '', responsavel: '' });
+  const { toast } = useToast();
+  const router = useRouter();
+
+
+  const handleCreateMeta = () => {
+      const { kpi, meta_nome, valor_meta, periodo, responsavel } = newMeta;
+      if (!kpi || !meta_nome || !valor_meta || !periodo || !responsavel) {
+          toast({
+              title: "Campos obrigatórios",
+              description: "Por favor, preencha todos os campos para criar a meta.",
+              variant: "destructive",
+          });
+          return;
+      }
+
+      const newEntry = {
+          id: `m${metas.length + 1}`,
+          kpi,
+          meta_nome,
+          valor_meta: parseFloat(valor_meta),
+          valor_atual: 0,
+          periodo,
+          responsavel,
+          status: 'não iniciado'
+      };
+
+      setMetas([newEntry, ...metas]);
+      setIsModalOpen(false);
+      setNewMeta({ kpi: '', meta_nome: '', valor_meta: '', periodo: '', responsavel: '' }); // Reset form
+
+      toast({
+          title: "Meta criada com sucesso!",
+          description: `A meta "${meta_nome}" foi adicionada.`,
+      });
+  };
 
   return (
     <main className="flex-1 bg-background p-4 sm:p-6 md:p-8 space-y-8">
@@ -64,30 +103,30 @@ export default function MetasPage() {
               <DialogHeader><DialogTitle className="text-xl">Criar Nova Meta</DialogTitle><DialogDescription>Defina uma nova meta e atribua um responsável para impulsionar os resultados.</DialogDescription></DialogHeader>
               <div className="grid gap-6 py-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label htmlFor="kpi">Vincular a um KPI</Label><Select><SelectTrigger><SelectValue placeholder="Selecione um KPI existente" /></SelectTrigger><SelectContent><SelectItem value="kpi1">Taxa de Conversão</SelectItem><SelectItem value="kpi2">Faturamento Mensal</SelectItem></SelectContent></Select></div>
-                    <div className="space-y-2"><Label htmlFor="meta_nome">Nome da Meta</Label><Input id="meta_nome" placeholder="Ex: Aumentar faturamento em 20%" /></div>
+                    <div className="space-y-2"><Label htmlFor="kpi">Vincular a um KPI</Label><Select onValueChange={(v) => setNewMeta(p => ({...p, kpi: v}))}><SelectTrigger><SelectValue placeholder="Selecione um KPI existente" /></SelectTrigger><SelectContent><SelectItem value="Taxa de Conversão">Taxa de Conversão</SelectItem><SelectItem value="Faturamento Mensal">Faturamento Mensal</SelectItem></SelectContent></Select></div>
+                    <div className="space-y-2"><Label htmlFor="meta_nome">Nome da Meta</Label><Input id="meta_nome" placeholder="Ex: Aumentar faturamento em 20%" value={newMeta.meta_nome} onChange={(e) => setNewMeta(p => ({...p, meta_nome: e.target.value}))}/></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label htmlFor="valor_meta">Valor da Meta</Label><Input id="valor_meta" type="number" placeholder="Ex: 50000" /></div>
-                    <div className="space-y-2"><Label htmlFor="periodo">Período</Label><Select><SelectTrigger><SelectValue placeholder="Selecione o período" /></SelectTrigger><SelectContent><SelectItem value="mensal">Mensal</SelectItem><SelectItem value="trimestral">Trimestral</SelectItem><SelectItem value="anual">Anual</SelectItem></SelectContent></Select></div>
+                    <div className="space-y-2"><Label htmlFor="valor_meta">Valor da Meta</Label><Input id="valor_meta" type="number" placeholder="Ex: 50000" value={newMeta.valor_meta} onChange={(e) => setNewMeta(p => ({...p, valor_meta: e.target.value}))}/></div>
+                    <div className="space-y-2"><Label htmlFor="periodo">Período</Label><Select onValueChange={(v) => setNewMeta(p => ({...p, periodo: v}))}><SelectTrigger><SelectValue placeholder="Selecione o período" /></SelectTrigger><SelectContent><SelectItem value="mensal">Mensal</SelectItem><SelectItem value="trimestral">Trimestral</SelectItem><SelectItem value="anual">Anual</SelectItem></SelectContent></Select></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2"><Label htmlFor="data_inicio">Data de Início</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{date ? format(date, "PPP") : <span>Escolha uma data</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={setDate} initialFocus /></PopoverContent></Popover></div>
-                    <div className="space-y-2"><Label htmlFor="data_fim">Data de Fim</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{date ? format(date, "PPP") : <span>Escolha uma data</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={setDate} initialFocus /></PopoverContent></Popover></div>
+                    <div className="space-y-2"><Label htmlFor="data_fim">Data de Fim</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{date ? format(addDays(date || new Date(), 30), "PPP") : <span>Escolha uma data</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={setDate} initialFocus /></PopoverContent></Popover></div>
                 </div>
-                <div className="space-y-2"><Label htmlFor="responsavel">Responsável</Label><Select><SelectTrigger><SelectValue placeholder="Atribuir a um responsável" /></SelectTrigger><SelectContent><SelectItem value="user1">Ana (Comercial)</SelectItem><SelectItem value="user2">Carlos (Produção)</SelectItem></SelectContent></Select></div>
+                <div className="space-y-2"><Label htmlFor="responsavel">Responsável</Label><Select onValueChange={(v) => setNewMeta(p => ({...p, responsavel: v}))}><SelectTrigger><SelectValue placeholder="Atribuir a um responsável" /></SelectTrigger><SelectContent><SelectItem value="Ana (Comercial)">Ana (Comercial)</SelectItem><SelectItem value="Carlos (Produção)">Carlos (Produção)</SelectItem></SelectContent></Select></div>
               </div>
-              <DialogFooter><Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button><Button type="submit" onClick={() => setIsModalOpen(false)}>Salvar Meta</Button></DialogFooter>
+              <DialogFooter><Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button><Button type="submit" onClick={handleCreateMeta}>Salvar Meta</Button></DialogFooter>
             </DialogContent>
         </Dialog>
       </div>
 
        {/* PERFORMANCE BLOCKS */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Metas Ativas</CardTitle><Target className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">12</div></CardContent></Card>
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Concluídas</CardTitle><CheckCircle className="h-4 w-4 text-green-500"/></CardHeader><CardContent><div className="text-2xl font-bold">8</div></CardContent></Card>
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Atrasadas</CardTitle><XCircle className="h-4 w-4 text-red-500"/></CardHeader><CardContent><div className="text-2xl font-bold">1</div></CardContent></Card>
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Em Andamento</CardTitle><Activity className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">3</div></CardContent></Card>
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Metas Ativas</CardTitle><Target className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{metas.filter(m => m.status === 'em andamento').length}</div></CardContent></Card>
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Concluídas</CardTitle><CheckCircle className="h-4 w-4 text-green-500"/></CardHeader><CardContent><div className="text-2xl font-bold">{metas.filter(m => m.status === 'concluído').length}</div></CardContent></Card>
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Atrasadas</CardTitle><XCircle className="h-4 w-4 text-red-500"/></CardHeader><CardContent><div className="text-2xl font-bold">{metas.filter(m => m.status === 'atrasado').length}</div></CardContent></Card>
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Não Iniciadas</CardTitle><Activity className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{metas.filter(m => m.status === 'não iniciado').length}</div></CardContent></Card>
             <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Cresc. Médio</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">+5.2%</div></CardContent></Card>
         </div>
 
@@ -124,7 +163,7 @@ export default function MetasPage() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                            <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => router.push(`/admin/esap/acompanhamento?metaId=${meta.id}`)}>Ver Detalhes</DropdownMenuItem>
                                             <DropdownMenuItem>Editar Meta</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>

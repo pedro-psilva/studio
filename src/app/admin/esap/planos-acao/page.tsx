@@ -16,9 +16,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 
-const acoes = [
+const initialAcoes = [
   { id: 'a1', meta: 'Aumentar faturamento em 20%', acao_nome: 'Campanha de E-mail Marketing', responsavel: 'Beatriz (Marketing)', progresso: 75, prazo: '2024-08-15', status: 'Em Andamento' },
   { id: 'a2', meta: 'Reduzir para 4 dias', acao_nome: 'Otimizar fluxo de CAD/CAM', responsavel: 'Carlos (Produção)', progresso: 100, prazo: '2024-07-30', status: 'Concluído' },
   { id: 'a3', meta: 'Aumentar faturamento em 20%', acao_nome: 'Programa de indicação para clientes', responsavel: 'Ana (Comercial)', progresso: 20, prazo: '2024-09-01', status: 'Não Iniciado' },
@@ -28,6 +29,41 @@ const acoes = [
 export default function PlanosAcaoPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [date, setDate] = useState<Date>();
+  const [acoes, setAcoes] = useState(initialAcoes);
+  const [newAction, setNewAction] = useState({ meta: '', acao_nome: '', descricao: '', responsavel: ''});
+  const { toast } = useToast();
+
+  const handleCreateAction = () => {
+      const { meta, acao_nome, responsavel } = newAction;
+      if(!meta || !acao_nome || !responsavel || !date) {
+           toast({
+              title: "Campos obrigatórios",
+              description: "Por favor, preencha todos os campos para criar a ação.",
+              variant: "destructive",
+          });
+          return;
+      }
+      
+      const newEntry = {
+          id: `a${acoes.length + 1}`,
+          meta,
+          acao_nome,
+          responsavel,
+          progresso: 0,
+          prazo: format(date, 'yyyy-MM-dd'),
+          status: 'Não Iniciado'
+      };
+
+      setAcoes([newEntry, ...acoes]);
+      setIsModalOpen(false);
+      setNewAction({ meta: '', acao_nome: '', descricao: '', responsavel: '' }); // Reset form
+      setDate(undefined);
+
+       toast({
+          title: "Ação criada com sucesso!",
+          description: `A ação "${acao_nome}" foi adicionada.`,
+      });
+  };
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -52,30 +88,32 @@ export default function PlanosAcaoPage() {
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                     <Label htmlFor="meta">Selecionar Meta</Label>
-                    <Select>
+                    <Select onValueChange={(v) => setNewAction(p => ({...p, meta: v}))}>
                         <SelectTrigger><SelectValue placeholder="Vincule a uma meta existente" /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="m1">Aumentar faturamento em 20%</SelectItem>
-                            <SelectItem value="m2">Reduzir para 4 dias</SelectItem>
+                            <SelectItem value="Aumentar faturamento em 20%">Aumentar faturamento em 20%</SelectItem>
+                            <SelectItem value="Reduzir para 4 dias">Reduzir para 4 dias</SelectItem>
+                             <SelectItem value="Atingir 5% de conversão">Atingir 5% de conversão</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="acao_nome">Nome da Ação</Label>
-                    <Input id="acao_nome" placeholder="Ex: Criar campanha de e-mail marketing" />
+                    <Input id="acao_nome" placeholder="Ex: Criar campanha de e-mail marketing" value={newAction.acao_nome} onChange={(e) => setNewAction(p => ({...p, acao_nome: e.target.value}))}/>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="descricao">Descrição</Label>
-                    <Textarea id="descricao" placeholder="Detalhes sobre a ação a ser executada" />
+                    <Textarea id="descricao" placeholder="Detalhes sobre a ação a ser executada" value={newAction.descricao} onChange={(e) => setNewAction(p => ({...p, descricao: e.target.value}))}/>
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="responsavel">Responsável</Label>
-                        <Select>
+                        <Select onValueChange={(v) => setNewAction(p => ({...p, responsavel: v}))}>
                             <SelectTrigger><SelectValue placeholder="Atribuir a um responsável" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="user1">Ana (Comercial)</SelectItem>
-                                <SelectItem value="user2">Beatriz (Marketing)</SelectItem>
+                                <SelectItem value="Ana (Comercial)">Ana (Comercial)</SelectItem>
+                                <SelectItem value="Beatriz (Marketing)">Beatriz (Marketing)</SelectItem>
+                                <SelectItem value="Carlos (Produção)">Carlos (Produção)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -95,7 +133,7 @@ export default function PlanosAcaoPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                <Button type="submit" onClick={() => setIsModalOpen(false)}>Salvar Ação</Button>
+                <Button type="submit" onClick={handleCreateAction}>Salvar Ação</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -130,7 +168,18 @@ export default function PlanosAcaoPage() {
                   </TableCell>
                   <TableCell>{format(new Date(acao.prazo), 'dd/MM/yyyy')}</TableCell>
                   <TableCell>
-                    <Badge variant={acao.status === 'Atrasado' ? 'destructive' : 'default'}>{acao.status}</Badge>
+                    <Badge 
+                      variant={
+                          acao.status === 'Atrasado' ? 'destructive' :
+                          acao.status === 'Concluído' ? 'secondary' :
+                          'default'
+                      }
+                      className={
+                          acao.status === 'Concluído' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''
+                      }
+                    >
+                      {acao.status}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
