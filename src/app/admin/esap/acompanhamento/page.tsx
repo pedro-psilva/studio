@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { PlusCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -8,6 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 const metaData = {
     nome: 'Aumentar faturamento em 20%',
