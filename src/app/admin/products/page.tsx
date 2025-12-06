@@ -38,12 +38,12 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -55,6 +55,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import type { ServiceDocument } from '@/lib/serviceService';
 import { createService, deleteService, listServices, updateService } from '@/lib/serviceService';
@@ -106,7 +107,7 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilterEnabled, setStatusFilterEnabled] = useState(false);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
 
   const [newActive, setNewActive] = useState(true);
@@ -201,7 +202,7 @@ export default function ProductsPage() {
   function openCreateDialog() {
     setEditingServiceId(null);
     resetFormState();
-    setIsCreateDialogOpen(true);
+    setIsSheetOpen(true);
   }
 
   function openEditDialog(service: ServiceDocument) {
@@ -225,7 +226,7 @@ export default function ProductsPage() {
     setNewImageFile(null);
     setNewPromoTitle(service.tituloPromocional ?? '');
     setNewColor(service.corRepresentacao ?? '#4F46E5');
-    setIsCreateDialogOpen(true);
+    setIsSheetOpen(true);
   }
 
   async function handleSaveService() {
@@ -429,7 +430,7 @@ export default function ProductsPage() {
 
       resetFormState();
       setEditingServiceId(null);
-      setIsCreateDialogOpen(false);
+      setIsSheetOpen(false);
     } catch (error) {
       toast({
         title: 'Erro ao salvar produto',
@@ -575,8 +576,8 @@ export default function ProductsPage() {
                     </DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
+                <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                  <SheetTrigger asChild>
                     <Button
                       size="sm"
                       className="h-8 gap-1"
@@ -587,274 +588,146 @@ export default function ProductsPage() {
                         Adicionar Produto
                       </span>
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>
+                  </SheetTrigger>
+                  <SheetContent className="w-full sm:max-w-2xl">
+                    <SheetHeader>
+                      <SheetTitle>
                         {editingServiceId ? 'Editar produto/serviço' : 'Novo produto/serviço'}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between space-x-2">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="active">Ativo</Label>
-                          <p className="text-xs text-muted-foreground">
-                            Define se o produto está visível para uso.
-                          </p>
+                      </SheetTitle>
+                    </SheetHeader>
+                    <div className="py-4">
+                      <Tabs defaultValue="basic">
+                        <TabsList className="grid w-full grid-cols-4">
+                          <TabsTrigger value="basic">Básico</TabsTrigger>
+                          <TabsTrigger value="production">Produção</TabsTrigger>
+                          <TabsTrigger value="media">Mídia</TabsTrigger>
+                          <TabsTrigger value="advanced">Avançado</TabsTrigger>
+                        </TabsList>
+                        <div className="mt-4 max-h-[75vh] overflow-y-auto p-1">
+                          <TabsContent value="basic" className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="name">Nome</Label>
+                                <Input id="name" value={newName} onChange={(event) => setNewName(event.target.value)} />
+                              </div>
+                              <div className="grid gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                  <Label htmlFor="price">Preço base</Label>
+                                  <Input id="price" value={newPrice} onChange={(event) => setNewPrice(event.target.value)} placeholder="Ex: 350,00" />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="priceVisibility">Visibilidade do preço</Label>
+                                  <Select value={newPriceVisibility} onValueChange={(value) => setNewPriceVisibility(value as 'exibido' | 'escondido')}>
+                                    <SelectTrigger id="priceVisibility"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="exibido">Exibido</SelectItem>
+                                      <SelectItem value="escondido">Escondido</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="description">Descrição</Label>
+                                <Textarea id="description" value={newDescription} onChange={(event) => setNewDescription(event.target.value)} />
+                              </div>
+                              <div className="grid gap-4 md:grid-cols-2">
+                                <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+                                  <div className="space-y-0.5">
+                                    <Label htmlFor="active">Ativo</Label>
+                                    <p className="text-xs text-muted-foreground">Define se o produto está visível para uso.</p>
+                                  </div>
+                                  <Switch id="active" checked={newActive} onCheckedChange={setNewActive} />
+                                </div>
+                                <div className="space-y-2 rounded-lg border p-4">
+                                  <Label htmlFor="visibility">Visibilidade</Label>
+                                  <Select value={newVisibility} onValueChange={(value) => setNewVisibility(value as 'publico' | 'interno')}>
+                                    <SelectTrigger id="visibility"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="publico">Público</SelectItem>
+                                      <SelectItem value="interno">Interno</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                               <div className="space-y-2">
+                                <Label htmlFor="tags">Tags (separe por vírgula)</Label>
+                                <Input id="tags" value={newTags} onChange={(event) => setNewTags(event.target.value)} placeholder="zircônia, coroa, posterior" />
+                              </div>
+                          </TabsContent>
+                          <TabsContent value="production" className="space-y-4">
+                             <div className="space-y-2">
+                                <Label htmlFor="prazoEntrega">Prazo de entrega (dias)</Label>
+                                <Input id="prazoEntrega" type="number" min={0} value={newPrazoEntrega} onChange={(event) => setNewPrazoEntrega(event.target.value)} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Fluxo de produção</Label>
+                                <div className="grid gap-1 md:grid-cols-2">
+                                  {PRODUCTION_STEPS.map((step) => (
+                                    <label key={step} className="flex items-center gap-2 text-sm">
+                                      <Checkbox checked={newFluxoProducao.includes(step)} onCheckedChange={(checked) => {
+                                          setNewFluxoProducao((prev) => {
+                                            if (checked) return [...prev, step];
+                                            return prev.filter((item) => item !== step);
+                                          });
+                                        }} />
+                                      <span>{step}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="arquivosNecessarios">Arquivos necessários (separe por vírgula)</Label>
+                                <Input id="arquivosNecessarios" value={newArquivosNecessarios} onChange={(event) => setNewArquivosNecessarios(event.target.value)} placeholder="Modelo digital superior, Modelo digital inferior, ..." />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="arquivosOpcionais">Arquivos opcionais (separe por vírgula)</Label>
+                                <Input id="arquivosOpcionais" value={newArquivosOpcionais} onChange={(event) => setNewArquivosOpcionais(event.target.value)} placeholder="Foto sorriso, Rx panorâmica, ..." />
+                              </div>
+                          </TabsContent>
+                          <TabsContent value="media" className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="imagemArquivo">Foto 1 — Hero Estético</Label>
+                                <Input id="imagemArquivo" type="file" accept="image/*" onChange={(event) => setNewImageFile(event.target.files?.[0] ?? null)} />
+                                <p className="text-xs text-muted-foreground">Imagem principal do produto, usada como destaque.</p>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="imagemArquivo2">Foto 2 — Close-up do Material</Label>
+                                <Input id="imagemArquivo2" type="file" accept="image/*" onChange={(event) => setNewImageFile2(event.target.files?.[0] ?? null)} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="imagemArquivo3">Foto 3 — Técnica / CAD-CAM</Label>
+                                <Input id="imagemArquivo3" type="file" accept="image/*" onChange={(event) => setNewImageFile3(event.target.files?.[0] ?? null)} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="imagemArquivo4">Foto 4 — Aplicação Clínica</Label>
+                                <Input id="imagemArquivo4" type="file" accept="image/*" onChange={(event) => setNewImageFile4(event.target.files?.[0] ?? null)} />
+                              </div>
+                          </TabsContent>
+                           <TabsContent value="advanced" className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="tituloPromocional">Título promocional</Label>
+                                <Input id="tituloPromocional" value={newPromoTitle} onChange={(event) => setNewPromoTitle(event.target.value)} placeholder="Lançamento com 10% OFF" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="corRepresentacao">Cor de representação</Label>
+                                <Input id="corRepresentacao" type="text" value={newColor} onChange={(event) => setNewColor(event.target.value)} placeholder="#4F46E5" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="camposPersonalizados">Campos personalizados (um por linha)</Label>
+                                <Textarea id="camposPersonalizados" value={newCustomFieldsText} onChange={(event) => setNewCustomFieldsText(event.target.value)} placeholder={'Observações clínicas\nObservações do paciente\nInstruções ao laboratório'} />
+                                <p className="text-xs text-muted-foreground">Cada linha será convertida em um campo de texto opcional.</p>
+                              </div>
+                           </TabsContent>
                         </div>
-                        <Switch
-                          id="active"
-                          checked={newActive}
-                          onCheckedChange={setNewActive}
-                        />
-                      </div>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="visibility">Visibilidade</Label>
-                          <Select
-                            value={newVisibility}
-                            onValueChange={(value) =>
-                              setNewVisibility(value as 'publico' | 'interno')
-                            }
-                          >
-                            <SelectTrigger id="visibility">
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="publico">Público</SelectItem>
-                              <SelectItem value="interno">Interno</SelectItem>
-                            </SelectContent>
-                          </Select>
+                         <div className="flex justify-end gap-2 pt-6 border-t mt-4">
+                          <Button type="button" variant="outline" onClick={() => { setIsSheetOpen(false); setEditingServiceId(null); resetFormState(); }}>Cancelar</Button>
+                          <Button type="button" onClick={handleSaveService}>
+                            {editingServiceId ? 'Salvar alterações' : 'Salvar'}
+                          </Button>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="priceVisibility">Visibilidade do preço</Label>
-                          <Select
-                            value={newPriceVisibility}
-                            onValueChange={(value) =>
-                              setNewPriceVisibility(
-                                value as 'exibido' | 'escondido'
-                              )
-                            }
-                          >
-                            <SelectTrigger id="priceVisibility">
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="exibido">Exibido</SelectItem>
-                              <SelectItem value="escondido">Escondido</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Nome</Label>
-                        <Input
-                          id="name"
-                          value={newName}
-                          onChange={(event) => setNewName(event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="price">Preço base</Label>
-                        <Input
-                          id="price"
-                          value={newPrice}
-                          onChange={(event) => setNewPrice(event.target.value)}
-                          placeholder="Ex: 350,00"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="prazoEntrega">Prazo de entrega (dias)</Label>
-                        <Input
-                          id="prazoEntrega"
-                          type="number"
-                          min={0}
-                          value={newPrazoEntrega}
-                          onChange={(event) => setNewPrazoEntrega(event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="description">Descrição</Label>
-                        <Textarea
-                          id="description"
-                          value={newDescription}
-                          onChange={(event) =>
-                            setNewDescription(event.target.value)
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Fluxo de produção</Label>
-                        <div className="grid gap-1 md:grid-cols-2">
-                          {PRODUCTION_STEPS.map((step) => (
-                            <label
-                              key={step}
-                              className="flex items-center gap-2 text-sm"
-                            >
-                              <Checkbox
-                                checked={newFluxoProducao.includes(step)}
-                                onCheckedChange={(checked) => {
-                                  setNewFluxoProducao((prev) => {
-                                    if (checked) {
-                                      if (prev.includes(step)) return prev;
-                                      return [...prev, step];
-                                    }
-                                    return prev.filter((item) => item !== step);
-                                  });
-                                }}
-                              />
-                              <span>{step}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="tags">Tags (separe por vírgula)</Label>
-                        <Input
-                          id="tags"
-                          value={newTags}
-                          onChange={(event) => setNewTags(event.target.value)}
-                          placeholder="zircônia, coroa, posterior"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="arquivosNecessarios">
-                          Arquivos necessários (separe por vírgula)
-                        </Label>
-                        <Input
-                          id="arquivosNecessarios"
-                          value={newArquivosNecessarios}
-                          onChange={(event) =>
-                            setNewArquivosNecessarios(event.target.value)
-                          }
-                          placeholder="Modelo digital superior, Modelo digital inferior, ..."
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="arquivosOpcionais">
-                          Arquivos opcionais (separe por vírgula)
-                        </Label>
-                        <Input
-                          id="arquivosOpcionais"
-                          value={newArquivosOpcionais}
-                          onChange={(event) =>
-                            setNewArquivosOpcionais(event.target.value)
-                          }
-                          placeholder="Foto sorriso, Rx panorâmica, ..."
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="imagemArquivo">Foto 1 — Hero Estético</Label>
-                        <Input
-                          id="imagemArquivo"
-                          type="file"
-                          accept="image/*"
-                          onChange={(event) =>
-                            setNewImageFile(
-                              event.target.files?.[0] ?? null
-                            )
-                          }
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Imagem principal do produto, usada como destaque.
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="imagemArquivo2">Foto 2 — Close-up do Material</Label>
-                        <Input
-                          id="imagemArquivo2"
-                          type="file"
-                          accept="image/*"
-                          onChange={(event) =>
-                            setNewImageFile2(
-                              event.target.files?.[0] ?? null
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="imagemArquivo3">Foto 3 — Técnica / CAD-CAM</Label>
-                        <Input
-                          id="imagemArquivo3"
-                          type="file"
-                          accept="image/*"
-                          onChange={(event) =>
-                            setNewImageFile3(
-                              event.target.files?.[0] ?? null
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="imagemArquivo4">Foto 4 — Aplicação Clínica</Label>
-                        <Input
-                          id="imagemArquivo4"
-                          type="file"
-                          accept="image/*"
-                          onChange={(event) =>
-                            setNewImageFile4(
-                              event.target.files?.[0] ?? null
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="tituloPromocional">Título promocional</Label>
-                        <Input
-                          id="tituloPromocional"
-                          value={newPromoTitle}
-                          onChange={(event) => setNewPromoTitle(event.target.value)}
-                          placeholder="Lançamento com 10% OFF"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="corRepresentacao">Cor de representação</Label>
-                        <Input
-                          id="corRepresentacao"
-                          type="text"
-                          value={newColor}
-                          onChange={(event) => setNewColor(event.target.value)}
-                          placeholder="#4F46E5"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="camposPersonalizados">
-                          Campos personalizados (um por linha)
-                        </Label>
-                        <Textarea
-                          id="camposPersonalizados"
-                          value={newCustomFieldsText}
-                          onChange={(event) =>
-                            setNewCustomFieldsText(event.target.value)
-                          }
-                          placeholder={
-                            'Observações clínicas\nObservações do paciente\nInstruções ao laboratório'
-                          }
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Cada linha será convertida em um campo de texto
-                          opcional com um identificador automático.
-                        </p>
-                      </div>
-                      <div className="flex justify-end gap-2 pt-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setIsCreateDialogOpen(false);
-                            setEditingServiceId(null);
-                            resetFormState();
-                          }}
-                        >
-                          Cancelar
-                        </Button>
-                        <Button type="button" onClick={handleSaveService}>
-                          {editingServiceId ? 'Salvar alterações' : 'Salvar'}
-                        </Button>
-                      </div>
+                      </Tabs>
                     </div>
-                  </DialogContent>
-                </Dialog>
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
           </div>
@@ -875,8 +748,7 @@ export default function ProductsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="hidden w-[100px] sm:table-cell">
-                        Imagem aqui
-                        <span className="sr-only">Imagem</span>
+                        Imagem
                       </TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead>Código</TableHead>
