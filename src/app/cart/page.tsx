@@ -30,7 +30,7 @@ export default function CartPage() {
   const [loadingCart, setLoadingCart] = useState(true);
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [userAddress, setUserAddress] = useState<{ cep?: string; number?: string; complement?: string } | null>(null);
-  const { t } = useTranslation('common');
+  const { t, formatCurrency } = useTranslation('common');
   const { user } = useAuth();
   const router = useRouter();
 
@@ -305,7 +305,7 @@ export default function CartPage() {
                             {item.service.nome}
                           </Link>
                           {item.patientName && <p className="text-sm font-medium text-primary">Paciente: {item.patientName}</p>}
-                          <p className="text-sm text-muted-foreground">R$ {item.service.precoBase.toFixed(2)}</p>
+                          <p className="text-sm text-muted-foreground">{formatCurrency(item.service.precoBase)}</p>
                            <div className="flex items-center justify-between mt-4">
                              <div className="flex items-center border rounded-md">
                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)} disabled={isCustom}>
@@ -321,7 +321,7 @@ export default function CartPage() {
                               </Button>
                            </div>
                         </div>
-                         <p className="text-lg font-bold w-full sm:w-auto text-right">R$ {(item.service.precoBase * item.quantity).toFixed(2)}</p>
+                         <p className="text-lg font-bold w-full sm:w-auto text-right">{formatCurrency(item.service.precoBase * item.quantity)}</p>
                       </div>
                       
                       {/* Customization Details */}
@@ -360,16 +360,16 @@ export default function CartPage() {
                     <CardContent className="space-y-4">
                         <div className="flex justify-between">
                             <span>Subtotal</span>
-                            <span>R$ {subtotal.toFixed(2)}</span>
+                            <span>{formatCurrency(subtotal)}</span>
                         </div>
                          <div className="flex justify-between">
                             <span>Frete</span>
-                            <span>R$ {shipping.toFixed(2)}</span>
+                            <span>{formatCurrency(shipping)}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between font-bold text-lg">
                             <span>Total</span>
-                            <span>R$ {total.toFixed(2)}</span>
+                            <span>{formatCurrency(total)}</span>
                         </div>
                          <Button size="lg" className="w-full mt-4" onClick={handleCheckout}>
                             Finalizar Compra <ArrowRight className="ml-2 h-4 w-4"/>

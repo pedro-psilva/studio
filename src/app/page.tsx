@@ -215,7 +215,7 @@ export default function HomePage() {
 }
 
 function ProductCard({ service }: { service: ServiceDocument }) {
-  const { t } = useTranslation("common");
+  const { t, formatCurrency } = useTranslation("common");
   const requiresUpload = (service.arquivosNecessarios ?? []).length > 0;
 
   return (
@@ -260,7 +260,7 @@ function ProductCard({ service }: { service: ServiceDocument }) {
       </CardContent>
       <CardFooter className="flex items-center justify-between p-4 bg-background/30">
         <p className="text-lg font-bold text-primary">
-          R$ {service.precoBase.toFixed(2)}
+          {formatCurrency(service.precoBase)}
         </p>
         <Button size="sm" asChild>
           <Link href={`/products/${service.id}`}>

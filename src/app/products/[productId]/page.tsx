@@ -10,6 +10,7 @@ import {
   X,
   File as FileIcon,
   ChevronsRight,
+  ArrowLeft,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,8 @@ import {
   type CartItemFirestore,
 } from "@/lib/cartService";
 import { Progress } from "@/components/ui/progress";
+import { SeletorInterativoFDI } from '@/components/fdi-selector';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const colorOptions = {
   "VITA CLASSIC": {
@@ -84,125 +87,11 @@ const STEPS = [
   { id: "review", title: "Revisão" },
 ];
 
-interface ToothPosition {
-  tooth: number;
-  top: string;
-  left: string;
-}
-
-interface ToothButtonProps {
-  tooth: number;
-  isSelected: boolean;
-  onClick: (tooth: number) => void;
-  style: React.CSSProperties;
-}
-
-function ToothButton({ tooth, isSelected, onClick, style }: ToothButtonProps) {
-  return (
-    <button
-      type="button"
-      style={style}
-      className={
-        "absolute flex h-9 w-9 items-center justify-center rounded-full border text-sm font-light shadow-md transition-all duration-200 active:scale-95 " +
-        (isSelected
-          // ESTADO SELECIONADO: fundo/borda azul e texto branco
-          ? "scale-105 border-blue-500 bg-blue-500 text-white font-medium"
-          // ESTADO NORMAL: dente branco no light, translúcido no dark
-          : "border-slate-200 bg-white text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-white hover:border-blue-500")
-      }
-      onClick={() => onClick(tooth)}
-    >
-      {tooth}
-    </button>
-  );
-}
-
-const upperArcadePositions: ToothPosition[] = [
-  { tooth: 18, top: "120px", left: "80px" },
-  { tooth: 17, top: "95px", left: "95px" },
-  { tooth: 16, top: "70px", left: "115px" },
-  { tooth: 15, top: "45px", left: "140px" },
-  { tooth: 14, top: "28px", left: "165px" },
-  { tooth: 13, top: "18px", left: "190px" },
-  { tooth: 12, top: "12px", left: "218px" },
-  { tooth: 11, top: "10px", left: "248px" },
-  { tooth: 21, top: "10px", left: "282px" },
-  { tooth: 22, top: "12px", left: "312px" },
-  { tooth: 23, top: "18px", left: "340px" },
-  { tooth: 24, top: "28px", left: "365px" },
-  { tooth: 25, top: "45px", left: "390px" },
-  { tooth: 26, top: "70px", left: "415px" },
-  { tooth: 27, top: "95px", left: "435px" },
-  { tooth: 28, top: "120px", left: "450px" },
-];
-
-const lowerArcadePositions: ToothPosition[] = [
-  { tooth: 48, top: "120px", left: "80px" },
-  { tooth: 47, top: "95px", left: "95px" },
-  { tooth: 46, top: "70px", left: "115px" },
-  { tooth: 45, top: "45px", left: "140px" },
-  { tooth: 44, top: "28px", left: "165px" },
-  { tooth: 43, top: "18px", left: "190px" },
-  { tooth: 42, top: "12px", left: "218px" },
-  { tooth: 41, top: "10px", left: "248px" },
-  { tooth: 31, top: "10px", left: "282px" },
-  { tooth: 32, top: "12px", left: "312px" },
-  { tooth: 33, top: "18px", left: "340px" },
-  { tooth: 34, top: "28px", left: "365px" },
-  { tooth: 35, top: "45px", left: "390px" },
-  { tooth: 36, top: "70px", left: "415px" },
-  { tooth: 37, top: "95px", left: "435px" },
-  { tooth: 38, top: "120px", left: "450px" },
-];
-
-function ArcadaSuperiorFDI({
-  selectedTeeth,
-  onToothClick,
-}: {
-  selectedTeeth: number[];
-  onToothClick: (tooth: number) => void;
-}) {
-  return (
-    <div className="relative w-[540px] h-[200px] bg-transparent">
-      {upperArcadePositions.map(({ tooth, top, left }) => (
-        <ToothButton
-          key={tooth}
-          tooth={tooth}
-          isSelected={selectedTeeth.includes(tooth)}
-          onClick={onToothClick}
-          style={{ top, left }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ArcadaInferiorFDI({
-  selectedTeeth,
-  onToothClick,
-}: {
-  selectedTeeth: number[];
-  onToothClick: (tooth: number) => void;
-}) {
-  return (
-    <div className="relative w-[540px] h-[200px] bg-transparent scale-y-[-1]">
-      {lowerArcadePositions.map(({ tooth, top, left }) => (
-        <ToothButton
-          key={tooth}
-          tooth={tooth}
-          isSelected={selectedTeeth.includes(tooth)}
-          onClick={onToothClick}
-          style={{ top, left, transform: "scaleY(-1)" }}
-        />
-      ))}
-    </div>
-  );
-}
 
 export default function ProductDetailPage() {
   const params = useParams();
   const { productId } = params as { productId: string };
-  const { t } = useTranslation("home");
+  const { t, formatCurrency } = useTranslation("home");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -316,22 +205,6 @@ export default function ProductDetailPage() {
     Array.isArray(service.arquivosNecessarios) &&
     service.arquivosNecessarios.length > 0;
 
-  function toggleTooth(tooth: number) {
-    setSelectedTeeth((prev) =>
-      prev.includes(tooth)
-        ? prev.filter((t) => t !== tooth)
-        : [...prev, tooth].sort((a, b) => a - b)
-    );
-  }
-
-  function selectSmileTeeth() {
-    setSelectedTeeth([15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35]);
-  }
-
-  function clearSelection() {
-    setSelectedTeeth([]);
-  }
-
   function resetFlow() {
     setCurrentStep(0);
     setSelectedTeeth([]);
@@ -354,7 +227,7 @@ export default function ProductDetailPage() {
       errors.teeth = "Selecione ao menos 1 dente.";
     }
 
-    if (currentStep === 2 && requiresStl && uploadedFiles.length === 0) {
+    if (currentStep === 2 && requiresStl && uploadedFiles.length === 0 && !existingStlFileName) {
       errors.files = "Envie ao menos 1 arquivo clínico.";
     }
 
@@ -366,9 +239,13 @@ export default function ProductDetailPage() {
     return Object.keys(errors).length === 0;
   }
 
-  function handleNext() {
+  function handleNext(data?: any) {
+    if (currentStep === 0) {
+      setSelectedTeeth(data as number[]);
+    }
+    
     if (!validateStep()) return;
-
+    
     if (currentStep < STEPS.length - 1) {
       setCurrentStep((prev) => prev + 1);
     } else {
@@ -393,7 +270,7 @@ export default function ProductDetailPage() {
     if (!validateStep()) return;
 
     // TODO: upload real dos arquivos para Storage e uso das URLs
-    const stlFileUrl = uploadedFiles.length > 0 ? uploadedFiles[0].name : undefined;
+    const stlFileUrl = uploadedFiles.length > 0 ? uploadedFiles[0].name : existingStlFileName ?? undefined;
 
     const cartItem: CartItemFirestore = {
       productId: service.id,
@@ -436,35 +313,6 @@ export default function ProductDetailPage() {
 
   function removeFile(fileName: string) {
     setUploadedFiles((prev) => prev.filter((f) => f.name !== fileName));
-  }
-
-  function handleSaveDraft() {
-    if (!service) return;
-
-    try {
-      if (typeof window === "undefined") return;
-
-      const draftKey = `serviceDraft:${service.id}`;
-      const draft = {
-        productId: service.id,
-        selectedTeeth,
-        selectedColor,
-        patientData,
-        // não dá para persistir os arquivos completos com File API de forma simples;
-        // guardamos apenas os nomes para referência visual futura, se necessário.
-        uploadedFileNames: uploadedFiles.map((f) => f.name),
-        currentStep,
-        createdAt: new Date().toISOString(),
-      };
-
-      window.localStorage.setItem(draftKey, JSON.stringify(draft));
-      // após salvar o rascunho, avança para o próximo passo (se existir)
-      setCurrentStep((prev) =>
-        prev < STEPS.length - 1 ? prev + 1 : prev
-      );
-    } catch (e) {
-      console.error("Erro ao salvar rascunho do serviço:", e);
-    }
   }
 
   if (!loading && !service && !error) {
@@ -574,7 +422,7 @@ export default function ProductDetailPage() {
                     href="/products"
                     className="text-sm text-muted-foreground hover:text-primary flex items-center mb-2"
                   >
-                    {/* ChevronLeft removido para simplificar */}
+                    <ArrowLeft className="mr-2 h-4 w-4" />
                     Voltar para produtos
                   </Link>
                   {service.tituloPromocional && (
@@ -589,7 +437,7 @@ export default function ProductDetailPage() {
                   Código: {service.codigo}
                 </p>
                 <p className="text-3xl font-bold text-primary mb-4">
-                  R$ {service.precoBase.toFixed(2)}
+                  {formatCurrency(service.precoBase)}
                 </p>
 
                 {service.prazoEntrega > 0 && (
@@ -624,143 +472,69 @@ export default function ProductDetailPage() {
                         Personalize seu Produto: {service.nome}
                       </DialogTitle>
                       <DialogDescription>
-                        Passo {currentStep + 1} de {STEPS.length}: {" "}
+                        Passo {currentStep + 1} de {STEPS.length}:{" "}
                         {STEPS[currentStep].title}
                       </DialogDescription>
                       <Progress value={progress} className="mt-2" />
                     </DialogHeader>
 
                     <div className="flex-1 overflow-y-auto pr-6 -mr-6">
-                      {/* Step 1: Teeth Selection com arcada FDI antiga */}
-                      <div className={currentStep === 0 ? "block" : "hidden"}>
-                        <h3 className="text-lg font-semibold mb-4 text-center">
-                          Selecione os dentes
-                        </h3>
-
-                        <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-                          <div className="flex-1 flex flex-col items-center justify-center py-1 scale-95 md:scale-100">
-                            <ArcadaSuperiorFDI
-                              selectedTeeth={selectedTeeth}
-                              onToothClick={toggleTooth}
-                            />
-                            <div className="h-2" />
-                            <ArcadaInferiorFDI
-                              selectedTeeth={selectedTeeth}
-                              onToothClick={toggleTooth}
-                            />
-                          </div>
-
-                          <div className="w-full md:w-64 lg:w-72 space-y-4">
-                            <div className="border rounded-md p-3 bg-muted/40 min-h-[80px]">
-                              <p className="text-xs font-semibold mb-2">
-                                Dentes selecionados
-                              </p>
-                              {selectedTeeth.length > 0 ? (
-                                <div className="flex flex-wrap gap-2">
-                                  {selectedTeeth.map((tooth) => (
-                                    <Badge
-                                      key={tooth}
-                                      variant="default"
-                                      className="relative text-xs bg-primary cursor-pointer hover:bg-primary/80 flex items-center justify-center px-2 py-1 pr-3"
-                                      onClick={() => toggleTooth(tooth)}
-                                    >
-                                      <span>{tooth}</span>
-                                      <span className="absolute -top-1 -right-1 text-[9px] leading-none bg-red-600 text-white rounded-full px-1 pb-[1px]">
-                                        ×
-                                      </span>
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-xs text-muted-foreground">
-                                  Nenhum dente selecionado
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                className="w-full"
-                                onClick={selectSmileTeeth}
-                              >
-                                Selecionar sorriso
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full"
-                                onClick={clearSelection}
-                              >
-                                Limpar seleção
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-
-                        {formErrors.teeth && (
-                          <p className="text-sm text-destructive mt-4 text-center">
-                            {formErrors.teeth}
-                          </p>
-                        )}
+                      {/* Step 1: Teeth Selection */}
+                      <div className={currentStep === 0 ? 'block' : 'hidden'}>
+                        <SeletorInterativoFDI 
+                          initialSelection={selectedTeeth}
+                          onNext={(selection) => handleNext(selection)}
+                        />
+                        {formErrors.teeth && <p className="text-sm text-center text-destructive mt-4">{formErrors.teeth}</p>}
                       </div>
 
                       {/* Step 2: Color Selection */}
-                      <div
-                        className={currentStep === 1 ? "block" : "hidden"}
-                      >
+                      <div className={currentStep === 1 ? "block" : "hidden"}>
                         <h3 className="text-lg font-semibold mb-4">
                           SELECIONE A COR DESEJADA
                         </h3>
-                        <RadioGroup
-                          value={selectedColor || ""}
-                          onValueChange={setSelectedColor}
-                        >
-                          {/* acordeão de sistemas/tons */}
-                          <div className="space-y-2">
-                            {Object.entries(colorOptions).map(
-                              ([system, subGroups]) => (
-                                <div key={system} className="border rounded-md">
-                                  <div className="px-4 py-2 font-medium">
-                                    {system}
-                                  </div>
-                                  <div className="px-4 pb-3 space-y-2">
-                                    {Object.entries(subGroups).map(
-                                      ([groupName, colors]) => (
-                                        <div key={groupName}>
-                                          <p className="text-xs font-semibold mb-1 text-muted-foreground">
-                                            {groupName}
-                                          </p>
-                                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                                            {colors.map((color) => (
-                                              <Label
-                                                key={color}
-                                                htmlFor={color}
-                                                className={`flex items-center justify-center p-2 rounded-md border-2 cursor-pointer transition-colors text-xs sm:text-sm ${
-                                                  selectedColor === color
-                                                    ? "border-primary bg-primary/10"
-                                                    : "border-muted"
-                                                }`}
-                                              >
-                                                <RadioGroupItem
-                                                  value={color}
-                                                  id={color}
-                                                  className="sr-only"
-                                                />
-                                                <span>{color}</span>
-                                              </Label>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )
-                                    )}
-                                  </div>
-                                </div>
-                              )
-                            )}
-                          </div>
-                        </RadioGroup>
+                        <Accordion type="single" collapsible defaultValue="VITA CLASSIC">
+                          {Object.entries(colorOptions).map(([system, subGroups]) => (
+                            <AccordionItem value={system} key={system}>
+                              <AccordionTrigger>{system}</AccordionTrigger>
+                              <AccordionContent>
+                                <RadioGroup
+                                  value={selectedColor || ""}
+                                  onValueChange={setSelectedColor}
+                                  className="space-y-4 pt-2"
+                                >
+                                  {Object.entries(subGroups).map(([groupName, colors]) => (
+                                    <div key={groupName}>
+                                      <p className="text-sm font-semibold mb-2 text-muted-foreground">
+                                        {groupName}
+                                      </p>
+                                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                        {colors.map((color) => (
+                                          <Label
+                                            key={color}
+                                            htmlFor={color}
+                                            className={`flex items-center justify-center p-3 rounded-md border-2 cursor-pointer transition-colors text-xs sm:text-sm ${
+                                              selectedColor === color
+                                                ? "border-primary bg-primary/10"
+                                                : "border-muted"
+                                            }`}
+                                          >
+                                            <RadioGroupItem
+                                              value={color}
+                                              id={color}
+                                              className="sr-only"
+                                            />
+                                            <span>{color}</span>
+                                          </Label>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </RadioGroup>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
                       </div>
 
                       {/* Step 3: File Upload */}
@@ -957,7 +731,7 @@ export default function ProductDetailPage() {
                           <div className="flex justify-between items-center">
                             <span>Arquivos:</span>
                             <span className="font-medium text-right">
-                              {uploadedFiles.length} arquivo(s)
+                              {uploadedFiles.length > 0 ? `${uploadedFiles.length} novo(s)` : (existingStlFileName ? '1 existente' : 'Nenhum')}
                             </span>
                           </div>
                           <Separator />
@@ -972,8 +746,10 @@ export default function ProductDetailPage() {
                     </div>
 
                     <DialogFooter className="pt-4 mt-auto border-t">
-                      <div className="flex justify-between w-full">
-                        <div />
+                     <div className="flex justify-between w-full items-center">
+                        <div className="text-lg font-bold text-primary">
+                          {formatCurrency(service.precoBase)}
+                        </div>
                         <div className="flex items-center gap-2">
                           {currentStep > 0 && (
                             <Button variant="outline" onClick={handleBack}>
@@ -981,23 +757,16 @@ export default function ProductDetailPage() {
                             </Button>
                           )}
 
-                          {currentStep === STEPS.length - 1 ? (
-                            <>
-                              <Button
-                                variant="outline"
-                                onClick={handleAddToCart}
-                              >
-                                Adicionar ao carrinho
-                              </Button>
-                              <Button onClick={handleNext}>
-                                Finalizar compra
-                                <ChevronsRight className="ml-2 h-4 w-4" />
-                              </Button>
-                            </>
-                          ) : (
-                            <Button onClick={handleNext}>
+                          {currentStep < STEPS.length - 1 && (
+                            <Button onClick={() => handleNext()}>
                               Avançar
                               <ChevronsRight className="ml-2 h-4 w-4" />
+                            </Button>
+                          )}
+                          
+                          {currentStep === STEPS.length - 1 && (
+                            <Button onClick={handleAddToCart}>
+                              Adicionar ao carrinho
                             </Button>
                           )}
                         </div>

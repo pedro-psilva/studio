@@ -33,5 +33,8 @@ export const useTranslation = (namespace: Namespace) => {
     return fallbackResult === fallbackKey ? key : fallbackResult;
   }
 
-  return { ...context, t };
+  // Expose formatCurrency from the context
+  const { formatCurrency } = context;
+
+  return { ...context, t, formatCurrency };
 };

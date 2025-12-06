@@ -9,11 +9,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { getOrder, type OrderDocument } from "@/lib/orderService";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function CheckoutOrderPage() {
   const params = useParams();
   const router = useRouter();
   const { orderId } = params as { orderId: string };
+  const { formatCurrency } = useTranslation('common');
 
   const [order, setOrder] = useState<OrderDocument | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,7 @@ export default function CheckoutOrderPage() {
                     Status: <span className="font-semibold">{order.status}</span>
                   </p>
                   <p className="text-lg font-bold">
-                    Total: R$ {order.total.toFixed(2)}
+                    Total: {formatCurrency(order.total)}
                   </p>
                 </div>
               )}
