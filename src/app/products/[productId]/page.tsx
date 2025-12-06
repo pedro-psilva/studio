@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -726,7 +727,7 @@ export default function ProductDetailPage() {
                           <div className="flex justify-between items-center">
                             <span>{tProduct('modal.review.teeth')}:</span>
                             <span className="font-medium text-right">
-                              {selectedTeeth.length > 0
+                              {selectedTeeth && selectedTeeth.length > 0
                                 ? selectedTeeth.join(", ")
                                 : tProduct('modal.review.none')}
                             </span>
@@ -863,3 +864,5 @@ export default function ProductDetailPage() {
     </div>
   );
 }
+
+    
