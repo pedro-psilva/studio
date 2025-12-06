@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { getService } from '@/lib/serviceService';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
@@ -59,6 +60,7 @@ export default function AccountPage() {
   const [orders, setOrders] = useState<OrderDocument[]>([]);
   const [loadingExtra, setLoadingExtra] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [serviceNames, setServiceNames] = useState<Record<string, string>>({});
 
   // Redireciona visitante não autenticado
   useEffect(() => {
@@ -86,6 +88,29 @@ export default function AccountPage() {
         // Pedidos do usuário
         const userOrders = await listUserOrders(user.uid);
         setOrders(userOrders);
+
+        // Carrega nomes de serviços para os productIds usados nos pedidos
+        const productIds = Array.from(
+          new Set(
+            userOrders
+              .flatMap((o) => o.items?.map((i) => i.productId) ?? [])
+              .filter(Boolean) as string[]
+          )
+        );
+
+        if (productIds.length > 0) {
+          const entries = await Promise.all(
+            productIds.map(async (pid) => {
+              try {
+                const service = await getService(pid);
+                return [pid, service?.nome ?? pid] as [string, string];
+              } catch {
+                return [pid, pid] as [string, string];
+              }
+            })
+          );
+          setServiceNames(Object.fromEntries(entries));
+        }
 
       } catch (err) {
         console.error('Erro ao carregar dados da conta:', err);
@@ -184,11 +209,22 @@ export default function AccountPage() {
                         orders.map(order => {
                           const statusInfo = statusMap[order.status] || { label: order.status, icon: AlertTriangle, color: 'bg-gray-500' };
                           const mainItem = order.items[0];
+                          const mainServiceName = mainItem?.productId
+                            ? serviceNames[mainItem.productId] || mainItem.productId
+                            : null;
                           const patientName = mainItem?.patientName || `Pedido #${order.id.substring(0, 6)}`;
                           return (
                             <TableRow key={order.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/account/orders/${order.id}`)}>
                               <TableCell className="font-medium">{patientName}</TableCell>
-                              <TableCell>{mainItem?.productId ? `${mainItem.productId} ${order.items.length > 1 ? `+${order.items.length - 1}` : ''}` : 'N/A'}</TableCell>
+                              <TableCell>
+                                {mainServiceName
+                                  ? `${mainServiceName}${
+                                      order.items.length > 1
+                                        ? ` +${order.items.length - 1}`
+                                        : ''
+                                    }`
+                                  : 'N/A'}
+                              </TableCell>
                               <TableCell className="hidden md:table-cell">{mainItem?.teeth?.join(', ') || 'N/A'}</TableCell>
                               <TableCell>
                                 <Badge variant="secondary" className="flex items-center gap-2">

@@ -17,6 +17,8 @@ import { getCart, setCart, updateCartItems, CartItemFirestore } from '@/lib/cart
 import { createOrderFromCart, OrderItemFirestore } from '@/lib/orderService';
 import { Badge } from '@/components/ui/badge';
 import { getService, type ServiceDocument } from '@/lib/serviceService';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 type CartItemWithService = CartItemFirestore & {
   uniqueId: string;
@@ -26,6 +28,8 @@ type CartItemWithService = CartItemFirestore & {
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItemWithService[]>([]);
   const [loadingCart, setLoadingCart] = useState(true);
+  const [userPhone, setUserPhone] = useState<string | null>(null);
+  const [userAddress, setUserAddress] = useState<{ cep?: string; number?: string; complement?: string } | null>(null);
   const { t } = useTranslation('common');
   const { user } = useAuth();
   const router = useRouter();
@@ -99,6 +103,37 @@ export default function CartPage() {
     loadCart();
   }, [user]);
 
+  useEffect(() => {
+    const loadUserDataForPayment = async () => {
+      if (!user) return;
+
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const snap = await getDoc(userRef);
+        if (snap.exists()) {
+          const data = snap.data() as { phone?: string };
+          if (data.phone) setUserPhone(data.phone);
+        }
+
+        const addrCol = collection(db, `users/${user.uid}/addresses`);
+        const addrSnap = await getDocs(addrCol);
+        if (!addrSnap.empty) {
+          const all = addrSnap.docs.map((d) => d.data() as any);
+          const main = all.find((a) => a.isPrincipal) ?? all[0];
+          setUserAddress({
+            cep: main.cep,
+            number: main.numero ?? main.number,
+            complement: main.complemento ?? main.complement,
+          });
+        }
+      } catch (e) {
+        console.error('Erro ao carregar dados do usuário para pagamento:', e);
+      }
+    };
+
+    loadUserDataForPayment();
+  }, [user]);
+
   const syncCartToFirestore = async (items: CartItemWithService[]) => {
     if (!user) return;
 
@@ -144,7 +179,7 @@ export default function CartPage() {
     (acc, item) => acc + (item.service.precoBase ?? 0) * item.quantity,
     0
   );
-  const shipping = subtotal > 0 ? 15.00 : 0;
+  const shipping = 0;
   const total = subtotal + shipping;
 
   const handleCheckout = async () => {
@@ -166,6 +201,18 @@ export default function CartPage() {
       patientName: item.patientName,
     }));
 
+    const infinitepayItems = cartItems.map((item) => ({
+      quantity: item.quantity,
+      price: Math.round((item.service.precoBase ?? 0) * 100),
+      description: item.service.nome,
+    }));
+
+    const customer = {
+      name: user?.displayName ?? user?.email ?? undefined,
+      email: user?.email ?? undefined,
+      phone_number: userPhone ?? undefined,
+    };
+
     try {
       const order = await createOrderFromCart({
         userId: user.uid,
@@ -176,8 +223,34 @@ export default function CartPage() {
 
       await setCart(user.uid, []);
       setCartItems([]);
+      try {
+        const response = await fetch('/api/payments/infinitepay/create-link', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ orderId: order.id, total, items: infinitepayItems, customer, address: userAddress }),
+        });
 
-      router.push(`/checkout/${order.id}`);
+        if (!response.ok) {
+          console.error('Falha ao criar link de pagamento InfinitePay');
+          router.push(`/checkout/${order.id}`);
+          return;
+        }
+
+        const data = (await response.json()) as { url?: string };
+
+        if (!data.url) {
+          console.error('Resposta inválida ao criar link de pagamento InfinitePay');
+          router.push(`/checkout/${order.id}`);
+          return;
+        }
+
+        window.location.href = data.url;
+      } catch (err) {
+        console.error('Erro ao integrar com InfinitePay:', err);
+        router.push(`/checkout/${order.id}`);
+      }
     } catch (error) {
       console.error('Erro ao finalizar compra:', error);
     }

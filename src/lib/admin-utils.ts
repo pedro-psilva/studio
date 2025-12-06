@@ -7,6 +7,7 @@ import {
   query, 
   where, 
   getDocs,
+  deleteDoc,
   DocumentData,
   DocumentReference,
   QueryDocumentSnapshot
@@ -85,6 +86,30 @@ export async function getAllUsers() {
     }));
   } catch (error) {
     console.error('Error getting users:', error);
+    throw error;
+  }
+}
+
+// Update user document by ID
+// Usamos um tipo genérico flexível para permitir campos adicionais como status, totalOrders, etc.
+export async function updateUserById(userId: string, data: Record<string, any>) {
+  try {
+    await updateDoc(doc(db, 'users', userId), {
+      ...data,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+}
+
+// Delete user document by ID
+export async function deleteUserById(userId: string) {
+  try {
+    await deleteDoc(doc(db, 'users', userId));
+  } catch (error) {
+    console.error('Error deleting user:', error);
     throw error;
   }
 }

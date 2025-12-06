@@ -105,6 +105,30 @@ export async function listUserOrders(userId: string): Promise<OrderDocument[]> {
   });
 }
 
+// Lista todos os pedidos (para visão administrativa / financeira)
+export async function listAllOrders(): Promise<OrderDocument[]> {
+  const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+
+  return snapshot.docs.map((docSnap) => {
+    const data = docSnap.data() as any;
+
+    return {
+      id: data.id,
+      userId: data.userId,
+      items: data.items ?? [],
+      subtotal: data.subtotal,
+      shipping: data.shipping,
+      total: data.total,
+      status: data.status,
+      createdAt: data.createdAt?.toDate?.() ?? new Date(),
+      updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+      paymentProvider: data.paymentProvider ?? null,
+      paymentStatus: data.paymentStatus ?? null,
+      paymentId: data.paymentId,
+    } as OrderDocument;
+  });
+}
+
 export type CreateOrderParams = {
   userId: string;
   items: OrderItemFirestore[];

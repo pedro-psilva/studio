@@ -1,4 +1,6 @@
 'use client';
+
+import { useEffect, useState } from 'react';
 import {
   File,
   ListFilter,
@@ -41,78 +43,159 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { useRouter } from 'next/navigation';
+import { toast } from '@/hooks/use-toast';
+import { getAllUsers, updateUserById, deleteUserById } from '@/lib/admin-utils';
 
-const users = [
-    { name: "Dr. João Silva", type: "PF", email: "joao.silva@email.com", phone: "(11) 99999-1234", totalOrders: 15, status: "Ativo" },
-    { name: "Clínica OdontoPrime", type: "PJ", email: "contato@odontoprime.com", phone: "(21) 3333-4444", totalOrders: 58, status: "Ativo" },
-    { name: "Dra. Maria Oliveira", type: "PF", email: "maria.o@email.com", phone: "(31) 98888-5678", totalOrders: 5, status: "Inativo" },
-    { name: "Sorriso Center", type: "PJ", email: "financeiro@sorrisocenter.com", phone: "(41) 3030-2020", totalOrders: 112, status: "Ativo" },
-    { name: "Dr. Pedro Costa", type: "PF", email: "pedro.costa@email.com", phone: "(51) 97777-8901", totalOrders: 0, status: "Ativo" },
-];
+interface UserRow {
+  id: string;
+  name: string;
+  type: string;
+  role: string;
+  email: string;
+  phone: string;
+  totalOrders: number;
+  status: string;
+}
 
 export default function UsersPage() {
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data: any[] = await getAllUsers();
+
+        const mapped: UserRow[] = data.map((user) => ({
+          id: user.id,
+          name:
+            user.displayName ||
+            user.clinicName ||
+            user.email ||
+            'Sem nome',
+          type: user.pessoaTipo || 'PF',
+          role: user.tipo || 'cliente',
+          email: user.email || '',
+          phone: user.phone || '',
+          totalOrders: typeof user.totalOrders === 'number' ? user.totalOrders : 0,
+          status: user.status || 'Ativo',
+        }));
+
+        setUsers(mapped);
+      } catch (err) {
+        console.error('Erro ao buscar usuários:', err);
+        setError('Não foi possível carregar os usuários.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const handleToggleStatus = async (userId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'Ativo' ? 'Inativo' : 'Ativo';
+    try {
+      await updateUserById(userId, { status: newStatus });
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
+      );
+      toast({
+        title: 'Status atualizado',
+        description: `Usuário agora está ${newStatus}.`,
+      });
+    } catch (err) {
+      console.error('Erro ao atualizar status do usuário:', err);
+      toast({
+        title: 'Erro ao atualizar status',
+        description: 'Tente novamente em alguns instantes.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    const confirmed = window.confirm('Tem certeza que deseja excluir este usuário? Essa ação não pode ser desfeita.');
+    if (!confirmed) return;
+
+    try {
+      await deleteUserById(userId);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      toast({
+        title: 'Usuário excluído',
+        description: 'O usuário foi removido com sucesso.',
+      });
+    } catch (err) {
+      console.error('Erro ao excluir usuário:', err);
+      toast({
+        title: 'Erro ao excluir usuário',
+        description: 'Verifique suas permissões e tente novamente.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-      <Tabs defaultValue="all">
-        <div className="flex items-center">
-          <TabsList>
-            <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="pf">PF</TabsTrigger>
-            <TabsTrigger value="pj">PJ</TabsTrigger>
-            <TabsTrigger value="active">Ativos</TabsTrigger>
-            <TabsTrigger value="inactive" className="hidden sm:flex">
-              Inativos
-            </TabsTrigger>
-          </TabsList>
-           <div className="relative ml-auto flex-1 md:grow-0">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar por nome, email..."
-              className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
-            />
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1">
-                  <ListFilter className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Filtro
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filtrar por</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem checked>
-                  Tipo (PF/PJ)
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Status</DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button size="sm" className="h-8 gap-1">
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Adicionar Usuário
-              </span>
-            </Button>
-          </div>
-        </div>
-        <TabsContent value="all">
-          <Card>
-            <CardHeader>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
               <CardTitle>Usuários</CardTitle>
               <CardDescription>
-                Gerencie os clientes da sua plataforma.
+                Gerencie clientes, colaboradores e administradores.
               </CardDescription>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative w-full sm:w-auto sm:min-w-[240px]">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Buscar por nome, email..."
+                  className="w-full rounded-lg bg-background pl-8"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 gap-1">
+                      <ListFilter className="h-3.5 w-3.5" />
+                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Filtro
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Filtrar por</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem checked>
+                      Tipo (PF/PJ)
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem>Status</DropdownMenuCheckboxItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button size="sm" className="h-8 gap-1">
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Adicionar Usuário
+                  </span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="all">
+            <TabsContent value="all">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Tipo</TableHead>
+                    <TableHead>Papel</TableHead>
                     <TableHead className="hidden md:table-cell">Email</TableHead>
                     <TableHead className="hidden md:table-cell">Telefone</TableHead>
                     <TableHead className="hidden md:table-cell">Pedidos</TableHead>
@@ -123,54 +206,111 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{user.type}</Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">{user.email}</TableCell>
-                      <TableCell className="hidden md:table-cell">{user.phone}</TableCell>
-                       <TableCell className="hidden md:table-cell">{user.totalOrders}</TableCell>
-                      <TableCell>
-                        <Badge variant={user.status === 'Ativo' ? 'default' : 'destructive'} className={user.status === 'Ativo' ? '' : 'bg-destructive/20 text-destructive border-destructive/50'}>
-                            {user.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
-                            <DropdownMenuItem>Resetar Senha</DropdownMenuItem>
-                            <DropdownMenuItem>Ver Histórico de Pedidos</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                             <DropdownMenuItem>Tornar VIP</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
-                              Bloquear
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                  {loading && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
+                        Carregando usuários...
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
+
+                  {!loading && error && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-sm text-destructive">
+                        {error}
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {!loading && !error && users.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
+                        Nenhum usuário encontrado.
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {!loading && !error &&
+                    users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{user.type}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {user.role === 'admin'
+                              ? 'Administrador'
+                              : user.role === 'colaborador'
+                              ? 'Colaborador'
+                              : 'Cliente'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{user.email}</TableCell>
+                        <TableCell className="hidden md:table-cell">{user.phone}</TableCell>
+                        <TableCell className="hidden md:table-cell">{user.totalOrders}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={user.status === 'Ativo' ? 'default' : 'destructive'}
+                            className={
+                              user.status === 'Ativo'
+                                ? ''
+                                : 'bg-destructive/20 text-destructive border-destructive/50'
+                            }
+                          >
+                            {user.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => router.push(`/admin/users/${user.id}`)}
+                              >
+                                Ver detalhes
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleToggleStatus(user.id, user.status)
+                                }
+                              >
+                                {user.status === 'Ativo' ? 'Marcar como inativo' : 'Marcar como ativo'}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleDeleteUser(user.id)}
+                              >
+                                Excluir usuário
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
-            </CardContent>
-            <CardFooter>
-              <div className="text-xs text-muted-foreground">
-                Mostrando <strong>1-5</strong> de <strong>42</strong> usuários
+              <div className="mt-4 text-xs text-muted-foreground">
+                {users.length > 0 && !loading && !error ? (
+                  <>
+                    Mostrando <strong>{users.length}</strong> usuário
+                    {users.length > 1 && 's'}
+                  </>
+                ) : (
+                  'Sem usuários para exibir'
+                )}
               </div>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </main>
   );
 }
