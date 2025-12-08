@@ -229,12 +229,11 @@ export default function FinancePage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID Fatura</TableHead>
-                <TableHead>Pedido</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Pedido</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -268,8 +267,6 @@ export default function FinancePage() {
               {!loading && !error &&
                 filteredInvoices.map((invoice) => (
                   <TableRow key={invoice.id}>
-                    <TableCell className="font-medium">{invoice.id}</TableCell>
-                    <TableCell>{invoice.orderId}</TableCell>
                     <TableCell>{invoice.client}</TableCell>
                     <TableCell>{invoice.date}</TableCell>
                     <TableCell>
@@ -291,6 +288,7 @@ export default function FinancePage() {
                         {invoice.status}
                       </Badge>
                     </TableCell>
+                    <TableCell className="font-medium">{invoice.orderId}</TableCell>
                     <TableCell>
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/admin/orders/${invoice.orderId}`}>

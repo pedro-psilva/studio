@@ -31,6 +31,12 @@ export type ServiceDocument = {
   imagensSecundarias: string[];
   tituloPromocional: string;
   corRepresentacao: string;
+  nomeEN?: string;
+  nomeES?: string;
+  descricaoEN?: string;
+  descricaoES?: string;
+  tituloPromocionalEN?: string;
+  tituloPromocionalES?: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -53,6 +59,12 @@ export type CreateServiceParams = {
   imagensSecundarias: string[];
   tituloPromocional: string;
   corRepresentacao: string;
+  nomeEN?: string;
+  nomeES?: string;
+  descricaoEN?: string;
+  descricaoES?: string;
+  tituloPromocionalEN?: string;
+  tituloPromocionalES?: string;
 };
 
 export type UpdateServiceParams = Partial<CreateServiceParams> & {
@@ -81,6 +93,12 @@ function mapServiceData(data: any): ServiceDocument {
     imagensSecundarias: data.imagensSecundarias ?? [],
     tituloPromocional: data.tituloPromocional,
     corRepresentacao: data.corRepresentacao,
+    nomeEN: data.nomeEN,
+    nomeES: data.nomeES,
+    descricaoEN: data.descricaoEN,
+    descricaoES: data.descricaoES,
+    tituloPromocionalEN: data.tituloPromocionalEN,
+    tituloPromocionalES: data.tituloPromocionalES,
     createdAt: data.createdAt?.toDate?.() ?? new Date(),
     updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
   };

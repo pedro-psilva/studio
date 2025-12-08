@@ -26,7 +26,7 @@ export default function ProductsPage() {
   const [services, setServices] = useState<ServiceDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1500]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([1500, 0]);
 
   useEffect(() => {
     let isMounted = true;
@@ -56,7 +56,7 @@ export default function ProductsPage() {
   }, []);
 
   const filteredServices = useMemo(() => {
-    const [minPrice, maxPrice] = priceRange;
+    const [maxPrice, minPrice] = priceRange;
 
     return services.filter((service) => {
       const price = service.precoBase ?? 0;
@@ -93,7 +93,7 @@ export default function ProductsPage() {
                     max={1500}
                     step={50}
                     onValueChange={(value) =>
-                      setPriceRange([value[0] ?? 0, value[1] ?? 1500])
+                      setPriceRange([value[0] ?? 1500, value[1] ?? 0])
                     }
                   />
                   <div className="flex justify-between text-sm text-muted-foreground mt-2">
@@ -140,14 +140,24 @@ export default function ProductsPage() {
 }
 
 function ProductCard({ service }: { service: ServiceDocument }) {
-  const { t: tCommon, formatCurrency } = useTranslation("common");
+  const { t: tCommon, formatCurrency, language } = useTranslation("common");
   const { t: tHome } = useTranslation("home");
-  const { t: tProducts } = useTranslation('products');
 
   const requiresUpload = (service.arquivosNecessarios ?? []).length > 0;
 
-  const productName = tProducts(`${service.codigo}.name`) || service.nome;
-  const productDescription = tProducts(`${service.codigo}.description`) || service.descricao;
+  const productName =
+    language === 'en-US'
+      ? service.nomeEN || service.nome
+      : language === 'es-ES'
+      ? service.nomeES || service.nome
+      : service.nome;
+
+  const productDescription =
+    language === 'en-US'
+      ? service.descricaoEN || service.descricao
+      : language === 'es-ES'
+      ? service.descricaoES || service.descricao
+      : service.descricao;
 
   return (
     <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg hover:shadow-primary/20">

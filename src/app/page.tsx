@@ -215,14 +215,24 @@ export default function HomePage() {
 }
 
 function ProductCard({ service }: { service: ServiceDocument }) {
-  const { t: tCommon, formatCurrency } = useTranslation('common');
+  const { t: tCommon, formatCurrency, language } = useTranslation('common');
   const { t: tHome } = useTranslation('home');
-  const { t: tProducts } = useTranslation('products');
 
   const requiresUpload = (service.arquivosNecessarios ?? []).length > 0;
-  
-  const productName = tProducts(`${service.codigo}.name`) || service.nome;
-  const productDescription = tProducts(`${service.codigo}.description`) || service.descricao;
+
+  const productName =
+    language === 'en-US'
+      ? service.nomeEN || service.nome
+      : language === 'es-ES'
+      ? service.nomeES || service.nome
+      : service.nome;
+
+  const productDescription =
+    language === 'en-US'
+      ? service.descricaoEN || service.descricao
+      : language === 'es-ES'
+      ? service.descricaoES || service.descricao
+      : service.descricao;
 
   return (
     <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:border-primary hover:shadow-lg hover:shadow-primary/20">

@@ -47,6 +47,41 @@ interface OrderRow {
   paymentStatus: OrderDocument['paymentStatus'];
 }
 
+function getOrderStatusLabel(status: OrderDocument['status']): string {
+  switch (status) {
+    case 'pending_payment':
+      return 'Pagamento pendente';
+    case 'paid':
+      return 'Pago';
+    case 'in_production':
+      return 'Em produção';
+    case 'shipped':
+      return 'Enviado';
+    case 'delivered':
+      return 'Entregue';
+    case 'canceled':
+      return 'Cancelado';
+    default:
+      return status;
+  }
+}
+
+function getPaymentStatusLabel(status: OrderDocument['paymentStatus']): string {
+  switch (status) {
+    case 'waiting':
+      return 'Aguardando pagamento';
+    case 'approved':
+      return 'Aprovado';
+    case 'refused':
+      return 'Recusado';
+    case 'refunded':
+      return 'Estornado';
+    case null:
+    default:
+      return 'N/A';
+  }
+}
+
 export default function OrdersPage() {
   const [rows, setRows] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -238,12 +273,12 @@ export default function OrdersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead className="hidden md:table-cell">Data</TableHead>
                 <TableHead className="hidden md:table-cell">Valor</TableHead>
                 <TableHead className="hidden md:table-cell">Status Pedido</TableHead>
                 <TableHead>Status Pagamento</TableHead>
+                <TableHead>ID</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -277,7 +312,6 @@ export default function OrdersPage() {
               {!loading && !error &&
                 filteredRows.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>{order.client}</TableCell>
                     <TableCell className="hidden md:table-cell">{order.date}</TableCell>
                     <TableCell className="hidden md:table-cell">
@@ -287,21 +321,38 @@ export default function OrdersPage() {
                       })}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      <Badge variant="outline">{order.orderStatus}</Badge>
+                      <Badge
+                        variant="outline"
+                        className={
+                          order.orderStatus === 'paid' || order.orderStatus === 'delivered'
+                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                            : order.orderStatus === 'pending_payment'
+                            ? 'bg-amber-100 text-amber-700 border-amber-200'
+                            : order.orderStatus === 'in_production' || order.orderStatus === 'shipped'
+                            ? 'bg-blue-100 text-blue-700 border-blue-200'
+                            : 'bg-destructive/10 text-destructive border-destructive/30'
+                        }
+                      >
+                        {getOrderStatusLabel(order.orderStatus)}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={
+                        variant="outline"
+                        className={
                           order.paymentStatus === 'approved'
-                            ? 'default'
+                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
                             : order.paymentStatus === 'waiting'
-                            ? 'secondary'
-                            : 'destructive'
+                            ? 'bg-amber-100 text-amber-700 border-amber-200'
+                            : order.paymentStatus === 'refused' || order.paymentStatus === 'refunded'
+                            ? 'bg-destructive/10 text-destructive border-destructive/30'
+                            : 'bg-muted text-muted-foreground border-muted'
                         }
                       >
-                        {order.paymentStatus ?? 'N/A'}
+                        {getPaymentStatusLabel(order.paymentStatus)}
                       </Badge>
                     </TableCell>
+                    <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

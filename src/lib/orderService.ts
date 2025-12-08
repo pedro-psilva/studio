@@ -65,6 +65,21 @@ export async function getOrder(orderId: string): Promise<OrderDocument | null> {
 
   const data = snap.data() as any;
 
+  const createdAt: Date = data.createdAt?.toDate?.() ?? new Date();
+  const updatedAt: Date = data.updatedAt?.toDate?.() ?? new Date();
+
+  let status: OrderStatus = data.status;
+
+  if (status === 'pending_payment' && data.paymentStatus === 'waiting') {
+    const now = new Date();
+    const diffMs = now.getTime() - createdAt.getTime();
+    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+
+    if (diffMs >= threeDaysMs) {
+      status = 'canceled';
+    }
+  }
+
   return {
     id: data.id,
     userId: data.userId,
@@ -72,9 +87,9 @@ export async function getOrder(orderId: string): Promise<OrderDocument | null> {
     subtotal: data.subtotal,
     shipping: data.shipping,
     total: data.total,
-    status: data.status,
-    createdAt: data.createdAt?.toDate?.() ?? new Date(),
-    updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+    status,
+    createdAt,
+    updatedAt,
     paymentProvider: data.paymentProvider ?? null,
     paymentStatus: data.paymentStatus ?? null,
     paymentId: data.paymentId,
@@ -88,6 +103,21 @@ export async function listUserOrders(userId: string): Promise<OrderDocument[]> {
   return snapshot.docs.map((docSnap) => {
     const data = docSnap.data() as any;
 
+    const createdAt: Date = data.createdAt?.toDate?.() ?? new Date();
+    const updatedAt: Date = data.updatedAt?.toDate?.() ?? new Date();
+
+    let status: OrderStatus = data.status;
+
+    if (status === 'pending_payment' && data.paymentStatus === 'waiting') {
+      const now = new Date();
+      const diffMs = now.getTime() - createdAt.getTime();
+      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+
+      if (diffMs >= threeDaysMs) {
+        status = 'canceled';
+      }
+    }
+
     return {
       id: data.id,
       userId: data.userId,
@@ -95,9 +125,9 @@ export async function listUserOrders(userId: string): Promise<OrderDocument[]> {
       subtotal: data.subtotal,
       shipping: data.shipping,
       total: data.total,
-      status: data.status,
-      createdAt: data.createdAt?.toDate?.() ?? new Date(),
-      updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+      status,
+      createdAt,
+      updatedAt,
       paymentProvider: data.paymentProvider ?? null,
       paymentStatus: data.paymentStatus ?? null,
       paymentId: data.paymentId,
@@ -112,6 +142,21 @@ export async function listAllOrders(): Promise<OrderDocument[]> {
   return snapshot.docs.map((docSnap) => {
     const data = docSnap.data() as any;
 
+    const createdAt: Date = data.createdAt?.toDate?.() ?? new Date();
+    const updatedAt: Date = data.updatedAt?.toDate?.() ?? new Date();
+
+    let status: OrderStatus = data.status;
+
+    if (status === 'pending_payment' && data.paymentStatus === 'waiting') {
+      const now = new Date();
+      const diffMs = now.getTime() - createdAt.getTime();
+      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+
+      if (diffMs >= threeDaysMs) {
+        status = 'canceled';
+      }
+    }
+
     return {
       id: data.id,
       userId: data.userId,
@@ -119,9 +164,9 @@ export async function listAllOrders(): Promise<OrderDocument[]> {
       subtotal: data.subtotal,
       shipping: data.shipping,
       total: data.total,
-      status: data.status,
-      createdAt: data.createdAt?.toDate?.() ?? new Date(),
-      updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+      status,
+      createdAt,
+      updatedAt,
       paymentProvider: data.paymentProvider ?? null,
       paymentStatus: data.paymentStatus ?? null,
       paymentId: data.paymentId,

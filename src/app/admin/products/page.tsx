@@ -109,6 +109,8 @@ export default function ProductsPage() {
   const [statusFilterEnabled, setStatusFilterEnabled] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState<'basic' | 'production' | 'media' | 'advanced'>('basic');
+  const [isSaving, setIsSaving] = useState(false);
 
   const [newActive, setNewActive] = useState(true);
   const [newVisibility, setNewVisibility] = useState<'publico' | 'interno'>('publico');
@@ -129,6 +131,13 @@ export default function ProductsPage() {
   const [newImageFile4, setNewImageFile4] = useState<File | null>(null);
   const [newPromoTitle, setNewPromoTitle] = useState('');
   const [newColor, setNewColor] = useState('#4F46E5');
+  const [newInternationalAvailable, setNewInternationalAvailable] = useState(false);
+  const [newNameEN, setNewNameEN] = useState('');
+  const [newNameES, setNewNameES] = useState('');
+  const [newDescriptionEN, setNewDescriptionEN] = useState('');
+  const [newDescriptionES, setNewDescriptionES] = useState('');
+  const [newPromoTitleEN, setNewPromoTitleEN] = useState('');
+  const [newPromoTitleES, setNewPromoTitleES] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -178,6 +187,42 @@ export default function ProductsPage() {
     return result;
   }, [services, statusFilterEnabled, searchTerm]);
 
+  const parsedTags = useMemo(
+    () =>
+      newTags
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [newTags]
+  );
+
+  const parsedArquivosNecessarios = useMemo(
+    () =>
+      newArquivosNecessarios
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [newArquivosNecessarios]
+  );
+
+  const parsedArquivosOpcionais = useMemo(
+    () =>
+      newArquivosOpcionais
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [newArquivosOpcionais]
+  );
+
+  const parsedCustomFieldsLines = useMemo(
+    () =>
+      newCustomFieldsText
+        .split('\n')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [newCustomFieldsText]
+  );
+
   function resetFormState() {
     setNewActive(true);
     setNewVisibility('publico');
@@ -197,6 +242,14 @@ export default function ProductsPage() {
     setNewImageFile4(null);
     setNewPromoTitle('');
     setNewColor('#4F46E5');
+    setNewInternationalAvailable(false);
+    setNewNameEN('');
+    setNewNameES('');
+    setNewDescriptionEN('');
+    setNewDescriptionES('');
+    setNewPromoTitleEN('');
+    setNewPromoTitleES('');
+    setCurrentTab('basic');
   }
 
   function openCreateDialog() {
@@ -226,10 +279,31 @@ export default function ProductsPage() {
     setNewImageFile(null);
     setNewPromoTitle(service.tituloPromocional ?? '');
     setNewColor(service.corRepresentacao ?? '#4F46E5');
+    setNewNameEN(service.nomeEN ?? '');
+    setNewNameES(service.nomeES ?? '');
+    setNewDescriptionEN(service.descricaoEN ?? '');
+    setNewDescriptionES(service.descricaoES ?? '');
+    setNewPromoTitleEN(service.tituloPromocionalEN ?? '');
+    setNewPromoTitleES(service.tituloPromocionalES ?? '');
+    setNewInternationalAvailable(
+      !!(
+        (service.nomeEN && service.nomeEN.trim()) ||
+        (service.nomeES && service.nomeES.trim()) ||
+        (service.descricaoEN && service.descricaoEN.trim()) ||
+        (service.descricaoES && service.descricaoES.trim()) ||
+        (service.tituloPromocionalEN && service.tituloPromocionalEN.trim()) ||
+        (service.tituloPromocionalES && service.tituloPromocionalES.trim())
+      )
+    );
+    setCurrentTab('basic');
     setIsSheetOpen(true);
   }
 
   async function handleSaveService() {
+    if (isSaving) {
+      return;
+    }
+
     if (!newName.trim() || !newPrice.trim()) {
       toast({
         title: 'Dados incompletos',
@@ -367,6 +441,12 @@ export default function ProductsPage() {
           imagensSecundarias,
           tituloPromocional: newPromoTitle.trim(),
           corRepresentacao: newColor.trim() || '#4F46E5',
+          nomeEN: newInternationalAvailable ? newNameEN.trim() : undefined,
+          nomeES: newInternationalAvailable ? newNameES.trim() : undefined,
+          descricaoEN: newInternationalAvailable ? newDescriptionEN.trim() : undefined,
+          descricaoES: newInternationalAvailable ? newDescriptionES.trim() : undefined,
+          tituloPromocionalEN: newInternationalAvailable ? newPromoTitleEN.trim() : undefined,
+          tituloPromocionalES: newInternationalAvailable ? newPromoTitleES.trim() : undefined,
         };
 
         const created = await createService(payload);
@@ -377,7 +457,7 @@ export default function ProductsPage() {
           description: 'O produto/serviço foi criado com sucesso.',
         });
       } else {
-        await updateService(editingServiceId, {
+        const updatePayload = {
           ativo: newActive,
           visibilidade: newVisibility,
           nome: newName.trim(),
@@ -394,38 +474,27 @@ export default function ProductsPage() {
           imagensSecundarias,
           tituloPromocional: newPromoTitle.trim(),
           corRepresentacao: newColor.trim() || '#4F46E5',
-        });
+          nomeEN: newInternationalAvailable ? newNameEN.trim() : '',
+          nomeES: newInternationalAvailable ? newNameES.trim() : '',
+          descricaoEN: newInternationalAvailable ? newDescriptionEN.trim() : '',
+          descricaoES: newInternationalAvailable ? newDescriptionES.trim() : '',
+          tituloPromocionalEN: newInternationalAvailable ? newPromoTitleEN.trim() : '',
+          tituloPromocionalES: newInternationalAvailable ? newPromoTitleES.trim() : '',
+        };
 
+        await updateService(editingServiceId, updatePayload);
+
+        // Atualiza o estado local para refletir imediatamente as mudanças na tabela
         setServices((prev) =>
           prev.map((service) =>
             service.id === editingServiceId
               ? {
                   ...service,
-                  ativo: newActive,
-                  visibilidade: newVisibility,
-                  nome: newName.trim(),
-                  descricao: newDescription.trim(),
-                  precoBase: priceNumber,
-                  visibilidadePreco: newPriceVisibility,
-                  prazoEntrega: prazoNumber,
-                  fluxoProducao: newFluxoProducao,
-                  tags,
-                  arquivosNecessarios,
-                  arquivosOpcionais,
-                  camposPersonalizados,
-                  imagemUrl: imageUrl,
-                  imagensSecundarias,
-                  tituloPromocional: newPromoTitle.trim(),
-                  corRepresentacao: newColor.trim() || '#4F46E5',
+                  ...updatePayload,
                 }
               : service
           )
         );
-
-        toast({
-          title: 'Produto atualizado',
-          description: 'As alterações foram salvas com sucesso.',
-        });
       }
 
       resetFormState();
@@ -437,6 +506,8 @@ export default function ProductsPage() {
         description: 'Ocorreu um erro ao salvar. Tente novamente.',
         variant: 'destructive',
       });
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -460,6 +531,12 @@ export default function ProductsPage() {
         imagensSecundarias: service.imagensSecundarias ?? [],
         tituloPromocional: service.tituloPromocional,
         corRepresentacao: service.corRepresentacao,
+        nomeEN: service.nomeEN,
+        nomeES: service.nomeES,
+        descricaoEN: service.descricaoEN,
+        descricaoES: service.descricaoES,
+        tituloPromocionalEN: service.tituloPromocionalEN,
+        tituloPromocionalES: service.tituloPromocionalES,
       };
 
       const created = await createService(payload);
@@ -596,7 +673,12 @@ export default function ProductsPage() {
                       </SheetTitle>
                     </SheetHeader>
                     <div className="py-4">
-                      <Tabs defaultValue="basic">
+                      <Tabs
+                        value={currentTab}
+                        onValueChange={(value) =>
+                          setCurrentTab(value as 'basic' | 'production' | 'media' | 'advanced')
+                        }
+                      >
                         <TabsList className="grid w-full grid-cols-4">
                           <TabsTrigger value="basic">Básico</TabsTrigger>
                           <TabsTrigger value="production">Produção</TabsTrigger>
@@ -612,7 +694,29 @@ export default function ProductsPage() {
                               <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                   <Label htmlFor="price">Preço base</Label>
-                                  <Input id="price" value={newPrice} onChange={(event) => setNewPrice(event.target.value)} placeholder="Ex: 350,00" />
+                                  <Input
+                                    id="price"
+                                    value={newPrice}
+                                    onChange={(event) => {
+                                      const raw = event.target.value;
+                                      const digits = raw.replace(/\D/g, '');
+
+                                      if (!digits) {
+                                        setNewPrice('');
+                                        return;
+                                      }
+
+                                      const intPart = digits.slice(0, -2) || '0';
+                                      const decimalPart = digits.slice(-2);
+
+                                      const intNumber = Number(intPart);
+                                      const intFormatted = intNumber.toLocaleString('pt-BR');
+
+                                      const formatted = `${intFormatted},${decimalPart}`;
+                                      setNewPrice(formatted);
+                                    }}
+                                    placeholder="Ex: 350,00"
+                                  />
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor="priceVisibility">Visibilidade do preço</Label>
@@ -650,7 +754,24 @@ export default function ProductsPage() {
                               </div>
                                <div className="space-y-2">
                                 <Label htmlFor="tags">Tags (separe por vírgula)</Label>
-                                <Input id="tags" value={newTags} onChange={(event) => setNewTags(event.target.value)} placeholder="zircônia, coroa, posterior" />
+                                <Input
+                                  id="tags"
+                                  value={newTags}
+                                  onChange={(event) => setNewTags(event.target.value)}
+                                  placeholder="zircônia, coroa, posterior"
+                                />
+                                {parsedTags.length > 0 && (
+                                  <div className="flex flex-wrap gap-2 pt-1">
+                                    {parsedTags.map((tag, index) => (
+                                      <span
+                                        key={`${tag}-${index}`}
+                                        className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                           </TabsContent>
                           <TabsContent value="production" className="space-y-4">
@@ -676,11 +797,45 @@ export default function ProductsPage() {
                               </div>
                               <div className="space-y-2">
                                 <Label htmlFor="arquivosNecessarios">Arquivos necessários (separe por vírgula)</Label>
-                                <Input id="arquivosNecessarios" value={newArquivosNecessarios} onChange={(event) => setNewArquivosNecessarios(event.target.value)} placeholder="Modelo digital superior, Modelo digital inferior, ..." />
+                                <Input
+                                  id="arquivosNecessarios"
+                                  value={newArquivosNecessarios}
+                                  onChange={(event) => setNewArquivosNecessarios(event.target.value)}
+                                  placeholder="Modelo digital superior, Modelo digital inferior, ..."
+                                />
+                                {parsedArquivosNecessarios.length > 0 && (
+                                  <div className="flex flex-wrap gap-2 pt-1">
+                                    {parsedArquivosNecessarios.map((item, index) => (
+                                      <span
+                                        key={`${item}-${index}`}
+                                        className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground"
+                                      >
+                                        {item}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                               <div className="space-y-2">
                                 <Label htmlFor="arquivosOpcionais">Arquivos opcionais (separe por vírgula)</Label>
-                                <Input id="arquivosOpcionais" value={newArquivosOpcionais} onChange={(event) => setNewArquivosOpcionais(event.target.value)} placeholder="Foto sorriso, Rx panorâmica, ..." />
+                                <Input
+                                  id="arquivosOpcionais"
+                                  value={newArquivosOpcionais}
+                                  onChange={(event) => setNewArquivosOpcionais(event.target.value)}
+                                  placeholder="Foto sorriso, Rx panorâmica, ..."
+                                />
+                                {parsedArquivosOpcionais.length > 0 && (
+                                  <div className="flex flex-wrap gap-2 pt-1">
+                                    {parsedArquivosOpcionais.map((item, index) => (
+                                      <span
+                                        key={`${item}-${index}`}
+                                        className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground"
+                                      >
+                                        {item}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                           </TabsContent>
                           <TabsContent value="media" className="space-y-4">
@@ -711,17 +866,150 @@ export default function ProductsPage() {
                                 <Label htmlFor="corRepresentacao">Cor de representação</Label>
                                 <Input id="corRepresentacao" type="text" value={newColor} onChange={(event) => setNewColor(event.target.value)} placeholder="#4F46E5" />
                               </div>
+                              <div className="space-y-4 rounded-lg border p-4">
+                                <div className="flex items-center justify-between space-x-2">
+                                  <div className="space-y-0.5">
+                                    <Label htmlFor="internationalAvailable">Disponível internacionalmente?</Label>
+                                    <p className="text-xs text-muted-foreground">Quando ativado, preencha nome, descrição e título em inglês e espanhol.</p>
+                                  </div>
+                                  <Switch
+                                    id="internationalAvailable"
+                                    checked={newInternationalAvailable}
+                                    onCheckedChange={setNewInternationalAvailable}
+                                  />
+                                </div>
+
+                                {newInternationalAvailable && (
+                                  <div className="mt-4 space-y-4">
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                      <div className="space-y-2">
+                                        <Label htmlFor="nameEN">Nome (EN)</Label>
+                                        <Input
+                                          id="nameEN"
+                                          value={newNameEN}
+                                          onChange={(event) => setNewNameEN(event.target.value)}
+                                          placeholder="Nome do produto em inglês"
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="nameES">Nome (ES)</Label>
+                                        <Input
+                                          id="nameES"
+                                          value={newNameES}
+                                          onChange={(event) => setNewNameES(event.target.value)}
+                                          placeholder="Nome do produto em espanhol"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                      <div className="space-y-2">
+                                        <Label htmlFor="descricaoEN">Descrição (EN)</Label>
+                                        <Textarea
+                                          id="descricaoEN"
+                                          value={newDescriptionEN}
+                                          onChange={(event) => setNewDescriptionEN(event.target.value)}
+                                          placeholder="Descrição do produto em inglês"
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="descricaoES">Descrição (ES)</Label>
+                                        <Textarea
+                                          id="descricaoES"
+                                          value={newDescriptionES}
+                                          onChange={(event) => setNewDescriptionES(event.target.value)}
+                                          placeholder="Descrição do produto em espanhol"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                      <div className="space-y-2">
+                                        <Label htmlFor="tituloPromocionalEN">Título promocional (EN)</Label>
+                                        <Input
+                                          id="tituloPromocionalEN"
+                                          value={newPromoTitleEN}
+                                          onChange={(event) => setNewPromoTitleEN(event.target.value)}
+                                          placeholder="Título promocional em inglês"
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="tituloPromocionalES">Título promocional (ES)</Label>
+                                        <Input
+                                          id="tituloPromocionalES"
+                                          value={newPromoTitleES}
+                                          onChange={(event) => setNewPromoTitleES(event.target.value)}
+                                          placeholder="Título promocional em espanhol"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
                               <div className="space-y-2">
                                 <Label htmlFor="camposPersonalizados">Campos personalizados (um por linha)</Label>
-                                <Textarea id="camposPersonalizados" value={newCustomFieldsText} onChange={(event) => setNewCustomFieldsText(event.target.value)} placeholder={'Observações clínicas\nObservações do paciente\nInstruções ao laboratório'} />
+                                <Textarea
+                                  id="camposPersonalizados"
+                                  value={newCustomFieldsText}
+                                  onChange={(event) => setNewCustomFieldsText(event.target.value)}
+                                  placeholder={'Observações clínicas\nObservações do paciente\nInstruções ao laboratório'}
+                                />
+                                {parsedCustomFieldsLines.length > 0 && (
+                                  <div className="flex flex-wrap gap-2 pt-1">
+                                    {parsedCustomFieldsLines.map((item, index) => (
+                                      <span
+                                        key={`${item}-${index}`}
+                                        className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground"
+                                      >
+                                        {item}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                                 <p className="text-xs text-muted-foreground">Cada linha será convertida em um campo de texto opcional.</p>
                               </div>
                            </TabsContent>
                         </div>
-                         <div className="flex justify-end gap-2 pt-6 border-t mt-4">
-                          <Button type="button" variant="outline" onClick={() => { setIsSheetOpen(false); setEditingServiceId(null); resetFormState(); }}>Cancelar</Button>
-                          <Button type="button" onClick={handleSaveService}>
-                            {editingServiceId ? 'Salvar alterações' : 'Salvar'}
+                        <div className="flex justify-end gap-2 pt-6 border-t mt-4">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setIsSheetOpen(false);
+                              setEditingServiceId(null);
+                              resetFormState();
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            type="button"
+                            disabled={isSaving && currentTab === 'advanced'}
+                            onClick={() => {
+                              if (currentTab === 'basic') {
+                                setCurrentTab('production');
+                                return;
+                              }
+                              if (currentTab === 'production') {
+                                setCurrentTab('media');
+                                return;
+                              }
+                              if (currentTab === 'media') {
+                                setCurrentTab('advanced');
+                                return;
+                              }
+
+                              handleSaveService();
+                            }}
+                          >
+                            {currentTab === 'advanced'
+                              ? isSaving
+                                ? 'Salvando...'
+                                : editingServiceId
+                                ? 'Salvar alterações'
+                                : 'Salvar'
+                              : 'Próximo'}
                           </Button>
                         </div>
                       </Tabs>
@@ -788,8 +1076,11 @@ export default function ProductsPage() {
                           <TableCell>{service.codigo}</TableCell>
                           <TableCell>
                             <Badge
-                              variant={
-                                statusLabel === 'Ativo' ? 'outline' : 'secondary'
+                              variant="outline"
+                              className={
+                                statusLabel === 'Ativo'
+                                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                  : 'bg-muted text-muted-foreground border-muted'
                               }
                             >
                               {statusLabel}

@@ -1,14 +1,10 @@
-'use client';
-import {
-  File,
-  ListFilter,
-  MoreHorizontal,
-  PlusCircle,
-  Search,
-} from 'lucide-react';
+"use client";
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useEffect, useMemo, useState } from "react";
+import { File, ListFilter, MoreHorizontal, PlusCircle, Search } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -16,7 +12,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -25,7 +21,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -33,115 +29,440 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-
-const coupons = [
-    { code: "ITLAB25", type: "Percentual", discount: "25%", uses: "15/100", expiry: "2024-12-31", status: "Ativo" },
-    { code: "NEWCLINIC15", type: "Percentual", discount: "15%", uses: "88/200", expiry: "2024-10-31", status: "Ativo" },
-    { code: "FREESHIP", type: "Valor Fixo", discount: "R$ 30,00", uses: "∞", expiry: "2024-12-31", status: "Ativo" },
-    { code: "EXPIRED50", type: "Valor Fixo", discount: "R$ 50,00", uses: "50/50", expiry: "2024-06-30", status: "Expirado" },
-    { code: "DRAFT01", type: "Percentual", discount: "10%", uses: "0/0", expiry: "N/A", status: "Rascunho" },
-];
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import {
+  CouponDocument,
+  createCoupon,
+  deleteCoupon,
+  getCouponStatus,
+  listCoupons,
+  updateCoupon,
+} from "@/lib/couponService";
 
 export default function CouponsPage() {
-    return (
-        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-            <Tabs defaultValue="all">
-                <div className="flex items-center">
-                    <TabsList>
-                        <TabsTrigger value="all">Todos</TabsTrigger>
-                        <TabsTrigger value="active">Ativos</TabsTrigger>
-                        <TabsTrigger value="expired">Expirados</TabsTrigger>
-                        <TabsTrigger value="draft" className="hidden sm:flex">
-                            Rascunho
-                        </TabsTrigger>
-                    </TabsList>
-                    <div className="ml-auto flex items-center gap-2">
-                        <Button size="sm" className="h-8 gap-1">
-                            <PlusCircle className="h-3.5 w-3.5" />
-                            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                                Criar Cupom
-                            </span>
-                        </Button>
+  const [coupons, setCoupons] = useState<CouponDocument[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentTab, setCurrentTab] = useState<"all" | "active" | "expired" | "draft">("all");
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [newCode, setNewCode] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newType, setNewType] = useState<"percent" | "fixed" | "free_shipping">("percent");
+  const [newValue, setNewValue] = useState("");
+  const [newMaxUses, setNewMaxUses] = useState("");
+  const [newMinOrderTotal, setNewMinOrderTotal] = useState("");
+  const [newActive, setNewActive] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadCoupons() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await listCoupons();
+        if (!isMounted) return;
+        setCoupons(data);
+      } catch (err: any) {
+        if (!isMounted) return;
+        setError(err?.message ?? "Erro ao carregar cupons");
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadCoupons();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filteredCoupons = useMemo(() => {
+    return coupons.filter((coupon) => {
+      const status = getCouponStatus(coupon);
+
+      if (currentTab === "active" && status !== "Ativo") return false;
+      if (currentTab === "expired" && status !== "Expirado") return false;
+      if (currentTab === "draft" && status !== "Rascunho") return false;
+
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        return (
+          coupon.code.toLowerCase().includes(term) ||
+          coupon.description.toLowerCase().includes(term)
+        );
+      }
+
+      return true;
+    });
+  }, [coupons, currentTab, searchTerm]);
+
+  function formatDiscount(coupon: CouponDocument) {
+    if (coupon.type === "percent") {
+      return `${coupon.value}%`;
+    }
+    if (coupon.type === "fixed") {
+      return coupon.value.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      });
+    }
+    return "Frete Grátis";
+  }
+
+  function formatUses(coupon: CouponDocument) {
+    if (coupon.maxUses == null) {
+      return `${coupon.usedCount} / ∞`;
+    }
+    return `${coupon.usedCount} / ${coupon.maxUses}`;
+  }
+
+  function formatValidity(coupon: CouponDocument) {
+    if (!coupon.validFrom && !coupon.validUntil) return "Sem validade";
+    if (!coupon.validUntil)
+      return `A partir de ${coupon.validFrom?.toLocaleDateString("pt-BR")}`;
+    if (!coupon.validFrom)
+      return `Até ${coupon.validUntil.toLocaleDateString("pt-BR")}`;
+    return `${coupon.validFrom.toLocaleDateString("pt-BR")} - ${coupon.validUntil.toLocaleDateString("pt-BR")}`;
+  }
+
+  async function handleCreateCoupon() {
+    if (isSaving) return;
+    const trimmedCode = newCode.trim();
+    if (!trimmedCode || !newValue.trim()) return;
+
+    const valueNumber = Number(newValue.replace(/,/g, "."));
+    if (Number.isNaN(valueNumber) || valueNumber <= 0) return;
+
+    const maxUsesNumber = newMaxUses.trim() ? Number(newMaxUses.trim()) : null;
+    const minOrderNumber = newMinOrderTotal.trim()
+      ? Number(newMinOrderTotal.trim().replace(/,/g, "."))
+      : 0;
+
+    if (maxUsesNumber !== null && (Number.isNaN(maxUsesNumber) || maxUsesNumber < 0)) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const created = await createCoupon({
+        code: trimmedCode,
+        description: newDescription.trim(),
+        type: newType,
+        value: valueNumber,
+        maxUses: maxUsesNumber,
+        minOrderTotal: minOrderNumber,
+        active: newActive,
+        validFrom: null,
+        validUntil: null,
+      });
+
+      setCoupons((prev) => [created, ...prev]);
+      setNewCode("");
+      setNewDescription("");
+      setNewType("percent");
+      setNewValue("");
+      setNewMaxUses("");
+      setNewMinOrderTotal("");
+      setNewActive(true);
+      setIsSheetOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <CardTitle>Cupons</CardTitle>
+              <CardDescription>
+                Gerencie os cupons promocionais da sua loja.
+              </CardDescription>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative w-full sm:w-auto sm:min-w-[240px]">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Buscar por código ou descrição..."
+                  className="w-full rounded-lg bg-background pl-8"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                />
+              </div>
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => setIsSheetOpen(true)}
+                  >
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                      Criar Cupom
+                    </span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-full sm:max-w-md">
+                  <SheetHeader>
+                    <SheetTitle>Novo cupom</SheetTitle>
+                  </SheetHeader>
+                  <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="code">Código</Label>
+                      <Input
+                        id="code"
+                        value={newCode}
+                        onChange={(e) => setNewCode(e.target.value.toUpperCase())}
+                        placeholder="EX: ITLAB25"
+                      />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Descrição</Label>
+                      <Input
+                        id="description"
+                        value={newDescription}
+                        onChange={(e) => setNewDescription(e.target.value)}
+                        placeholder="Ex: 25% off na primeira compra"
+                      />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="type">Tipo</Label>
+                        <Select value={newType} onValueChange={(v) => setNewType(v as any)}>
+                          <SelectTrigger id="type">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="percent">Percentual</SelectItem>
+                            <SelectItem value="fixed">Valor fixo</SelectItem>
+                            <SelectItem value="free_shipping">Frete grátis</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="value">Valor</Label>
+                        <Input
+                          id="value"
+                          value={newValue}
+                          onChange={(e) => setNewValue(e.target.value.replace(/[^0-9.,]/g, ""))}
+                          placeholder={newType === "percent" ? "Ex: 25" : "Ex: 50,00"}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="maxUses">Limite de usos (opcional)</Label>
+                        <Input
+                          id="maxUses"
+                          value={newMaxUses}
+                          onChange={(e) => setNewMaxUses(e.target.value.replace(/[^0-9]/g, ""))}
+                          placeholder="Ex: 100"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="minOrder">Pedido mínimo (opcional)</Label>
+                        <Input
+                          id="minOrder"
+                          value={newMinOrderTotal}
+                          onChange={(e) => setNewMinOrderTotal(e.target.value.replace(/[^0-9.,]/g, ""))}
+                          placeholder="Ex: 300,00"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between space-x-2 rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="active">Ativo</Label>
+                      </div>
+                      <Switch
+                        id="active"
+                        checked={newActive}
+                        onCheckedChange={setNewActive}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2 border-t mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setIsSheetOpen(false);
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleCreateCoupon}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? "Salvando..." : "Salvar"}
+                      </Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={currentTab} onValueChange={(v) => setCurrentTab(v as any)}>
+            <TabsList>
+              <TabsTrigger value="all">Todos</TabsTrigger>
+              <TabsTrigger value="active">Ativos</TabsTrigger>
+              <TabsTrigger value="expired">Expirados</TabsTrigger>
+              <TabsTrigger value="draft" className="hidden sm:flex">
+                Rascunho
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value={currentTab} className="mt-4">
+              {loading ? (
+                <div className="py-8 text-sm text-muted-foreground">
+                  Carregando cupons...
                 </div>
-                <TabsContent value="all">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Cupons de Desconto</CardTitle>
-                            <CardDescription>
-                                Gerencie os cupons promocionais da sua loja.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Código</TableHead>
-                                        <TableHead>Tipo</TableHead>
-                                        <TableHead>Desconto</TableHead>
-                                        <TableHead className="hidden md:table-cell">Usos</TableHead>
-                                        <TableHead className="hidden md:table-cell">Validade</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>
-                                            <span className="sr-only">Ações</span>
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {coupons.map((coupon) => (
-                                        <TableRow key={coupon.code}>
-                                            <TableCell className="font-medium">{coupon.code}</TableCell>
-                                            <TableCell>{coupon.type}</TableCell>
-                                            <TableCell className="font-semibold">{coupon.discount}</TableCell>
-                                            <TableCell className="hidden md:table-cell">{coupon.uses}</TableCell>
-                                            <TableCell className="hidden md:table-cell">{coupon.expiry}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={coupon.status === 'Ativo' ? 'outline' : 'secondary'}>{coupon.status}</Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button
-                                                            aria-haspopup="true"
-                                                            size="icon"
-                                                            variant="ghost"
-                                                        >
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                            <span className="sr-only">Toggle menu</span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                                                        <DropdownMenuItem>Desativar</DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem className="text-destructive">
-                                                            Excluir
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                        <CardFooter>
-                            <div className="text-xs text-muted-foreground">
-                                Mostrando <strong>1-5</strong> de <strong>10</strong> cupons
-                            </div>
-                        </CardFooter>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-        </main>
-    );
+              ) : error ? (
+                <div className="py-8 text-sm text-destructive">{error}</div>
+              ) : filteredCoupons.length === 0 ? (
+                <div className="py-8 text-sm text-muted-foreground">
+                  Nenhum cupom encontrado.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Desconto</TableHead>
+                      <TableHead className="hidden md:table-cell">Usos</TableHead>
+                      <TableHead className="hidden md:table-cell">Validade</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>
+                        <span className="sr-only">Ações</span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCoupons.map((coupon) => {
+                      const status = getCouponStatus(coupon);
+
+                      return (
+                        <TableRow key={coupon.id}>
+                          <TableCell className="font-medium">{coupon.code}</TableCell>
+                          <TableCell>
+                            {coupon.type === "percent"
+                              ? "Percentual"
+                              : coupon.type === "fixed"
+                              ? "Valor Fixo"
+                              : "Frete Grátis"}
+                          </TableCell>
+                          <TableCell className="font-semibold">
+                            {formatDiscount(coupon)}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {formatUses(coupon)}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {formatValidity(coupon)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={
+                                status === "Ativo"
+                                  ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                  : status === "Expirado"
+                                  ? "bg-destructive/10 text-destructive border-destructive/30"
+                                  : "bg-muted text-muted-foreground border-muted"
+                              }
+                            >
+                              {status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  aria-haspopup="true"
+                                  size="icon"
+                                  variant="ghost"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Toggle menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    updateCoupon(coupon.id, { active: !coupon.active }).then(
+                                      () => {
+                                        setCoupons((prev) =>
+                                          prev.map((c) =>
+                                            c.id === coupon.id ? { ...c, active: !c.active } : c
+                                          )
+                                        );
+                                      }
+                                    )
+                                  }
+                                >
+                                  {coupon.active ? "Desativar" : "Ativar"}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() =>
+                                    deleteCoupon(coupon.id).then(() =>
+                                      setCoupons((prev) => prev.filter((c) => c.id !== coupon.id))
+                                    )
+                                  }
+                                >
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter>
+          <div className="text-xs text-muted-foreground">
+            Mostrando <strong>{filteredCoupons.length}</strong> cupom
+            {filteredCoupons.length !== 1 && "s"}
+          </div>
+        </CardFooter>
+      </Card>
+    </main>
+  );
 }
