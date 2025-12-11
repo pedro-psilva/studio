@@ -1,11 +1,14 @@
-'use client';
-import { useState } from 'react';
+"use client";
+import { useEffect, useState } from 'react';
 import { MoreHorizontal, Truck, FileText, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { listAllOrders, type OrderDocument } from "@/lib/orderService";
 
 type Order = {
   id: string;
@@ -21,20 +24,130 @@ type KanbanColumn = {
   orders: Order[];
 };
 
-const initialColumns: Record<KanbanColumn['id'], KanbanColumn> = {
-  entry: { id: 'entry', title: 'Entrada', orders: [
-    { id: 'EXP-001', client: 'Clínica Sorriso Novo', carrier: 'Correios', shippingDate: '2024-08-10' },
-  ]},
+type DashboardOrder = OrderDocument & {
+  clientName: string;
+};
+
+const emptyColumns: Record<KanbanColumn['id'], KanbanColumn> = {
+  entry: { id: 'entry', title: 'Entrada', orders: [] },
   packing: { id: 'packing', title: 'Conferência / Embalagem', orders: [] },
   invoice: { id: 'invoice', title: 'Nota Fiscal', orders: [] },
-  'ready-to-ship': { id: 'ready-to-ship', title: 'Pronto para Envio', orders: [
-      { id: 'EXP-002', client: 'Dr. Carlos Lima', carrier: 'Loggi', trackingCode: 'LOG12345BR', shippingDate: '2024-08-09' },
-  ]},
+  'ready-to-ship': { id: 'ready-to-ship', title: 'Pronto para Envio', orders: [] },
   shipped: { id: 'shipped', title: 'Saída (Enviado)', orders: [] },
 };
 
 export default function ShippingPage() {
-    const [columns, setColumns] = useState(initialColumns);
+    const [columns, setColumns] = useState<Record<KanbanColumn['id'], KanbanColumn>>(emptyColumns);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadData() {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const rawOrders = await listAllOrders();
+
+                const filtered = rawOrders.filter((o) =>
+                    o.status === 'shipped' || o.status === 'delivered'
+                );
+
+                const uniqueUserIds = Array.from(
+                    new Set(filtered.map((o) => o.userId).filter(Boolean)),
+                );
+
+                const userMap = new Map<
+                    string,
+                    { displayName?: string; clinicName?: string; email?: string }
+                >();
+
+                await Promise.all(
+                    uniqueUserIds.map(async (userId) => {
+                        try {
+                            const userRef = doc(db, "users", userId);
+                            const snap = await getDoc(userRef);
+                            if (snap.exists()) {
+                                const data = snap.data() as any;
+                                userMap.set(userId, {
+                                    displayName: data.displayName,
+                                    clinicName: data.clinicName,
+                                    email: data.email,
+                                });
+                            }
+                        } catch {
+                        }
+                    }),
+                );
+
+                const mapped: DashboardOrder[] = filtered.map((order) => {
+                    const userInfo = userMap.get(order.userId ?? "") ?? {};
+
+                    const clientName =
+                        userInfo.displayName ||
+                        userInfo.clinicName ||
+                        userInfo.email ||
+                        order.userId ||
+                        "Cliente";
+
+                    return {
+                        ...order,
+                        clientName,
+                    };
+                });
+
+                const nextColumns: Record<KanbanColumn['id'], KanbanColumn> = {
+                    entry: { ...emptyColumns.entry, orders: [] },
+                    packing: { ...emptyColumns.packing, orders: [] },
+                    invoice: { ...emptyColumns.invoice, orders: [] },
+                    'ready-to-ship': { ...emptyColumns['ready-to-ship'], orders: [] },
+                    shipped: { ...emptyColumns.shipped, orders: [] },
+                };
+
+                for (const order of mapped) {
+                    const shippingDate = order.updatedAt
+                        ? order.updatedAt.toISOString()
+                        : new Date().toISOString();
+
+                    const shippingOrder: Order = {
+                        id: order.id,
+                        client: order.clientName,
+                        carrier: 'Transportadora',
+                        trackingCode: undefined,
+                        shippingDate,
+                    };
+
+                    let columnKey: KanbanColumn['id'] = 'entry';
+
+                    if (order.status === 'delivered') {
+                        columnKey = 'shipped';
+                    } else if (order.status === 'shipped') {
+                        columnKey = 'ready-to-ship';
+                    }
+
+                    nextColumns[columnKey].orders.push(shippingOrder);
+                }
+
+                if (!isMounted) return;
+                setColumns(nextColumns);
+            } catch (err: any) {
+                if (!isMounted) return;
+                setError(err?.message ?? 'Erro ao carregar Expedição');
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        void loadData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const onDragEnd = (result: DropResult) => {
         const { source, destination } = result;
@@ -67,10 +180,20 @@ export default function ShippingPage() {
                 <h1 className="text-2xl font-semibold text-white">Kanban de Produção - Expedição</h1>
             </header>
             <main className="flex-1 overflow-x-auto">
+                {loading && (
+                    <div className="flex items-center justify-center py-10 text-sm text-gray-400">
+                        Carregando Expedição...
+                    </div>
+                )}
+                {!loading && error && (
+                    <div className="flex items-center justify-center py-10 text-sm text-red-500">
+                        {error}
+                    </div>
+                )}
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="grid grid-flow-col auto-cols-max md:auto-cols-fr gap-5 h-full min-w-max">
                         {Object.values(columns).map(column => (
-                            <Droppable key={column.id} droppableId={column.id}>
+                            <Droppable key={column.id} droppableId={column.id} isDropDisabled={false}>
                                 {(provided, snapshot) => (
                                     <div
                                         ref={provided.innerRef}
@@ -101,7 +224,6 @@ export default function ShippingPage() {
                                                                 )}
                                                             >
                                                                 <div className="flex justify-between items-start mb-2">
-                                                                    <span className="font-bold text-sm text-[#FFD700]">{order.id}</span>
                                                                     {order.trackingCode ? <Badge variant="secondary">{order.trackingCode}</Badge> : <Badge variant="destructive" className="bg-orange-600">Sem NF</Badge>}
                                                                 </div>
                                                                 <p className="font-semibold text-white mb-3">{order.client}</p>

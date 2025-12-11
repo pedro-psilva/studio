@@ -1,16 +1,21 @@
-'use client';
-import { useState } from 'react';
+"use client";
+import { useEffect, useState } from 'react';
 import { MoreHorizontal, Paperclip, Clock, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { listAllOrders, type OrderDocument } from "@/lib/orderService";
+import { getService } from "@/lib/serviceService";
 
 type Order = {
   id: string;
   client: string;
   product: string;
+  patient?: string;
   files: number;
   dueDate: string;
   urgency: boolean;
@@ -23,13 +28,13 @@ type KanbanColumn = {
   orders: Order[];
 };
 
-const initialColumns: Record<KanbanColumn['id'], KanbanColumn> = {
-  entry: { id: 'entry', title: 'Entrada', orders: [
-    { id: 'CAD-001', client: 'Clínica Sorriso Novo', product: 'Coroa de Zircônia', files: 2, dueDate: '2024-08-05', urgency: true, missingFiles: false },
-  ]},
-  cad: { id: 'cad', title: 'CAD', orders: [
-    { id: 'CAD-002', client: 'Dr. Carlos Lima', product: 'Lente E-max', files: 1, dueDate: '2024-08-04', urgency: false, missingFiles: false },
-  ]},
+type DashboardOrder = OrderDocument & {
+  clientName: string;
+};
+
+const emptyColumns: Record<KanbanColumn['id'], KanbanColumn> = {
+  entry: { id: 'entry', title: 'Entrada', orders: [] },
+  cad: { id: 'cad', title: 'CAD', orders: [] },
   cam: { id: 'cam', title: 'CAM', orders: [] },
   milling: { id: 'milling', title: 'Impressão / Fresagem', orders: [] },
   'digital-control': { id: 'digital-control', title: 'Controle Digital', orders: [] },
@@ -37,7 +42,146 @@ const initialColumns: Record<KanbanColumn['id'], KanbanColumn> = {
 };
 
 export default function CadCamPage() {
-    const [columns, setColumns] = useState(initialColumns);
+    const [columns, setColumns] = useState<Record<KanbanColumn['id'], KanbanColumn>>(emptyColumns);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadData() {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const rawOrders = await listAllOrders();
+
+                // considerar apenas pedidos em produção para este quadro
+                const filtered = rawOrders.filter((o) => o.status === 'in_production');
+
+                const uniqueUserIds = Array.from(
+                    new Set(filtered.map((o) => o.userId).filter(Boolean)),
+                );
+
+                const userMap = new Map<
+                    string,
+                    { displayName?: string; clinicName?: string; email?: string }
+                >();
+
+                await Promise.all(
+                    uniqueUserIds.map(async (userId) => {
+                        try {
+                            const userRef = doc(db, "users", userId);
+                            const snap = await getDoc(userRef);
+                            if (snap.exists()) {
+                                const data = snap.data() as any;
+                                userMap.set(userId, {
+                                    displayName: data.displayName,
+                                    clinicName: data.clinicName,
+                                    email: data.email,
+                                });
+                            }
+                        } catch {
+                        }
+                    }),
+                );
+
+                const mapped: DashboardOrder[] = filtered.map((order) => {
+                    const userInfo = userMap.get(order.userId ?? "") ?? {};
+
+                    const clientName =
+                        userInfo.displayName ||
+                        userInfo.clinicName ||
+                        userInfo.email ||
+                        order.userId ||
+                        "Cliente";
+
+                    return {
+                        ...order,
+                        clientName,
+                    };
+                });
+
+                const productIds = Array.from(
+                    new Set(
+                        mapped
+                            .flatMap((o) => o.items?.map((i) => i.productId) ?? [])
+                            .filter(Boolean) as string[],
+                    ),
+                );
+
+                let serviceNames: Record<string, string> = {};
+
+                if (productIds.length > 0) {
+                    const entries = await Promise.all(
+                        productIds.map(async (pid) => {
+                            try {
+                                const service = await getService(pid);
+                                return [pid, service?.nome ?? pid] as [string, string];
+                            } catch {
+                                return [pid, pid] as [string, string];
+                            }
+                        }),
+                    );
+
+                    serviceNames = Object.fromEntries(entries);
+                }
+
+                const nextColumns: Record<KanbanColumn['id'], KanbanColumn> = {
+                    entry: { ...emptyColumns.entry, orders: [] },
+                    cad: { ...emptyColumns.cad, orders: [] },
+                    cam: { ...emptyColumns.cam, orders: [] },
+                    milling: { ...emptyColumns.milling, orders: [] },
+                    'digital-control': { ...emptyColumns['digital-control'], orders: [] },
+                    exit: { ...emptyColumns.exit, orders: [] },
+                };
+
+                for (const order of mapped) {
+                    const firstItem = order.items?.[0];
+                    const productId = firstItem?.productId;
+                    const productName = productId
+                        ? serviceNames[productId] ?? productId
+                        : "Serviço";
+                    const patientName = firstItem?.patientName ?? "Paciente";
+
+                    const files = order.items?.length ?? 0;
+                    const dueDate = order.createdAt
+                        ? order.createdAt.toISOString()
+                        : new Date().toISOString();
+
+                    const cadOrder: Order = {
+                        id: order.id,
+                        client: order.clientName,
+                        product: productName,
+                        patient: patientName,
+                        files,
+                        dueDate,
+                        urgency: false,
+                        missingFiles: false,
+                    };
+
+                    // inicialmente todos entram em "Entrada"; o time move entre as etapas
+                    nextColumns.entry.orders.push(cadOrder);
+                }
+
+                if (!isMounted) return;
+                setColumns(nextColumns);
+            } catch (err: any) {
+                if (!isMounted) return;
+                setError(err?.message ?? 'Erro ao carregar CAD/CAM');
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        void loadData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const onDragEnd = (result: DropResult) => {
         const { source, destination } = result;
@@ -70,10 +214,20 @@ export default function CadCamPage() {
                 <h1 className="text-2xl font-semibold text-white">Kanban de Produção - CAD/CAM</h1>
             </header>
             <main className="flex-1 overflow-x-auto">
+                {loading && (
+                    <div className="flex items-center justify-center py-10 text-sm text-gray-400">
+                        Carregando CAD/CAM...
+                    </div>
+                )}
+                {!loading && error && (
+                    <div className="flex items-center justify-center py-10 text-sm text-red-500">
+                        {error}
+                    </div>
+                )}
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="grid grid-flow-col auto-cols-max md:auto-cols-fr gap-5 h-full min-w-max">
                         {Object.values(columns).map(column => (
-                            <Droppable key={column.id} droppableId={column.id}>
+                            <Droppable key={column.id} droppableId={column.id} isDropDisabled={false}>
                                 {(provided, snapshot) => (
                                     <div
                                         ref={provided.innerRef}
@@ -104,14 +258,14 @@ export default function CadCamPage() {
                                                                 )}
                                                             >
                                                                  <div className="flex justify-between items-start mb-2">
-                                                                    <span className="font-bold text-sm text-[#FFD700]">{order.id}</span>
                                                                     <div className="flex items-center gap-2">
                                                                         {order.missingFiles && <Badge variant="destructive" className="h-5 bg-orange-600">Pendência</Badge>}
                                                                         {order.urgency && <Badge className="bg-red-600 text-white h-5">URGENTE</Badge>}
                                                                     </div>
                                                                 </div>
                                                                 <p className="font-semibold text-white mb-1">{order.client}</p>
-                                                                <p className="text-sm text-gray-400 mb-3">{order.product}</p>
+                                                                <p className="text-sm text-gray-400 mb-1">{order.product}</p>
+                                                                <p className="text-xs text-gray-500 mb-2">Paciente: {order.patient ?? "Paciente"}</p>
                                                                 <div className="flex justify-between items-center text-xs text-gray-500">
                                                                     <div className="flex items-center gap-1.5">
                                                                         <Paperclip className="h-3 w-3" />
