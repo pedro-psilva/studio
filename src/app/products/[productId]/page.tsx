@@ -1,10 +1,10 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, useParams, useRouter, useSearchParams } from "next/navigation";
+
 import {
   ShoppingCart,
   UploadCloud,
@@ -44,6 +44,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { SeletorInterativoFDI } from '@/components/fdi-selector';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { storage } from "@/lib/firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 const colorOptions = {
   "VITA CLASSIC": {
@@ -87,7 +89,6 @@ const STEPS = [
   { id: "patient", title: "Ficha do Paciente" },
   { id: "review", title: "Revisão" },
 ];
-
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -272,8 +273,20 @@ export default function ProductDetailPage() {
 
     if (!validateStep()) return;
 
-    // TODO: upload real dos arquivos para Storage e uso das URLs
-    const stlFileUrl = uploadedFiles.length > 0 ? uploadedFiles[0].name : existingStlFileName ?? undefined;
+    let stlFileUrl: string | undefined = existingStlFileName ?? undefined;
+
+    if (uploadedFiles.length > 0) {
+      try {
+        const file = uploadedFiles[0];
+        const safeUserId = user.uid || "anonymous";
+        const storagePath = `cases-files/${safeUserId}/${service.id}/${Date.now()}-${file.name}`;
+        const fileRef = ref(storage, storagePath);
+        const snapshot = await uploadBytes(fileRef, file);
+        stlFileUrl = await getDownloadURL(snapshot.ref);
+      } catch (uploadError) {
+        console.error("Erro ao fazer upload do arquivo clínico:", uploadError);
+      }
+    }
 
     const cartItem: CartItemFirestore = {
       productId: service.id,
@@ -301,12 +314,6 @@ export default function ProductDetailPage() {
     } catch (err) {
       console.error("Erro ao adicionar item ao carrinho:", err);
     }
-  }
-
-  function handleFileDrop(e: React.DragEvent<HTMLLabelElement>) {
-    e.preventDefault();
-    const files = Array.from(e.dataTransfer.files);
-    setUploadedFiles((prev) => [...prev, ...files]);
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {

@@ -20,6 +20,7 @@ type Order = {
   dueDate: string;
   urgency: boolean;
   missingFiles: boolean;
+  stlFileUrl?: string;
 };
 
 type KanbanColumn = {
@@ -161,6 +162,7 @@ export default function CadCamPage() {
                         dueDate,
                         urgency: false,
                         missingFiles: false,
+                        stlFileUrl: firstItem?.stlFileUrl,
                     };
 
                     // inicialmente todos entram em "Entrada"; o time move entre as etapas
@@ -269,23 +271,35 @@ export default function CadCamPage() {
                                                                 <p className="font-semibold text-white mb-1">{order.client}</p>
                                                                 <p className="text-sm text-gray-400 mb-1">{order.product}</p>
                                                                 <p className="text-xs text-gray-500 mb-2">Paciente: {order.patient ?? "Paciente"}</p>
-                                                                <div className="flex justify-between items-center text-xs text-gray-500">
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <Paperclip className="h-3 w-3" />
-                                                                        <span>{order.files} STL</span>
+                                                                <div className="flex flex-col gap-2 text-xs text-gray-500">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <Paperclip className="h-3 w-3" />
+                                                                            <span>{order.files} STL</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <Clock className="h-3 w-3" />
+                                                                            <span>{new Date(order.dueDate).toLocaleDateString()}</span>
+                                                                        </div>
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost" className="h-6 w-6 text-gray-400 hover:text-white"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                                                            <DropdownMenuContent align="end" className="bg-[#1a1a1a] text-white border-[#2d2d2d]">
+                                                                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                                                <DropdownMenuItem className="focus:bg-[#333] focus:text-white">Ver Detalhes</DropdownMenuItem>
+                                                                                <DropdownMenuSeparator className="bg-[#2d2d2d]" />
+                                                                            </DropdownMenuContent>
+                                                                        </DropdownMenu>
                                                                     </div>
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <Clock className="h-3 w-3" />
-                                                                        <span>{new Date(order.dueDate).toLocaleDateString()}</span>
-                                                                    </div>
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost" className="h-6 w-6 text-gray-400 hover:text-white"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                                                        <DropdownMenuContent align="end" className="bg-[#1a1a1a] text-white border-[#2d2d2d]">
-                                                                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                                            <DropdownMenuItem className="focus:bg-[#333] focus:text-white">Ver Detalhes</DropdownMenuItem>
-                                                                            <DropdownMenuSeparator className="bg-[#2d2d2d]" />
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
+                                                                    {order.stlFileUrl && (
+                                                                        <a
+                                                                            href={order.stlFileUrl}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="text-[11px] text-blue-400 hover:text-blue-300 underline"
+                                                                        >
+                                                                            Baixar arquivos clínicos
+                                                                        </a>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         )}

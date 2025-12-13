@@ -257,12 +257,15 @@ export default function ProductionGeneralPage() {
 
         const sourceColId = source.droppableId as keyof typeof columns;
         const destColId = destination.droppableId as keyof typeof columns;
-        
+
         if (source.droppableId === destination.droppableId) {
             const items = Array.from(columns[sourceColId].orders);
             const [reorderedItem] = items.splice(source.index, 1);
             items.splice(destination.index, 0, reorderedItem);
-            setColumns({ ...columns, [sourceColId]: { ...columns[sourceColId], orders: items } });
+            setColumns({
+                ...columns,
+                [sourceColId]: { ...columns[sourceColId], orders: items },
+            });
         } else {
             const sourceItems = Array.from(columns[sourceColId].orders);
             const destItems = Array.from(columns[destColId].orders);
@@ -277,37 +280,43 @@ export default function ProductionGeneralPage() {
     };
 
     return (
-        <div className="bg-[#0a0a0a] flex flex-col flex-1 h-full p-4 md:p-6 lg:p-8">
+        <div className="bg-background flex flex-col flex-1 h-full p-4 md:p-6 lg:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl font-semibold text-white">Kanban de Produção - Geral</h1>
+                <h1 className="text-2xl font-semibold text-foreground">Kanban de Produção - Geral</h1>
             </header>
             <main className="flex-1 overflow-x-auto">
                 {loading && (
-                    <div className="flex items-center justify-center py-10 text-sm text-gray-400">
+                    <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
                         Carregando pedidos de produção...
                     </div>
                 )}
                 {!loading && error && (
-                    <div className="flex items-center justify-center py-10 text-sm text-red-500">
+                    <div className="flex items-center justify-center py-10 text-sm text-destructive">
                         {error}
                     </div>
                 )}
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="grid grid-flow-col auto-cols-max md:auto-cols-fr gap-5 h-full min-w-max">
-                        {Object.values(columns).map(column => (
-                            <Droppable key={column.id} droppableId={column.id} isDropDisabled={false}>
+                        {Object.values(columns).map((column) => (
+                            <Droppable
+                                key={column.id}
+                                droppableId={column.id}
+                                isDropDisabled={false}
+                                isCombineEnabled={false}
+                                ignoreContainerClipping={false}
+                            >
                                 {(provided, snapshot) => (
                                     <div
                                         ref={provided.innerRef}
                                         {...provided.droppableProps}
                                         className={cn(
-                                            "flex flex-col w-[300px] h-full rounded-lg bg-[#1a1a1a] border border-[#2d2d2d]",
-                                            snapshot.isDraggingOver && "border-[#FFD700] bg-[#1a1a1a]/80"
+                                            "flex flex-col w-[300px] h-full rounded-lg bg-card border border-border",
+                                            snapshot.isDraggingOver && "border-primary/60 bg-accent/40"
                                         )}
                                     >
-                                        <div className="flex items-center justify-between p-4 border-b border-[#2d2d2d]">
-                                            <h2 className="font-semibold text-white">{column.title}</h2>
-                                            <div className="text-sm font-bold bg-[#FFD700] text-black rounded-full px-2.5 py-0.5">
+                                        <div className="flex items-center justify-between p-4 border-b border-border/60">
+                                            <h2 className="font-semibold text-foreground">{column.title}</h2>
+                                            <div className="text-sm font-bold bg-primary text-primary-foreground rounded-full px-2.5 py-0.5">
                                                 {column.orders.length}
                                             </div>
                                         </div>
@@ -321,8 +330,8 @@ export default function ProductionGeneralPage() {
                                                                 {...provided.draggableProps}
                                                                 {...provided.dragHandleProps}
                                                                 className={cn(
-                                                                    "bg-[#121212] rounded-[16px] border border-[#3b2f00] p-4 shadow-sm transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_0_15px_rgba(255,215,0,0.2)]",
-                                                                    snapshot.isDragging && "scale-[1.03] shadow-[0_0_15px_rgba(255,215,0,0.4)] opacity-90 border-[#ffd700]"
+                                                                    "bg-background rounded-[16px] border border-border p-4 shadow-sm transition-all duration-200 hover:scale-[1.03] hover:shadow-md",
+                                                                    snapshot.isDragging && "scale-[1.03] shadow-lg opacity-90 border-primary"
                                                                 )}
                                                             >
                                                                 <div className="flex justify-between items-start mb-2">
@@ -334,11 +343,11 @@ export default function ProductionGeneralPage() {
                                                                         {order.urgency && !order.isLate && <Badge className="bg-orange-600 text-white h-5">Urgente</Badge>}
                                                                     </div>
                                                                 </div>
-                                                                <p className="font-semibold text-white mb-1">{order.client}</p>
-                                                                <p className="text-sm text-gray-400 mb-1">{order.product}</p>
-                                                                <p className="text-xs text-gray-500 mb-2">Paciente: {order.patient ?? "Paciente"}</p>
+                                                                <p className="font-semibold text-foreground mb-1">{order.client}</p>
+                                                                <p className="text-sm text-muted-foreground mb-1">{order.product}</p>
+                                                                <p className="text-xs text-muted-foreground mb-2">Paciente: {order.patient ?? "Paciente"}</p>
 
-                                                                <div className="flex justify-between items-center text-xs text-gray-500">
+                                                                <div className="flex justify-between items-center text-xs text-muted-foreground">
                                                                     <div className="flex items-center gap-1.5">
                                                                         <Paperclip className="h-3 w-3" />
                                                                         <span>{order.files}</span>
@@ -353,7 +362,7 @@ export default function ProductionGeneralPage() {
                                                                                 aria-haspopup="true"
                                                                                 size="icon"
                                                                                 variant="ghost"
-                                                                                className="h-6 w-6 text-gray-400 hover:text-white"
+                                                                                className="h-6 w-6 text-muted-foreground hover:text-foreground"
                                                                             >
                                                                                 <MoreHorizontal className="h-4 w-4" />
                                                                                 <span className="sr-only">Ações</span>

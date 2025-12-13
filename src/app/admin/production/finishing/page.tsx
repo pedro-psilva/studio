@@ -19,6 +19,7 @@ type Order = {
   responsible: string;
   photos: number;
   lastUpdate: string;
+  stlFileUrl?: string;
 };
 
 type KanbanColumn = {
@@ -160,6 +161,7 @@ export default function FinishingPage() {
                         responsible: 'Equipe',
                         photos: 0,
                         lastUpdate,
+                        stlFileUrl: firstItem?.stlFileUrl,
                     };
 
                     let columnKey: KanbanColumn['id'] = 'entry';
@@ -270,6 +272,16 @@ export default function FinishingPage() {
                                                                 <p className="font-semibold text-white mb-1">{order.client}</p>
                                                                 <p className="text-sm text-gray-400 mb-1">{order.product}</p>
                                                                 <p className="text-xs text-gray-500 mb-2">Paciente: {order.patient ?? "Paciente"}</p>
+                                                                {order.stlFileUrl && (
+                                                                    <a
+                                                                        href={order.stlFileUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-[11px] text-blue-400 hover:text-blue-300 underline mb-2 block"
+                                                                    >
+                                                                        Baixar arquivos clínicos
+                                                                    </a>
+                                                                )}
                                                                 <div className="flex justify-between items-center text-xs text-gray-500">
                                                                      <div className="flex items-center gap-1.5">
                                                                         <User className="h-3 w-3" />

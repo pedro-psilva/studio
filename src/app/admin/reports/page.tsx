@@ -13,6 +13,11 @@ interface SalesByService {
   total: number;
 }
 
+interface CartConversionEntry {
+  label: string;
+  value: number;
+}
+
 export default function ReportsPage() {
   const [orders, setOrders] = useState<OrderDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +99,34 @@ export default function ReportsPage() {
       total,
     }));
   }, [orders, serviceNames]);
+
+  const {
+    conversionRate,
+    paidOrdersCount,
+    totalOrdersCount,
+    conversionChartData,
+  } = useMemo(() => {
+    const totalOrdersCount = orders.length;
+    const paidOrdersCount = orders.filter((o) => o.paymentStatus === 'approved').length;
+
+    const conversionRate = totalOrdersCount > 0
+      ? (paidOrdersCount / totalOrdersCount) * 100
+      : 0;
+
+    const notConvertedCount = Math.max(totalOrdersCount - paidOrdersCount, 0);
+
+    const conversionChartData: CartConversionEntry[] = [
+      { label: 'Convertidos', value: paidOrdersCount },
+      { label: 'Não convertidos', value: notConvertedCount },
+    ];
+
+    return {
+      conversionRate,
+      paidOrdersCount,
+      totalOrdersCount,
+      conversionChartData,
+    };
+  }, [orders]);
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -232,7 +265,57 @@ export default function ReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Gráfico de conversão em breve...</p>
+            {loading && (
+              <p className="text-sm text-muted-foreground">Carregando dados...</p>
+            )}
+            {!loading && error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
+            {!loading && !error && totalOrdersCount === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Nenhum pedido encontrado para calcular a conversão.
+              </p>
+            )}
+            {!loading && !error && totalOrdersCount > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold">
+                    {conversionRate.toFixed(1)}%
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {paidOrdersCount} de {totalOrdersCount} pedidos com pagamento aprovado
+                  </span>
+                </div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={conversionChartData}>
+                    <XAxis
+                      dataKey="label"
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      formatter={(value: any) => `${value} pedido(s)`}
+                    />
+                    <Legend />
+                    <Bar
+                      dataKey="value"
+                      name="Pedidos"
+                      fill="hsl(var(--primary))"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
