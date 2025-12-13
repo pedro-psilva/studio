@@ -146,9 +146,12 @@ export default function ProductionGeneralPage() {
                         productIds.map(async (pid) => {
                             try {
                                 const service = await getService(pid);
-                                return [pid, service?.nome ?? pid] as [string, string];
+                                return [
+                                    pid,
+                                    service?.nome ?? 'Serviço não especificado',
+                                ] as [string, string];
                             } catch {
-                                return [pid, pid] as [string, string];
+                                return [pid, 'Serviço não especificado'] as [string, string];
                             }
                         }),
                     );
@@ -171,7 +174,7 @@ export default function ProductionGeneralPage() {
                     const firstItem = order.items?.[0];
                     const productId = firstItem?.productId;
                     const productName = productId
-                        ? serviceNames[productId] ?? productId
+                        ? serviceNames[productId] ?? 'Serviço não especificado'
                         : "Serviço";
                     const patientName = firstItem?.patientName ?? "Paciente";
 

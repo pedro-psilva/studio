@@ -103,9 +103,12 @@ export default function AccountPage() {
             productIds.map(async (pid) => {
               try {
                 const service = await getService(pid);
-                return [pid, service?.nome ?? pid] as [string, string];
+                return [
+                  pid,
+                  service?.nome ?? 'Serviço não especificado',
+                ] as [string, string];
               } catch {
-                return [pid, pid] as [string, string];
+                return [pid, 'Serviço não especificado'] as [string, string];
               }
             })
           );
@@ -210,7 +213,7 @@ export default function AccountPage() {
                           const statusInfo = statusMap[order.status] || { label: order.status, icon: AlertTriangle, color: 'bg-gray-500' };
                           const mainItem = order.items[0];
                           const mainServiceName = mainItem?.productId
-                            ? serviceNames[mainItem.productId] || mainItem.productId
+                            ? serviceNames[mainItem.productId] || 'Serviço não especificado'
                             : null;
                           const patientName = mainItem?.patientName || `Pedido #${order.id.substring(0, 6)}`;
                           return (

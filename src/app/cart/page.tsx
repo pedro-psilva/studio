@@ -1,6 +1,6 @@
  'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -18,7 +18,7 @@ import { createOrderFromCart, OrderItemFirestore } from '@/lib/orderService';
 import { Badge } from '@/components/ui/badge';
 import { getService, type ServiceDocument } from '@/lib/serviceService';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, limit } from 'firebase/firestore';
 
 type CartItemWithService = CartItemFirestore & {
   uniqueId: string;
@@ -30,6 +30,20 @@ export default function CartPage() {
   const [loadingCart, setLoadingCart] = useState(true);
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [userAddress, setUserAddress] = useState<{ cep?: string; number?: string; complement?: string } | null>(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: string;
+    code: string;
+    type: 'percent' | 'fixed' | 'free_shipping';
+    value: number;
+    active: boolean;
+    maxUses?: number | null;
+    usedCount?: number;
+    validFrom?: Date | null;
+    validUntil?: Date | null;
+  } | null>(null);
   const { t, formatCurrency } = useTranslation('common');
   const { user } = useAuth();
   const router = useRouter();
@@ -180,7 +194,118 @@ export default function CartPage() {
     0
   );
   const shipping = 0;
-  const total = subtotal + shipping;
+
+  const discount = useMemo(() => {
+    if (!appliedCoupon) return 0;
+
+    if (appliedCoupon.type === 'percent') {
+      const percent = Math.max(0, Math.min(appliedCoupon.value, 100));
+      return (subtotal * percent) / 100;
+    }
+
+    if (appliedCoupon.type === 'fixed') {
+      const v = Math.max(0, appliedCoupon.value);
+      return Math.min(v, subtotal);
+    }
+
+    // free_shipping não altera subtotal; frete tratado separadamente
+    return 0;
+  }, [appliedCoupon, subtotal]);
+
+  const finalShipping = useMemo(() => {
+    if (appliedCoupon?.type === 'free_shipping') return 0;
+    return shipping;
+  }, [appliedCoupon, shipping]);
+
+  const total = useMemo(() => {
+    const base = subtotal - discount + finalShipping;
+    return base < 0 ? 0 : base;
+  }, [subtotal, discount, finalShipping]);
+
+  const handleApplyCoupon = async () => {
+    const raw = couponCode.trim();
+    if (!raw) {
+      setCouponError('Informe um código de cupom.');
+      setAppliedCoupon(null);
+      return;
+    }
+
+    setApplyingCoupon(true);
+    setCouponError(null);
+
+    try {
+      const normalized = raw.toUpperCase();
+      const col = collection(db, 'coupons');
+      const q = query(col, where('code', '==', normalized), limit(1));
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        setAppliedCoupon(null);
+        setCouponError('Cupom não encontrado.');
+        return;
+      }
+
+      const docSnap = snap.docs[0];
+      const data = docSnap.data() as any;
+
+      if (!data.active) {
+        setAppliedCoupon(null);
+        setCouponError('Este cupom está inativo.');
+        return;
+      }
+
+      const now = new Date();
+      const validFrom: Date | null = data.validFrom?.toDate?.() ?? null;
+      const validUntil: Date | null = data.validUntil?.toDate?.() ?? null;
+
+      if (validFrom && now < validFrom) {
+        setAppliedCoupon(null);
+        setCouponError('Este cupom ainda não está válido.');
+        return;
+      }
+
+      if (validUntil && now > validUntil) {
+        setAppliedCoupon(null);
+        setCouponError('Este cupom está expirado.');
+        return;
+      }
+
+      if (data.maxUses != null && typeof data.usedCount === 'number') {
+        if (data.usedCount >= data.maxUses) {
+          setAppliedCoupon(null);
+          setCouponError('Este cupom já atingiu o número máximo de usos.');
+          return;
+        }
+      }
+
+      const type: 'percent' | 'fixed' | 'free_shipping' =
+        data.type === 'fixed'
+          ? 'fixed'
+          : data.type === 'free_shipping'
+          ? 'free_shipping'
+          : 'percent';
+
+      setAppliedCoupon({
+        id: docSnap.id,
+        code: data.code,
+        type,
+        value: typeof data.value === 'number' ? data.value : 0,
+        active: !!data.active,
+        maxUses: data.maxUses ?? null,
+        usedCount: data.usedCount ?? 0,
+        validFrom,
+        validUntil,
+      });
+      setCouponError(null);
+      setCouponCode(normalized);
+    } catch (e) {
+      console.error('Erro ao aplicar cupom:', e);
+      setAppliedCoupon(null);
+      setCouponError('Não foi possível validar o cupom. Tente novamente.');
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
 
   const handleCheckout = async () => {
     if (!user) {
@@ -362,10 +487,42 @@ export default function CartPage() {
                             <span>Subtotal</span>
                             <span>{formatCurrency(subtotal)}</span>
                         </div>
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Código do cupom"
+                              value={couponCode}
+                              onChange={(e) => setCouponCode(e.target.value)}
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              disabled={applyingCoupon || cartItems.length === 0}
+                              onClick={handleApplyCoupon}
+                            >
+                              {applyingCoupon ? 'Aplicando...' : 'Aplicar'}
+                            </Button>
+                          </div>
+                          {couponError && (
+                            <p className="text-xs text-destructive">{couponError}</p>
+                          )}
+                          {appliedCoupon && !couponError && (
+                            <p className="text-xs text-emerald-600">
+                              Cupom {appliedCoupon.code} aplicado.
+                            </p>
+                          )}
+                        </div>
+                        {discount > 0 && (
+                          <div className="flex justify-between text-sm text-emerald-700">
+                            <span>Desconto</span>
+                            <span>-{formatCurrency(discount)}</span>
+                          </div>
+                        )}
                          <div className="flex justify-between">
                             <span>Frete</span>
-                            <span>{formatCurrency(shipping)}</span>
-                        </div>
+                            <span>{formatCurrency(finalShipping)}</span>
+                         </div>
                         <Separator />
                         <div className="flex justify-between font-bold text-lg">
                             <span>Total</span>

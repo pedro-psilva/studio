@@ -134,9 +134,12 @@ export default function AdminDashboard() {
             productIds.map(async (pid) => {
               try {
                 const service = await getService(pid);
-                return [pid, service?.nome ?? pid] as [string, string];
+                return [
+                  pid,
+                  service?.nome ?? 'Serviço não especificado',
+                ] as [string, string];
               } catch {
-                return [pid, pid] as [string, string];
+                return [pid, 'Serviço não especificado'] as [string, string];
               }
             }),
           );
@@ -235,7 +238,7 @@ export default function AdminDashboard() {
     const topProducts: TopProduct[] = Array.from(productMap.entries())
       .map(([id, data]) => ({
         id,
-        name: serviceNames[id] ?? id,
+        name: serviceNames[id] ?? 'Serviço não especificado',
         units: data.units,
       }))
       .sort((a, b) => b.units - a.units)
@@ -245,10 +248,11 @@ export default function AdminDashboard() {
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, 5)
       .map((o) => ({
+        id: o.id,
         customer: o.clientName,
         product:
           o.items && o.items[0]
-            ? serviceNames[o.items[0].productId] ?? o.items[0].productId
+            ? serviceNames[o.items[0].productId] ?? 'Serviço não especificado'
             : "Serviços",
         patient:
           o.items && o.items[0]?.patientName
@@ -499,7 +503,7 @@ export default function AdminDashboard() {
                   </TableHeader>
                   <TableBody>
                     {recentOrders.map((order) => (
-                      <TableRow key={order.customer}>
+                      <TableRow key={order.id}>
                         <TableCell>
                           <Link
                             href={`/admin/orders`}

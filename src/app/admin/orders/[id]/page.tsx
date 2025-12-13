@@ -59,9 +59,12 @@ export default function AdminOrderDetailPage() {
             productIds.map(async (pid) => {
               try {
                 const service = await getService(pid);
-                return [pid, service?.nome ?? pid] as [string, string];
+                return [
+                  pid,
+                  service?.nome ?? 'Serviço não especificado',
+                ] as [string, string];
               } catch {
-                return [pid, pid] as [string, string];
+                return [pid, 'Serviço não especificado'] as [string, string];
               }
             })
           );
@@ -247,7 +250,7 @@ export default function AdminOrderDetailPage() {
                         {order.items.map((item, index) => (
                           <TableRow key={index}>
                             <TableCell className="font-medium">
-                              {serviceNames[item.productId] || item.productId}
+                              {serviceNames[item.productId] || 'Serviço não especificado'}
                             </TableCell>
                             <TableCell>{item.quantity}</TableCell>
                             <TableCell>{item.patientName || '-'}</TableCell>

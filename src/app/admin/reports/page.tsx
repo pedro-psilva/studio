@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { ResponsiveContainer, BarChart, XAxis, YAxis, Bar, Tooltip, Legend } from 'recharts';
 import { File } from "lucide-react";
 import { listAllOrders, type OrderDocument } from '@/lib/orderService';
+import { getService } from '@/lib/serviceService';
 
 interface SalesByService {
   name: string;
@@ -16,6 +17,7 @@ export default function ReportsPage() {
   const [orders, setOrders] = useState<OrderDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [serviceNames, setServiceNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let isMounted = true;
@@ -27,6 +29,33 @@ export default function ReportsPage() {
         const data = await listAllOrders();
         if (!isMounted) return;
         setOrders(data);
+
+        const productIds = Array.from(
+          new Set(
+            data
+              .flatMap((o) => o.items?.map((i) => i.productId) ?? [])
+              .filter(Boolean) as string[],
+          ),
+        );
+
+        if (productIds.length > 0) {
+          const entries = await Promise.all(
+            productIds.map(async (pid) => {
+              try {
+                const service = await getService(pid);
+                return [
+                  pid,
+                  service?.nome ?? 'Serviço não especificado',
+                ] as [string, string];
+              } catch {
+                return [pid, 'Serviço não especificado'] as [string, string];
+              }
+            }),
+          );
+
+          if (!isMounted) return;
+          setServiceNames(Object.fromEntries(entries));
+        }
       } catch (err: any) {
         if (!isMounted) return;
         setError(err?.message ?? 'Erro ao carregar relatórios');
@@ -60,8 +89,11 @@ export default function ReportsPage() {
       }
     }
 
-    return Array.from(map.entries()).map(([name, total]) => ({ name, total }));
-  }, [orders]);
+    return Array.from(map.entries()).map(([productId, total]) => ({
+      name: serviceNames[productId] ?? 'Serviço não especificado',
+      total,
+    }));
+  }, [orders, serviceNames]);
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
