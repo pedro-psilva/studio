@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     const baseUrl = process.env.BASE_URL;
 
     if (!handle || !baseUrl) {
+      console.error('Configuração de pagamento incompleta. INFINITEPAY_HANDLE ou BASE_URL ausentes.');
       return NextResponse.json({ error: 'Configuração de pagamento incompleta' }, { status: 500 });
     }
 
@@ -71,6 +72,14 @@ export async function POST(req: NextRequest) {
       if (address.complement) body.address.complement = address.complement;
     }
 
+    console.log('Enviando requisição para InfinitePay:', {
+      endpoint: INFINITEPAY_ENDPOINT,
+      handle,
+      redirectUrl,
+      webhookUrl,
+      items,
+    });
+
     const response = await fetch(INFINITEPAY_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -81,16 +90,22 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const text = await response.text();
-      console.error('Erro ao criar link InfinitePay:', text);
+      console.error('Erro ao criar link InfinitePay:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: text,
+      });
       return NextResponse.json({ error: 'Falha ao criar link de pagamento' }, { status: 502 });
     }
 
     const data = (await response.json()) as { url?: string };
 
     if (!data.url) {
+      console.error('Resposta da InfinitePay não contém URL:', data);
       return NextResponse.json({ error: 'Resposta inválida da InfinitePay' }, { status: 502 });
     }
 
+    console.log('Link de pagamento InfinitePay gerado com sucesso:', data.url);
     return NextResponse.json({ url: data.url });
   } catch (error) {
     console.error('Erro na rota create-link InfinitePay:', error);

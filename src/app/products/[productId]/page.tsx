@@ -288,9 +288,11 @@ export default function ProductDetailPage() {
       }
     }
 
+    const quantity = requiresStl ? Math.max(1, selectedTeeth.length || 1) : 1;
+
     const cartItem: CartItemFirestore = {
       productId: service.id,
-      quantity: 1,
+      quantity,
       teeth: selectedTeeth,
       shade: selectedColor || undefined,
       material: undefined,
@@ -329,7 +331,13 @@ export default function ProductDetailPage() {
     notFound();
   }
 
-  const productName = service ? tProducts(`${service.codigo}.name`) || service.nome : '...';
+  const translatedName = service ? tProducts(`${service.codigo}.name`) : null;
+  const productName = service
+    ? translatedName && translatedName !== `${service.codigo}.name`
+      ? translatedName
+      : service.nome
+    : '...';
+
   const productDescription = service ? tProducts(`${service.codigo}.description`) || service.descricao : '...';
   
   const translatedTags = service ? tProducts(`${service.codigo}.tags`) : null;
@@ -337,6 +345,10 @@ export default function ProductDetailPage() {
 
   const translatedFlow = service ? tProducts(`${service.codigo}.productionFlow`) : null;
   const productFlow = Array.isArray(translatedFlow) ? translatedFlow : (service?.fluxoProducao ?? []);
+
+  const unitPrice = service?.precoBase ?? 0;
+  const quantity = requiresStl ? Math.max(1, selectedTeeth.length || 1) : 1;
+  const totalPrice = unitPrice * quantity;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -456,7 +468,7 @@ export default function ProductDetailPage() {
                   {tProduct('code')}: {service.codigo}
                 </p>
                 <p className="text-3xl font-bold text-primary mb-4">
-                  {formatCurrency(service.precoBase)}
+                  {formatCurrency(totalPrice)}
                 </p>
 
                 {service.prazoEntrega > 0 && (
@@ -491,8 +503,7 @@ export default function ProductDetailPage() {
                         {tProduct('modal.title')}: {productName}
                       </DialogTitle>
                       <DialogDescription>
-                        {tProduct('modal.step', { current: currentStep + 1, total: STEPS.length })}:{" "}
-                        {tProduct(`modal.steps.${STEPS[currentStep].id}`)}
+                        {`Passo ${currentStep + 1} de ${STEPS.length}`}: {tProduct(`modal.steps.${STEPS[currentStep].id}`)}
                       </DialogDescription>
                       <Progress value={progress} className="mt-2" />
                     </DialogHeader>
@@ -767,7 +778,7 @@ export default function ProductDetailPage() {
                     <DialogFooter className="pt-4 mt-auto border-t">
                      <div className="flex justify-between w-full items-center">
                         <div className="text-lg font-bold text-primary">
-                          {formatCurrency(service.precoBase)}
+                          {formatCurrency(totalPrice)}
                         </div>
                         <div className="flex items-center gap-2">
                           {currentStep > 0 && (

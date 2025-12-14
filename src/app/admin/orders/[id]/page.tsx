@@ -22,6 +22,41 @@ interface UserInfo {
   phone?: string;
 }
 
+function getOrderStatusLabel(status: OrderDocument['status']): string {
+  switch (status) {
+    case 'pending_payment':
+      return 'Pagamento pendente';
+    case 'paid':
+      return 'Pago';
+    case 'in_production':
+      return 'Em produção';
+    case 'shipped':
+      return 'Enviado';
+    case 'delivered':
+      return 'Entregue';
+    case 'canceled':
+      return 'Cancelado';
+    default:
+      return status;
+  }
+}
+
+function getPaymentStatusLabel(status: OrderDocument['paymentStatus']): string {
+  switch (status) {
+    case 'waiting':
+      return 'Aguardando pagamento';
+    case 'approved':
+      return 'Aprovado';
+    case 'refused':
+      return 'Recusado';
+    case 'refunded':
+      return 'Estornado';
+    case null:
+    default:
+      return 'N/A';
+  }
+}
+
 export default function AdminOrderDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -148,11 +183,11 @@ export default function AdminOrderDetailPage() {
                 <CardContent className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Status do pedido</p>
-                    <Badge variant="outline">{order.status}</Badge>
+                    <Badge variant="outline">{getOrderStatusLabel(order.status)}</Badge>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Status do pagamento</p>
-                    <p className="text-sm font-medium">{order.paymentStatus ?? 'N/A'}</p>
+                    <p className="text-sm font-medium">{getPaymentStatusLabel(order.paymentStatus)}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Itens</p>

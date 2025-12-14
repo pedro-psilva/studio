@@ -94,7 +94,6 @@ export default function CadCamPage() {
                         userInfo.displayName ||
                         userInfo.clinicName ||
                         userInfo.email ||
-                        order.userId ||
                         "Cliente";
 
                     return {
@@ -232,7 +231,13 @@ export default function CadCamPage() {
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="grid grid-flow-col auto-cols-max md:auto-cols-fr gap-5 h-full min-w-max">
                         {Object.values(columns).map(column => (
-                            <Droppable key={column.id} droppableId={column.id} isDropDisabled={false}>
+                            <Droppable
+                                key={column.id}
+                                droppableId={column.id}
+                                isDropDisabled={false}
+                                isCombineEnabled={false}
+                                ignoreContainerClipping={false}
+                            >
                                 {(provided, snapshot) => (
                                     <div
                                         ref={provided.innerRef}

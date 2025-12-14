@@ -81,7 +81,7 @@ export async function getOrder(orderId: string): Promise<OrderDocument | null> {
   }
 
   return {
-    id: data.id,
+    id: snap.id,
     userId: data.userId,
     items: data.items ?? [],
     subtotal: data.subtotal,
@@ -119,7 +119,7 @@ export async function listUserOrders(userId: string): Promise<OrderDocument[]> {
     }
 
     return {
-      id: data.id,
+      id: docSnap.id,
       userId: data.userId,
       items: data.items ?? [],
       subtotal: data.subtotal,
@@ -158,7 +158,7 @@ export async function listAllOrders(): Promise<OrderDocument[]> {
     }
 
     return {
-      id: data.id,
+      id: docSnap.id,
       userId: data.userId,
       items: data.items ?? [],
       subtotal: data.subtotal,

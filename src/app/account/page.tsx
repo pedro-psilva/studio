@@ -8,8 +8,18 @@ import { Footer } from '@/components/layout/footer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, addDoc, updateDoc, orderBy, query, where } from 'firebase/firestore';
 import { getService } from '@/lib/serviceService';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -32,6 +42,7 @@ import {
 } from 'lucide-react';
 import { OrderDocument, listUserOrders } from '@/lib/orderService';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserDocData {
   displayName?: string;
@@ -45,6 +56,7 @@ interface UserDocData {
 
 const statusMap = {
   pending_payment: { label: 'Aguardando Pagamento', icon: FileClock, color: 'bg-yellow-500' },
+  paid: { label: 'Pago', icon: CheckCircle, color: 'bg-emerald-500' },
   in_production: { label: 'Em Produção', icon: FlaskConical, color: 'bg-blue-500' },
   shipped: { label: 'Enviado', icon: CheckCircle, color: 'bg-green-500' },
   delivered: { label: 'Entregue', icon: CheckCircle, color: 'bg-green-700' },
@@ -61,6 +73,168 @@ export default function AccountPage() {
   const [loadingExtra, setLoadingExtra] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [serviceNames, setServiceNames] = useState<Record<string, string>>({});
+  const [userAddress, setUserAddress] = useState<{
+    id?: string;
+    cep?: string;
+    street?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    number?: string;
+    complement?: string;
+  } | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState<{
+    displayName: string;
+    countryCode: string;
+    ddd: string;
+    phoneLocal: string;
+    pessoaTipo: 'PF' | 'PJ' | '';
+    cpfCnpj: string;
+    clinicName: string;
+  }>({
+    displayName: '',
+    countryCode: '55',
+    ddd: '',
+    phoneLocal: '',
+    pessoaTipo: '',
+    cpfCnpj: '',
+    clinicName: '',
+  });
+  const [addressForm, setAddressForm] = useState<{
+    cep: string;
+    street: string;
+    number: string;
+    complement: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+  }>({ cep: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
+  const { toast } = useToast();
+
+  const refreshOrders = async () => {
+    if (!user) return;
+    try {
+      setLoadingExtra(true);
+      const userOrders = await listUserOrders(user.uid);
+      setOrders(userOrders);
+
+      const productIds = Array.from(
+        new Set(
+          userOrders
+            .flatMap((o) => o.items?.map((i) => i.productId) ?? [])
+            .filter(Boolean) as string[],
+        ),
+      );
+
+      if (productIds.length > 0) {
+        const entries = await Promise.all(
+          productIds.map(async (pid) => {
+            try {
+              const service = await getService(pid);
+              return [
+                pid,
+                service?.nome ?? 'Serviço não especificado',
+              ] as [string, string];
+            } catch {
+              return [pid, 'Serviço não especificado'] as [string, string];
+            }
+          }),
+        );
+        setServiceNames(Object.fromEntries(entries));
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar pedidos:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao verificar pagamento',
+        description: 'Não foi possível atualizar o status dos pedidos.',
+      });
+    } finally {
+      setLoadingExtra(false);
+    }
+  };
+
+  const handlePayOrder = async (order: OrderDocument) => {
+    // Monta descrição amigável com os nomes dos serviços do pedido
+    const serviceList = order.items
+      .map((item) => serviceNames[item.productId] || 'Serviço')
+      .filter(Boolean)
+      .join(', ');
+
+    const items = [
+      {
+        quantity: 1,
+        price: Math.round(order.total * 100),
+        description: serviceList || `Pedido clínico`,
+      },
+    ];
+
+    const customer = {
+      name:
+        userDoc?.clinicName ||
+        userDoc?.displayName ||
+        user?.displayName ||
+        user?.email ||
+        undefined,
+      email: user?.email || undefined,
+      phone_number: userDoc?.phone || undefined,
+    };
+
+    const address = userAddress
+      ? {
+          cep: userAddress.cep,
+          number: userAddress.number,
+          complement: userAddress.complement,
+        }
+      : undefined;
+
+    try {
+      const response = await fetch('/api/payments/infinitepay/create-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+          total: order.total,
+          items,
+          customer,
+          address,
+        }),
+      });
+
+      if (!response.ok) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao gerar link de pagamento',
+          description: 'Tente novamente em alguns instantes.',
+        });
+        return;
+      }
+
+      const data = (await response.json()) as { url?: string };
+
+      if (!data.url) {
+        toast({
+          variant: 'destructive',
+          title: 'Resposta inválida do gateway',
+          description: 'Não foi possível obter o link de pagamento.',
+        });
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (err) {
+      console.error('Erro ao gerar link de pagamento:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao gerar link de pagamento',
+        description: 'Verifique sua conexão e tente novamente.',
+      });
+    }
+  };
 
   // Redireciona visitante não autenticado
   useEffect(() => {
@@ -83,6 +257,26 @@ export default function AccountPage() {
           const data = snap.data() as UserDocData;
           setUserDoc(data);
           setIsAdmin(data?.tipo === 'admin');
+        }
+
+        // Endereço principal do usuário
+        const addrCol = collection(db, `users/${user.uid}/addresses`);
+        const addrSnap = await getDocs(addrCol);
+        if (!addrSnap.empty) {
+          const allDocs = addrSnap.docs;
+          const mainDoc =
+            allDocs.find((d) => (d.data() as any).isPrincipal) ?? allDocs[0];
+          const main = mainDoc.data() as any;
+          setUserAddress({
+            id: mainDoc.id,
+            cep: main.cep ?? main.zip ?? main.cepCode,
+            street: main.logradouro ?? main.rua ?? main.street,
+            neighborhood: main.bairro ?? main.neighborhood,
+            city: main.cidade ?? main.city,
+            state: main.estado ?? main.uf ?? main.state,
+            number: main.numero ?? main.number,
+            complement: main.complemento ?? main.complement,
+          });
         }
 
         // Pedidos do usuário
@@ -132,11 +326,189 @@ export default function AccountPage() {
   const displayName = userDoc?.displayName || user.displayName || user.email?.split('@')[0] || 'Usuário';
 
   const summaryCards = [
-    { title: "Casos em Andamento", value: orders.filter(o => o.status === 'in_production').length, icon: Loader, color: "text-blue-500" },
     { title: "Casos Pendentes", value: orders.filter(o => o.status === 'pending_payment').length, icon: FileClock, color: "text-yellow-500" },
+    { title: "Casos em Andamento", value: orders.filter(o => o.status === 'in_production').length, icon: Loader, color: "text-blue-500" },
     { title: "Casos Finalizados", value: orders.filter(o => o.status === 'delivered').length, icon: CheckCircle, color: "text-green-500" },
-    { title: "Retrabalhos", value: 0, icon: Activity, color: "text-orange-500" },
   ];
+
+  const openEditDialog = () => {
+    if (!user) return;
+    // Tenta quebrar o telefone salvo em código de país + DDD + número local
+    let countryCode = '55';
+    let ddd = '';
+    let phoneLocal = '';
+    if (userDoc?.phone) {
+      const digits = userDoc.phone.replace(/\D/g, '');
+      if (digits.length >= 4) {
+        countryCode = digits.slice(0, 2);
+        ddd = digits.slice(2, 4);
+        phoneLocal = digits.slice(4);
+      }
+    }
+
+    setProfileForm({
+      displayName:
+        userDoc?.displayName || user.displayName || user.email?.split('@')[0] || '',
+      countryCode,
+      ddd,
+      phoneLocal,
+      pessoaTipo: userDoc?.pessoaTipo || '',
+      cpfCnpj: userDoc?.cpfCnpj || '',
+      clinicName: userDoc?.clinicName || '',
+    });
+    setAddressForm({
+      cep: userAddress?.cep || '',
+      street: userAddress?.street || '',
+      number: userAddress?.number || '',
+      complement: userAddress?.complement || '',
+      neighborhood: userAddress?.neighborhood || '',
+      city: userAddress?.city || '',
+      state: userAddress?.state || '',
+    });
+    setEditOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    try {
+      setSavingProfile(true);
+
+      // Validação simples de telefone: código de país + DDD + número local obrigatórios e numéricos
+      const ccDigits = profileForm.countryCode.replace(/\D/g, '');
+      const dddDigits = profileForm.ddd.replace(/\D/g, '');
+      const localDigits = profileForm.phoneLocal.replace(/\D/g, '');
+
+      if (!ccDigits || !dddDigits || !localDigits) {
+        toast({
+          variant: 'destructive',
+          title: 'Telefone incompleto',
+          description: 'Informe código de país, DDD e telefone.',
+        });
+        setSavingProfile(false);
+        return;
+      }
+
+      if (ccDigits.length < 1 || ccDigits.length > 3) {
+        toast({
+          variant: 'destructive',
+          title: 'Código de país inválido',
+          description: 'Use um código de país numérico, por exemplo 55.',
+        });
+        setSavingProfile(false);
+        return;
+      }
+
+      if (dddDigits.length < 2 || dddDigits.length > 3) {
+        toast({
+          variant: 'destructive',
+          title: 'DDD inválido',
+          description: 'Informe um DDD válido, por exemplo 11.',
+        });
+        setSavingProfile(false);
+        return;
+      }
+
+      if (localDigits.length < 8) {
+        toast({
+          variant: 'destructive',
+          title: 'Telefone inválido',
+          description: 'Informe um número de telefone válido com 8 ou mais dígitos.',
+        });
+        setSavingProfile(false);
+        return;
+      }
+
+      const fullPhone = `+${ccDigits} ${dddDigits} ${localDigits}`;
+
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        displayName: profileForm.displayName || null,
+        phone: fullPhone,
+        pessoaTipo: profileForm.pessoaTipo || null,
+        cpfCnpj: profileForm.cpfCnpj || null,
+        clinicName: profileForm.clinicName || null,
+      });
+
+      const addrCol = collection(db, `users/${user.uid}/addresses`);
+      if (userAddress?.id) {
+        const addrRef = doc(addrCol, userAddress.id);
+        await updateDoc(addrRef, {
+          cep: addressForm.cep || null,
+          logradouro: addressForm.street || null,
+          numero: addressForm.number || null,
+          complemento: addressForm.complement || null,
+          bairro: addressForm.neighborhood || null,
+          cidade: addressForm.city || null,
+          estado: addressForm.state || null,
+          isPrincipal: true,
+        });
+        setUserAddress((prev) =>
+          prev
+            ? {
+                ...prev,
+                cep: addressForm.cep,
+                street: addressForm.street,
+                number: addressForm.number,
+                complement: addressForm.complement,
+                neighborhood: addressForm.neighborhood,
+                city: addressForm.city,
+                state: addressForm.state,
+              }
+            : prev,
+        );
+      } else {
+        const newAddrRef = await addDoc(addrCol, {
+          cep: addressForm.cep || null,
+          logradouro: addressForm.street || null,
+          numero: addressForm.number || null,
+          complemento: addressForm.complement || null,
+          bairro: addressForm.neighborhood || null,
+          cidade: addressForm.city || null,
+          estado: addressForm.state || null,
+          isPrincipal: true,
+        });
+        setUserAddress({
+          id: newAddrRef.id,
+          cep: addressForm.cep,
+          street: addressForm.street,
+          number: addressForm.number,
+          complement: addressForm.complement,
+          neighborhood: addressForm.neighborhood,
+          city: addressForm.city,
+          state: addressForm.state,
+        });
+      }
+
+      // Atualiza o estado local de userDoc para refletir os novos dados imediatamente
+      setUserDoc((prev) =>
+        prev
+          ? {
+              ...prev,
+              displayName: profileForm.displayName || prev.displayName,
+              phone: fullPhone,
+              pessoaTipo: profileForm.pessoaTipo || prev.pessoaTipo,
+              cpfCnpj: profileForm.cpfCnpj || prev.cpfCnpj,
+              clinicName: profileForm.clinicName || prev.clinicName,
+            }
+          : prev,
+      );
+
+      setEditOpen(false);
+      toast({
+        title: 'Dados atualizados',
+        description: 'Suas informações foram salvas com sucesso.',
+      });
+    } catch (err) {
+      console.error('Erro ao salvar perfil:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar dados',
+        description: 'Não foi possível salvar suas informações. Tente novamente.',
+      });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -236,10 +608,41 @@ export default function AccountPage() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="hidden md:table-cell">{format(order.updatedAt, 'dd/MM/yyyy')}</TableCell>
-                              <TableCell className="text-right">
-                                 <Button variant="ghost" size="icon">
-                                    <ChevronRight className="h-4 w-4" />
-                                  </Button>
+                              <TableCell className="text-right space-x-1">
+                                {order.paymentStatus === 'waiting' && (
+                                  <div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        void handlePayOrder(order);
+                                      }}
+                                    >
+                                      Pagar
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        void refreshOrders();
+                                      }}
+                                    >
+                                      Verificar pagamento
+                                    </Button>
+                                  </div>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/account/orders/${order.id}`);
+                                  }}
+                                >
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           )
@@ -253,8 +656,18 @@ export default function AccountPage() {
             
             <TabsContent value="my-account">
                <Card>
-                <CardHeader>
-                  <CardTitle>Minhas Informações</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Minhas Informações</CardTitle>
+                    <CardDescription>Dados cadastrais e endereço principal.</CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={openEditDialog}
+                  >
+                    Editar informações
+                  </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -295,6 +708,38 @@ export default function AccountPage() {
                     )}
                   </div>
 
+                  {userAddress && (
+                    <div className="space-y-2 pt-2 border-t mt-4">
+                      <p className="text-sm font-semibold">Endereço principal</p>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p>
+                          {userAddress.street && <span>{userAddress.street}</span>}
+                          {userAddress.number && (
+                            <span>{userAddress.street ? `, ${userAddress.number}` : userAddress.number}</span>
+                          )}
+                          {userAddress.complement && (
+                            <span>{` - ${userAddress.complement}`}</span>
+                          )}
+                        </p>
+                        {(userAddress.neighborhood || userAddress.city || userAddress.state) && (
+                          <p>
+                            {userAddress.neighborhood && <span>{userAddress.neighborhood}</span>}
+                            {userAddress.city && (
+                              <span>
+                                {userAddress.neighborhood ? ' · ' : ''}
+                                {userAddress.city}
+                              </span>
+                            )}
+                            {userAddress.state && (
+                              <span>{userAddress.city ? ` - ${userAddress.state}` : userAddress.state}</span>
+                            )}
+                          </p>
+                        )}
+                        {userAddress.cep && <p>CEP: {userAddress.cep}</p>}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="pt-4">
                     <Button variant="outline" onClick={() => router.push('/')}>
                       Voltar para a loja
@@ -307,6 +752,180 @@ export default function AccountPage() {
         </div>
       </main>
       <Footer />
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar informações</DialogTitle>
+            <DialogDescription>
+              Atualize seus dados cadastrais e endereço principal.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Nome</Label>
+              <Input
+                id="displayName"
+                value={profileForm.displayName}
+                onChange={(e) =>
+                  setProfileForm((prev) => ({ ...prev, displayName: e.target.value }))
+                }
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="countryCode">Código do país</Label>
+                <Input
+                  id="countryCode"
+                  value={profileForm.countryCode}
+                  onChange={(e) =>
+                    setProfileForm((prev) => ({ ...prev, countryCode: e.target.value }))
+                  }
+                  placeholder="55"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ddd">DDD</Label>
+                <Input
+                  id="ddd"
+                  value={profileForm.ddd}
+                  onChange={(e) =>
+                    setProfileForm((prev) => ({ ...prev, ddd: e.target.value }))
+                  }
+                  placeholder="11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phoneLocal">Telefone</Label>
+                <Input
+                  id="phoneLocal"
+                  value={profileForm.phoneLocal}
+                  onChange={(e) =>
+                    setProfileForm((prev) => ({ ...prev, phoneLocal: e.target.value }))
+                  }
+                  placeholder="999999999"
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="cpfCnpj">CPF/CNPJ</Label>
+                <Input
+                  id="cpfCnpj"
+                  value={profileForm.cpfCnpj}
+                  onChange={(e) =>
+                    setProfileForm((prev) => ({ ...prev, cpfCnpj: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="clinicName">Clínica</Label>
+                <Input
+                  id="clinicName"
+                  value={profileForm.clinicName}
+                  onChange={(e) =>
+                    setProfileForm((prev) => ({ ...prev, clinicName: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 space-y-2">
+              <p className="text-sm font-semibold">Endereço principal</p>
+              <div className="grid gap-3">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="street">Rua</Label>
+                    <Input
+                      id="street"
+                      value={addressForm.street}
+                      onChange={(e) =>
+                        setAddressForm((prev) => ({ ...prev, street: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="number">Número</Label>
+                    <Input
+                      id="number"
+                      value={addressForm.number}
+                      onChange={(e) =>
+                        setAddressForm((prev) => ({ ...prev, number: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="complement">Complemento</Label>
+                  <Input
+                    id="complement"
+                    value={addressForm.complement}
+                    onChange={(e) =>
+                      setAddressForm((prev) => ({ ...prev, complement: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="neighborhood">Bairro</Label>
+                    <Input
+                      id="neighborhood"
+                      value={addressForm.neighborhood}
+                      onChange={(e) =>
+                        setAddressForm((prev) => ({ ...prev, neighborhood: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Cidade</Label>
+                    <Input
+                      id="city"
+                      value={addressForm.city}
+                      onChange={(e) =>
+                        setAddressForm((prev) => ({ ...prev, city: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="state">Estado</Label>
+                    <Input
+                      id="state"
+                      value={addressForm.state}
+                      onChange={(e) =>
+                        setAddressForm((prev) => ({ ...prev, state: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cep">CEP</Label>
+                    <Input
+                      id="cep"
+                      value={addressForm.cep}
+                      onChange={(e) =>
+                        setAddressForm((prev) => ({ ...prev, cep: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setEditOpen(false)}
+              disabled={savingProfile}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveProfile} disabled={savingProfile}>
+              {savingProfile ? 'Salvando...' : 'Salvar alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

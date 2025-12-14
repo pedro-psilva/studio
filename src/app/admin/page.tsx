@@ -108,7 +108,6 @@ export default function AdminDashboard() {
             userInfo.displayName ||
             userInfo.clinicName ||
             userInfo.email ||
-            order.userId ||
             "Cliente";
 
           return {

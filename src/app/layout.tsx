@@ -1,10 +1,6 @@
-'use client';
 import './globals.css';
-import { Toaster } from '@/components/ui/toaster';
 import { Inter } from 'next/font/google';
-import { ThemeProvider } from '@/components/theme-provider';
-import { TranslationProvider } from '@/context/translation-context';
-import { AuthProvider } from '@/context/AuthContext';
+import { Providers } from './providers';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
 
@@ -28,19 +24,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} font-body antialiased`}>
-        <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <TranslationProvider>
-              {children}
-              <Toaster />
-            </TranslationProvider>
-          </ThemeProvider>
-        </AuthProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

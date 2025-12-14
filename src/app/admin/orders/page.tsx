@@ -128,7 +128,6 @@ export default function OrdersPage() {
             userInfo.displayName ||
             userInfo.clinicName ||
             userInfo.email ||
-            order.userId ||
             'Cliente';
 
           return {

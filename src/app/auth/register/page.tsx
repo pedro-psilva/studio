@@ -14,25 +14,27 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 import { signUpUser, AddressData } from '@/lib/authService';
-import { validateCPF, validateCNPJ, formatCPF, formatCNPJ, formatPhone, validateEmail, validatePassword } from '@/lib/utils/validators';
+import { validateCPF, validateCNPJ, formatCPF, formatCNPJ, validateEmail, validatePassword } from '@/lib/utils/validators';
 
 interface FormData {
-    fullName: string;
-    cpfCnpj: string;
-    phone: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
-    clinicName: string;
-    cep: string;
-    logradouro: string;
-    numero: string;
-    complemento: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
-    pais: string;
-  }
+  fullName: string;
+  cpfCnpj: string;
+  phoneCountryCode: string;
+  phoneDDD: string;
+  phoneLocal: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  clinicName: string;
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  pais: string;
+}
 
 export default function RegisterPage() {
   const [accountType, setAccountType] = useState<'pf' | 'pj'>('pf');
@@ -40,7 +42,9 @@ export default function RegisterPage() {
   const [form, setForm] = useState<FormData>({
     fullName: '',
     cpfCnpj: '',
-    phone: '',
+    phoneCountryCode: '55',
+    phoneDDD: '',
+    phoneLocal: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -121,6 +125,25 @@ export default function RegisterPage() {
       newErrors.confirmPassword = 'As senhas não conferem';
     }
 
+    // Validação de telefone: código de país + DDD + número local
+    const ccDigits = form.phoneCountryCode.replace(/\D/g, '');
+    const dddDigits = form.phoneDDD.replace(/\D/g, '');
+    const localDigits = form.phoneLocal.replace(/\D/g, '');
+
+    if (!ccDigits || !dddDigits || !localDigits) {
+      newErrors.phoneLocal = 'Informe código de país, DDD e telefone.';
+    } else {
+      if (ccDigits.length < 1 || ccDigits.length > 3) {
+        newErrors.phoneCountryCode = 'Código de país inválido.';
+      }
+      if (dddDigits.length < 2 || dddDigits.length > 3) {
+        newErrors.phoneDDD = 'DDD inválido.';
+      }
+      if (localDigits.length < 8) {
+        newErrors.phoneLocal = 'Telefone inválido (mínimo 8 dígitos).';
+      }
+    }
+
     // Validação do nome da clínica (apenas para PJ)
     if (accountType === 'pj' && !form.clinicName.trim()) {
       newErrors.clinicName = 'Nome da clínica é obrigatório';
@@ -148,6 +171,11 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      const ccDigits = form.phoneCountryCode.replace(/\D/g, '');
+      const dddDigits = form.phoneDDD.replace(/\D/g, '');
+      const localDigits = form.phoneLocal.replace(/\D/g, '');
+      const fullPhone = `+${ccDigits} ${dddDigits} ${localDigits}`;
+
       const endereco: AddressData = {
         cep: form.cep.replace(/[\D]/g, ''),
         logradouro: form.logradouro,
@@ -165,7 +193,7 @@ export default function RegisterPage() {
         senha: form.password,
         cpfCnpj: form.cpfCnpj.replace(/[\D]/g, ''),
         pessoaTipo: accountType === 'pf' ? 'PF' : 'PJ',
-        phone: form.phone ? formatPhone(form.phone).replace(/[\D]/g, '') : '',
+        phone: fullPhone,
         clinicName: accountType === 'pj' ? form.clinicName.trim() : undefined,
         endereco,
       });
@@ -317,16 +345,51 @@ export default function RegisterPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                placeholder="(00) 00000-0000"
-                value={formatPhone(form.phone)}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                maxLength={15}
-              />
+              <Label>Telefone</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Input
+                    id="phoneCountryCode"
+                    placeholder="55"
+                    value={form.phoneCountryCode}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, phoneCountryCode: e.target.value }))
+                    }
+                    className={errors.phoneCountryCode ? 'border-destructive' : ''}
+                  />
+                  {errors.phoneCountryCode && (
+                    <p className="text-sm text-destructive">{errors.phoneCountryCode}</p>
+                  )}
+                </div>
+                <div>
+                  <Input
+                    id="phoneDDD"
+                    placeholder="11"
+                    value={form.phoneDDD}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, phoneDDD: e.target.value }))
+                    }
+                    className={errors.phoneDDD ? 'border-destructive' : ''}
+                  />
+                  {errors.phoneDDD && (
+                    <p className="text-sm text-destructive">{errors.phoneDDD}</p>
+                  )}
+                </div>
+                <div>
+                  <Input
+                    id="phoneLocal"
+                    placeholder="999999999"
+                    value={form.phoneLocal}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, phoneLocal: e.target.value }))
+                    }
+                    className={errors.phoneLocal ? 'border-destructive' : ''}
+                  />
+                  {errors.phoneLocal && (
+                    <p className="text-sm text-destructive">{errors.phoneLocal}</p>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
