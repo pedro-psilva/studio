@@ -1,7 +1,6 @@
 import { addDoc, collection, doc, getDoc, getDocs, query, updateDoc, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { CartItemFirestore } from '@/lib/cartService';
-import { sendOrderStatusUpdateEmail, sendOrderConfirmationEmail } from '@/lib/emailService';
 import { getUserDataById } from '@/lib/userService';
 
 
@@ -47,6 +46,22 @@ export type OrderDocument = {
 };
 
 const COLLECTION_NAME = 'orders';
+
+async function sendOrderEmail(endpoint: 'order-confirmation' | 'status-update', payload: any) {
+  try {
+    // We don't need the base URL as API routes are same-origin
+    await fetch(`/api/send-email/${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.error(`Falha ao enviar e-mail de ${endpoint}:`, error);
+    // Non-critical, so we don't re-throw
+  }
+}
 
 function mapCartItemToOrderItem(item: CartItemFirestore): OrderItemFirestore {
   return {
@@ -229,11 +244,11 @@ export async function createOrderFromCart(
 
   await updateDoc(docRef, { id: orderId });
 
-  // Dispara e-mail de confirmação de pedido
+  // Dispara e-mail de confirmação de pedido via API route
   try {
     const user = await getUserDataById(userId);
     if (user && user.email) {
-      await sendOrderConfirmationEmail({
+      await sendOrderEmail('order-confirmation', {
         to: user.email,
         customerName: user.displayName || 'Cliente',
         orderId,
@@ -241,8 +256,8 @@ export async function createOrderFromCart(
         totalAmount: total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
       });
     }
-  } catch (emailError) {
-    console.error(`Falha ao enviar e-mail de confirmação para o pedido ${orderId}:`, emailError);
+  } catch (apiError) {
+    console.error(`Falha ao disparar e-mail de confirmação para o pedido ${orderId}:`, apiError);
   }
 
   return {
@@ -267,13 +282,13 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
     updatedAt: serverTimestamp(),
   });
 
-  // Dispara e-mail de atualização de status
+  // Dispara e-mail de atualização de status via API route
   try {
     const order = await getOrder(orderId);
     if (order && order.userId) {
       const user = await getUserDataById(order.userId);
       if (user && user.email) {
-        await sendOrderStatusUpdateEmail({
+        await sendOrderEmail('status-update', {
           to: user.email,
           customerName: user.displayName || 'Cliente',
           orderId,
@@ -281,8 +296,8 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
         });
       }
     }
-  } catch (emailError) {
-    console.error(`Falha ao enviar e-mail de atualização para o pedido ${orderId}:`, emailError);
+  } catch (apiError) {
+    console.error(`Falha ao disparar e-mail de atualização para o pedido ${orderId}:`, apiError);
   }
 }
 
