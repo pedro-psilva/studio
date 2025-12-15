@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow reads and writes by authenticated users on their own files
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow reads and writes for case files by authenticated users
+    match /cases-files/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow public read for service images
+    match /services-images/{allPaths=**} {
+      allow read;
+    }
+
+    // Allow public read for banner images
+    match /banner/{allPaths=**} {
+      allow read;
+    }
+  }
+}
