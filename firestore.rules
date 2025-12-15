@@ -1,0 +1,222 @@
+/**
+ * # Firestore Security Rules
+ *
+ * ## Core Philosophy
+ * This ruleset enforces a security model that combines Role-Based Access Control (RBAC) and User Ownership.
+ * A dedicated `roles_admin` collection provides an efficient way to manage administrative privileges,
+ * while most other data collections rely on a `userId` or other ownership fields within documents to
+ * grant access. This ensures that users can only access their own data, while administrators and
+ * designated roles (like technicians) have broader, but still specific, permissions.
+ *
+ * ## Data Structure
+ * - `/users/{userId}`: Contains private user profile data, accessible only by the owner and admins.
+ * - `/products/{productId}`: A public collection for the product catalog, readable by anyone but writable only by admins.
+ * - `/orders/{orderId}`: User-specific order documents, secured by a `userId` field. Subcollections like `/orderItems` inherit access from the parent order.
+ * - `/production/{productionId}`: Manages order production status, accessible to admins, the assigned technician, and the customer who placed the order.
+ * - `/roles_admin/{userId}`: A lookup collection where the existence of a document signifies that the user is an admin. This is a highly performant pattern for checking roles.
+ *
+ * ## Key Security Decisions
+ * - **Admin Access**: An `isAdmin()` helper function checks for a document in `/roles_admin`. Admins generally have read/write access to all data for management purposes.
+ * - **User Data Privacy**: Access to the `/users` collection is strictly controlled. General listing is disabled to prevent user data enumeration by non-admins.
+ * - **Ownership Enforcement**: For collections like `orders`, security is enforced by matching the `request.auth.uid` with an ownership field (e.g., `userId`) stored directly on the document.
+ * - **Relational Access**: For collections like `invoices` and `production`, access is granted not only to admins but also to related users (like the order owner or an assigned technician) by using a `get()` call to check the parent document's ownership details.
+ * - **Ambiguous Collections**: The top-level `/addresses` collection lacks an ownership field in its schema, making it impossible to securely determine who can read or write to it. Therefore, it has been completely locked down by default. To enable access, the `Address` entity must be updated to include an `ownerId` field.
+ *
+ * ## Denormalization for Authorization
+ * The rules heavily leverage denormalization for performance and security. Instead of costly cross-collection joins, ownership and role information like `userId` on orders and `assignedTechnicianId` on production documents are denormalized directly onto the records they secure. This allows for fast, simple, and non-billable checks within the rules.
+ *
+ * ## Structural Segregation
+ * Data is segregated by access patterns. Public data (`products`) is in a top-level collection with open read rules. Private user data (`users`, `orders`) is secured via ownership fields. Administrative data (`roles_admin`, `coupons`) is in separate collections locked down to admins.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --------------------------------
+    // Helper Functions
+    // --------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the primary function for enforcing document ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    /**
+     * Checks if a document exists before an update or delete operation.
+     * This prevents writes on non-existent documents.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Checks if the user is an administrator by verifying the existence of
+     * a document in the dedicated roles_admin collection. This is a highly
+     * performant way to check for roles.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    // --------------------------------
+    // User Data
+    // --------------------------------
+
+    /**
+     * @description Manages user profile data. A user can create and manage their own profile.
+     * Admins have full access for administrative purposes. Listing all users is restricted to admins.
+     * @path /users/{userId}
+     * @allow (create) A new user signing up: `request.auth.uid == userId`.
+     * @deny (get) An authenticated user trying to read another user's profile.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get, update: if (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
+    }
+
+    // --------------------------------
+    // Addresses - CRITICALLY FLAWED
+    // --------------------------------
+
+    /**
+     * @description Stores address information. This collection is currently locked down.
+     * @path /addresses/{addressId}
+     * @allow (any) No operations are allowed.
+     * @deny (any) All operations are denied.
+     * @principle Defaults to a secure state when ownership cannot be determined.
+     */
+    match /addresses/{addressId} {
+      // CRITICAL: The 'Address' entity is missing an 'ownerId' or similar field.
+      // Without it, there is no way to securely determine who owns an address document.
+      // To fix this, add an `ownerId` field to the Address schema and then update
+      // these rules to check `isOwner(resource.data.ownerId)`.
+      allow get, list, create, update, delete: if false;
+    }
+
+    // --------------------------------
+    // Public Catalog
+    // --------------------------------
+
+    /**
+     * @description Publicly readable product catalog. Anyone, including unauthenticated
+     * users, can view products. Only administrators can create, update, or delete products.
+     * @path /products/{productId}
+     * @allow (get) Any user or service reading product details for a catalog page.
+     * @deny (create) A regular authenticated user trying to add a new product.
+     * @principle Enforces public read access for catalog data with admin-only write controls.
+     */
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin() && isExistingDoc();
+    }
+
+    // --------------------------------
+    // Orders and Order Items
+    // --------------------------------
+
+    /**
+     * @description Users can create and manage their own orders. Order ownership is determined
+     * by the `userId` field within the order document. Admins can access any order.
+     * @path /orders/{orderId}
+     * @allow (get) A user fetching an order where `resource.data.userId == request.auth.uid`.
+     * @deny (get) A user trying to fetch an order belonging to another user.
+     * @principle Enforces document ownership for writes and reads.
+     */
+    match /orders/{orderId} {
+      allow get, update: if (isOwner(resource.data.userId) || isAdmin()) && isExistingDoc();
+      allow list: if isSignedIn(); // Requires client-side query: where("userId", "==", auth.uid)
+      allow create: if isOwner(request.resource.data.userId);
+      allow delete: if (isOwner(resource.data.userId) || isAdmin()) && isExistingDoc();
+
+      /**
+       * @description Order items are part of an order. Access is inherited from the parent
+       * order document. A user must own the order to access its items.
+       * @path /orders/{orderId}/orderItems/{orderItemId}
+       * @allow (get) The owner of the parent order fetching an item's details.
+       * @deny (get) A user trying to read items from an order they do not own.
+       * @principle Secures a subcollection by checking ownership of the parent document.
+       */
+      match /orderItems/{orderItemId} {
+        allow get, list, create, update, delete: if isOwner(get(/databases/$(database)/documents/orders/$(orderId)).data.userId) || isAdmin();
+      }
+    }
+
+    // --------------------------------
+    // Administrative Collections
+    // --------------------------------
+
+    /**
+     * @description Invoices are linked to orders. They can be read by the user who owns
+     * the order, but can only be managed by administrators.
+     * @path /invoices/{invoiceId}
+     * @allow (get) An admin, or the user who owns the associated order.
+     * @deny (create) A regular user trying to create their own invoice.
+     * @principle Provides read-only access to related users while restricting writes to admins.
+     */
+    match /invoices/{invoiceId} {
+      allow get: if isAdmin() || isOwner(get(/databases/$(database)/documents/orders/$(resource.data.orderId)).data.userId);
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin() && isExistingDoc();
+    }
+
+    /**
+     * @description Stores discount coupons. This is sensitive business information
+     * and should only be accessible and manageable by administrators.
+     * @path /coupons/{couponId}
+     * @allow (get) An admin reading a coupon's details.
+     * @deny (get) Any non-admin user trying to read coupon data.
+     * @principle Restricts access to sensitive data to a specific role (admin).
+     */
+    match /coupons/{couponId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin() && isExistingDoc();
+    }
+
+    /**
+     * @description Tracks the production status of orders. Admins have full access.
+     * The assigned technician can view and update their assigned tasks. The customer
+     * who owns the order can view its production status.
+     * @path /production/{productionId}
+     * @allow (get) An admin, the assigned tech, or the user who owns the related order.
+     * @deny (update) The customer trying to change the production status.
+     * @principle Implements multi-party access based on roles and relationships.
+     */
+    match /production/{productionId} {
+      allow get: if isAdmin() || isOwner(resource.data.assignedTechnicianId) || isOwner(get(/databases/$(database)/documents/orders/$(resource.data.orderId)).data.userId);
+      allow list: if isAdmin() || (isSignedIn() && request.query.get("assignedTechnicianId") == request.auth.uid);
+      allow create: if isAdmin();
+      allow update: if (isAdmin() || isOwner(resource.data.assignedTechnicianId)) && isExistingDoc();
+      allow delete: if isAdmin() && isExistingDoc();
+    }
+
+    /**
+     * @description Lookup collection to determine admin privileges. The existence of a
+     * document indicates the user is an admin. Only admins can view or manage this list.
+     * @path /roles_admin/{userId}
+     * @allow (create) An existing admin adding a new admin.
+     * @deny (list) A regular user trying to list all administrators.
+     * @principle Secures role-management data and prevents enumeration of privileged users.
+     */
+    match /roles_admin/{userId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin() && isExistingDoc();
+    }
+  }
+}

@@ -1,0 +1,521 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the DentalFlow application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "User's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "User's last name."
+        },
+        "clinicName": {
+          "type": "string",
+          "description": "Name of the clinic the user belongs to (if applicable)."
+        },
+        "cnpj": {
+          "type": "string",
+          "description": "CNPJ of the clinic (if applicable)."
+        },
+        "cpf": {
+          "type": "string",
+          "description": "User's CPF."
+        },
+        "phone": {
+          "type": "string",
+          "description": "User's phone number."
+        },
+        "addressId": {
+          "type": "string",
+          "description": "Reference to Address. (Relationship: User 1:1 Address)"
+        },
+        "role": {
+          "type": "string",
+          "description": "User's role (e.g., admin, technician, customer)."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName",
+        "addressId",
+        "role"
+      ]
+    },
+    "Address": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Address",
+      "type": "object",
+      "description": "Represents an address.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the address."
+        },
+        "street": {
+          "type": "string",
+          "description": "Street address."
+        },
+        "city": {
+          "type": "string",
+          "description": "City."
+        },
+        "state": {
+          "type": "string",
+          "description": "State."
+        },
+        "zipCode": {
+          "type": "string",
+          "description": "Zip code."
+        },
+        "country": {
+          "type": "string",
+          "description": "Country."
+        }
+      },
+      "required": [
+        "id",
+        "street",
+        "city",
+        "state",
+        "zipCode",
+        "country"
+      ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a dental product or service.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the product."
+        },
+        "name": {
+          "type": "string",
+          "description": "Product name."
+        },
+        "code": {
+          "type": "string",
+          "description": "Product code or SKU."
+        },
+        "description": {
+          "type": "string",
+          "description": "Product description."
+        },
+        "price": {
+          "type": "number",
+          "description": "Product price."
+        },
+        "material": {
+          "type": "string",
+          "description": "Product material."
+        },
+        "tonality": {
+          "type": "string",
+          "description": "Product tonality or shade."
+        },
+        "implantCompatible": {
+          "type": "string",
+          "description": "Implant compatibility information."
+        },
+        "stlRequired": {
+          "type": "boolean",
+          "description": "Indicates if an STL file upload is required for the product."
+        },
+        "productionTime": {
+          "type": "string",
+          "description": "Production time for the product."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the product image.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "code",
+        "description",
+        "price",
+        "stlRequired"
+      ]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a customer order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the order."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Order)"
+        },
+        "orderDate": {
+          "type": "string",
+          "description": "Date and time the order was placed.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Order status (e.g., received, in production, finalized, sent)."
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount of the order."
+        },
+        "shippingAddressId": {
+          "type": "string",
+          "description": "Reference to Address. (Relationship: Order 1:1 Address)"
+        },
+        "billingAddressId": {
+          "type": "string",
+          "description": "Reference to Address. (Relationship: Order 1:1 Address)"
+        },
+        "orderItems": {
+          "type": "array",
+          "description": "List of order item ids.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "orderDate",
+        "status",
+        "totalAmount",
+        "shippingAddressId",
+        "billingAddressId",
+        "orderItems"
+      ]
+    },
+    "OrderItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrderItem",
+      "type": "object",
+      "description": "Represents an item in an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the order item."
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N OrderItem)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the product in the order item."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product at the time of the order."
+        },
+        "stlFileUrl": {
+          "type": "string",
+          "description": "URL of the uploaded STL file for the order item (if applicable).",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "productId",
+        "quantity",
+        "price"
+      ]
+    },
+    "Invoice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Invoice",
+      "type": "object",
+      "description": "Represents an invoice for an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the invoice."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. (Relationship: Order 1:1 Invoice)"
+        },
+        "invoiceDate": {
+          "type": "string",
+          "description": "Date and time the invoice was issued.",
+          "format": "date-time"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Invoice amount."
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "Payment status of the invoice (e.g., paid, unpaid)."
+        },
+        "pdfUrl": {
+          "type": "string",
+          "description": "URL of the invoice PDF file.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "invoiceDate",
+        "amount",
+        "paymentStatus"
+      ]
+    },
+    "Coupon": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Coupon",
+      "type": "object",
+      "description": "Represents a discount coupon.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the coupon."
+        },
+        "code": {
+          "type": "string",
+          "description": "Coupon code."
+        },
+        "discountPercentage": {
+          "type": "number",
+          "description": "Discount percentage applied by the coupon."
+        },
+        "expirationDate": {
+          "type": "string",
+          "description": "Date and time the coupon expires.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "discountPercentage",
+        "expirationDate"
+      ]
+    },
+    "Production": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Production",
+      "type": "object",
+      "description": "Represents the production status of an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the production entry."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. (Relationship: Order 1:1 Production)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Production status (e.g., received, in production, finalized, sent)."
+        },
+        "assignedTechnicianId": {
+          "type": "string",
+          "description": "Reference to User (Technician). (Relationship: User 1:N Production)"
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Date the production started",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "Date the production ended",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "status"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "user",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Path-based ownership ensures only the user or an admin can access user data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/addresses/{addressId}",
+        "definition": {
+          "entityName": "address",
+          "schema": {
+            "$ref": "#/backend/entities/Address"
+          },
+          "description": "Stores address information.  Addresses are referenced by users and orders.",
+          "params": [
+            {
+              "name": "addressId",
+              "description": "The unique identifier for the address."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/products/{productId}",
+        "definition": {
+          "entityName": "product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Stores product information. Accessible to all users for catalog display.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier for the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/orders/{orderId}",
+        "definition": {
+          "entityName": "order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Stores order information. Includes the 'userId' field for authorization, ensuring users can only access their own orders.",
+          "params": [
+            {
+              "name": "orderId",
+              "description": "The unique identifier for the order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/orders/{orderId}/orderItems/{orderItemId}",
+        "definition": {
+          "entityName": "orderItem",
+          "schema": {
+            "$ref": "#/backend/entities/OrderItem"
+          },
+          "description": "Stores order items.  Authorization is inherited from the parent order document.",
+          "params": [
+            {
+              "name": "orderId",
+              "description": "The unique identifier for the order."
+            },
+            {
+              "name": "orderItemId",
+              "description": "The unique identifier for the order item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/invoices/{invoiceId}",
+        "definition": {
+          "entityName": "invoice",
+          "schema": {
+            "$ref": "#/backend/entities/Invoice"
+          },
+          "description": "Stores invoice information. Accessible by admins.",
+          "params": [
+            {
+              "name": "invoiceId",
+              "description": "The unique identifier for the invoice."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/coupons/{couponId}",
+        "definition": {
+          "entityName": "coupon",
+          "schema": {
+            "$ref": "#/backend/entities/Coupon"
+          },
+          "description": "Stores coupon information. Accessible by admins.",
+          "params": [
+            {
+              "name": "couponId",
+              "description": "The unique identifier for the coupon."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/production/{productionId}",
+        "definition": {
+          "entityName": "production",
+          "schema": {
+            "$ref": "#/backend/entities/Production"
+          },
+          "description": "Stores production status information. Includes the 'assignedTechnicianId' field for authorization, enabling technicians to access only their assigned production entries. Additionally orders can be filtered by status.",
+          "params": [
+            {
+              "name": "productionId",
+              "description": "The unique identifier for the production entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "user",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Collection used to store admin user IDs. The existence of a document indicates admin privileges.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support a premium e-commerce platform tailored for dental professionals, focusing on digital dentistry products and services. The structure prioritizes authorization independence, security, and scalability while adhering to the principles of DBAC (Database-Based Access Control). Authorization Independence is achieved through denormalization, specifically copying relevant user roles and permissions directly into documents or using existence checks in dedicated role collections, thus eliminating the need for `get()` calls in security rules. Structural Segregation is applied by separating data with different access requirements into distinct collections. Access modeling is standardized using path-based ownership for user-specific data and membership maps for collaborative data.\n\n**Explanation of Authorization Independence (Denormalization):**\n\n*   **Orders:** The `orders` collection stores a `userId` field, which is used to restrict access to orders based on the currently authenticated user.\n\n*   **OrderItems:** The `orderItems` collection is a subcollection of `orders` (/orders/{orderId}/orderItems/{orderItemId}), inheriting the authorization context from the parent order, and is additionally secured by the userId in the parent document. Each document is authorized only to the user that owns the parent order. The `orderItems` are created within the same atomic operation as the `order`.\n\n*   **Production:** The `production` collection, related to orders, stores the `assignedTechnicianId`. This denormalization allows technicians to access production documents assigned to them without requiring complex `get()` calls to the `users` collection.\n\n**QAPs (Rules are not Filters):**\n\n*   The structure enforces QAPs by segregating data based on ownership and roles.  Listing operations are secured by ensuring that rules only allow access to documents that the user is authorized to view (e.g., a user can only list their own orders, an admin can list all orders). The segregation of technician data in the production collection enables secure listing operations for technicians.\n\n**DBAC (Database-Based Access Control):**\n\n*   User roles (admin, technician, customer) are stored directly within the `users` collection in the `role` field. Dedicated collections `/roles_admin/{uid}` allows to determine admin status by checking for document existence, this strategy centralizes role management and ensures that authorization logic relies solely on the presence or absence of the `/roles_admin/{uid}` document, without needing to inspect its content.\n\n**Invariants:**\n\n*   Ownership is enforced through path-based security and the consistent use of the `userId` field. Timestamps can be validated in security rules to ensure data integrity. Denormalized data (e.g., `assignedTechnicianId` in `production`) is managed consistently to prevent inconsistencies.\n"
+  }
+}
