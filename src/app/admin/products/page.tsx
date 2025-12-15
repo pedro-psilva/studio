@@ -313,14 +313,14 @@ export default function ProductsPage() {
       return;
     }
 
-    const priceNumber = Number(
-      newPrice
-        .replace(/\./g, '')
-        .replace(/,/g, '.')
-        .trim()
-    );
+    const priceNumber = Number(newPrice.replace(/\./g, "").replace(",", "."));
 
     if (Number.isNaN(priceNumber)) {
+      toast({
+        title: 'Preço inválido',
+        description: 'O valor do preço base não é um número válido.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -364,6 +364,8 @@ export default function ProductsPage() {
         };
       });
     }
+    
+    setIsSaving(true);
 
     try {
       const existing = editingServiceId
