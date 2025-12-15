@@ -313,9 +313,9 @@ export default function ProductsPage() {
       return;
     }
 
-    const priceNumber = Number(newPrice.replace(/\./g, "").replace(",", "."));
+    const priceNumber = Number(newPrice.replace(/\./g, '').replace(',', '.'));
 
-    if (Number.isNaN(priceNumber)) {
+    if (isNaN(priceNumber)) {
       toast({
         title: 'Preço inválido',
         description: 'O valor do preço base não é um número válido.',
@@ -503,6 +503,7 @@ export default function ProductsPage() {
       setEditingServiceId(null);
       setIsSheetOpen(false);
     } catch (error) {
+      console.error(error);
       toast({
         title: 'Erro ao salvar produto',
         description: 'Ocorreu um erro ao salvar. Tente novamente.',
