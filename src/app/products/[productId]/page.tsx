@@ -323,6 +323,12 @@ export default function ProductDetailPage() {
     setUploadedFiles((prev) => [...prev, ...files]);
   }
 
+  const handleFileDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
+    setUploadedFiles((prev) => [...prev, ...files]);
+  };
+
   function removeFile(fileName: string) {
     setUploadedFiles((prev) => prev.filter((f) => f.name !== fileName));
   }
@@ -882,5 +888,3 @@ export default function ProductDetailPage() {
     </div>
   );
 }
-
-    
