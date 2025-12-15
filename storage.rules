@@ -7,8 +7,9 @@ service firebase.storage {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Allow reads and writes for case files by authenticated users
-    match /cases-files/{userId}/{allPaths=**} {
+    // Allow reads and writes for case files by authenticated users.
+    // The path includes the service/product ID.
+    match /cases-files/{userId}/{productId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
