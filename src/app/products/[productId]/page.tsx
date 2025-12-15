@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -353,7 +354,7 @@ export default function ProductDetailPage() {
   const productFlow = Array.isArray(translatedFlow) ? translatedFlow : (service?.fluxoProducao ?? []);
 
   const unitPrice = service?.precoBase ?? 0;
-  const quantity = requiresStl ? Math.max(1, selectedTeeth.length || 1) : 1;
+  const quantity = requiresStl ? Math.max(1, (selectedTeeth || []).length || 1) : 1;
   const totalPrice = unitPrice * quantity;
 
   return (
