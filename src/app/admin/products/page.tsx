@@ -443,12 +443,12 @@ export default function ProductsPage() {
           imagensSecundarias,
           tituloPromocional: newPromoTitle.trim(),
           corRepresentacao: newColor.trim() || '#4F46E5',
-          nomeEN: newInternationalAvailable ? newNameEN.trim() : undefined,
-          nomeES: newInternationalAvailable ? newNameES.trim() : undefined,
-          descricaoEN: newInternationalAvailable ? newDescriptionEN.trim() : undefined,
-          descricaoES: newInternationalAvailable ? newDescriptionES.trim() : undefined,
-          tituloPromocionalEN: newInternationalAvailable ? newPromoTitleEN.trim() : undefined,
-          tituloPromocionalES: newInternationalAvailable ? newPromoTitleES.trim() : undefined,
+          nomeEN: newInternationalAvailable ? newNameEN.trim() : '',
+          nomeES: newInternationalAvailable ? newNameES.trim() : '',
+          descricaoEN: newInternationalAvailable ? newDescriptionEN.trim() : '',
+          descricaoES: newInternationalAvailable ? newDescriptionES.trim() : '',
+          tituloPromocionalEN: newInternationalAvailable ? newPromoTitleEN.trim() : '',
+          tituloPromocionalES: newInternationalAvailable ? newPromoTitleES.trim() : '',
         };
 
         const created = await createService(payload);
