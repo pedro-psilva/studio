@@ -1,6 +1,9 @@
 import { addDoc, collection, doc, getDoc, getDocs, query, updateDoc, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { CartItemFirestore } from '@/lib/cartService';
+import { sendOrderStatusUpdateEmail, sendOrderConfirmationEmail } from '@/lib/emailService';
+import { getUserDataById } from '@/lib/userService';
+
 
 export type OrderItemFirestore = {
   productId: string;
@@ -226,6 +229,22 @@ export async function createOrderFromCart(
 
   await updateDoc(docRef, { id: orderId });
 
+  // Dispara e-mail de confirmação de pedido
+  try {
+    const user = await getUserDataById(userId);
+    if (user && user.email) {
+      await sendOrderConfirmationEmail({
+        to: user.email,
+        customerName: user.displayName || 'Cliente',
+        orderId,
+        orderDate: new Date().toLocaleDateString('pt-BR'),
+        totalAmount: total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      });
+    }
+  } catch (emailError) {
+    console.error(`Falha ao enviar e-mail de confirmação para o pedido ${orderId}:`, emailError);
+  }
+
   return {
     id: orderId,
     userId,
@@ -247,6 +266,24 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
     status,
     updatedAt: serverTimestamp(),
   });
+
+  // Dispara e-mail de atualização de status
+  try {
+    const order = await getOrder(orderId);
+    if (order && order.userId) {
+      const user = await getUserDataById(order.userId);
+      if (user && user.email) {
+        await sendOrderStatusUpdateEmail({
+          to: user.email,
+          customerName: user.displayName || 'Cliente',
+          orderId,
+          newStatus: status,
+        });
+      }
+    }
+  } catch (emailError) {
+    console.error(`Falha ao enviar e-mail de atualização para o pedido ${orderId}:`, emailError);
+  }
 }
 
 export async function updateOrderPayment(
@@ -261,5 +298,3 @@ export async function updateOrderPayment(
     updatedAt: serverTimestamp(),
   });
 }
-
-    
