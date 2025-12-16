@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +31,8 @@ function ToothButton({ tooth, isSelected, onClick, style }: ToothButtonProps) {
       style={style}
       className={cn(
         'absolute flex h-9 w-9 items-center justify-center rounded-full border text-sm font-light shadow-md transition-all duration-200 active:scale-95',
-        'border-white/20 bg-white/5 text-white',
+        // fundo mais escuro para melhor contraste no tema dark
+        'border-white/20 bg-neutral-800 text-white',
         'hover:border-blue-500',
         isSelected && 'scale-105 border-blue-500 bg-blue-500 font-medium'
       )}
@@ -124,6 +125,7 @@ function ArcadaInferiorFDI({ selectedTeeth, onToothClick }: { selectedTeeth: num
 interface SeletorInterativoFDIProps {
   initialSelection?: number[];
   onNext: (selection: number[]) => void;
+  onChangeSelection?: (selection: number[]) => void;
 }
 
 const smileTeeth = [13, 12, 11, 21, 22, 23, 33, 32, 31, 41, 42, 43];
@@ -131,6 +133,7 @@ const smileTeeth = [13, 12, 11, 21, 22, 23, 33, 32, 31, 41, 42, 43];
 export function SeletorInterativoFDI({
   initialSelection = [],
   onNext,
+  onChangeSelection,
 }: SeletorInterativoFDIProps) {
   const [selectedTeeth, setSelectedTeeth] = useState<number[]>(initialSelection);
 
@@ -146,12 +149,19 @@ export function SeletorInterativoFDI({
     // Sort to ensure a consistent order
     const upperSmile = [15, 14, 13, 12, 11, 21, 22, 23, 24, 25];
     const lowerSmile = [45, 44, 43, 42, 41, 31, 32, 33, 34, 35];
-    setSelectedTeeth([...new Set([...upperSmile, ...lowerSmile])].sort((a,b) => a-b));
+    const next = [...new Set([...upperSmile, ...lowerSmile])].sort((a,b) => a-b);
+    setSelectedTeeth(next);
   };
 
   const clearSelection = () => {
     setSelectedTeeth([]);
   };
+
+  useEffect(() => {
+    if (onChangeSelection) {
+      onChangeSelection(selectedTeeth);
+    }
+  }, [selectedTeeth, onChangeSelection]);
 
   const handleNext = () => {
     onNext(selectedTeeth);

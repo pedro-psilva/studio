@@ -309,7 +309,8 @@ export default function CartPage() {
 
   const handleCheckout = async () => {
     if (!user) {
-      router.push('/auth/login');
+      const returnUrl = '/cart';
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`);
       return;
     }
 

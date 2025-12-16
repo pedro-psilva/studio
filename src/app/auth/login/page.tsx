@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,11 +13,13 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [form, setForm] = useState({
     email: '',
     password: '',
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,8 +30,8 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, form.email, form.password);
-      // Redireciona para a página inicial após o login bem-sucedido
-      router.push('/');
+      const returnUrl = searchParams.get('returnUrl');
+      router.push(returnUrl ? decodeURIComponent(returnUrl) : '/');
     } catch (err: any) {
       console.error('Erro ao fazer login:', err);
       setError('E-mail ou senha inválidos. Tente novamente.');

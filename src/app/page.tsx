@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, ShoppingCart } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { categories } from '@/lib/data';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/context/AuthContext';
 import type { ServiceDocument } from '@/lib/serviceService';
 import { listServices } from '@/lib/serviceService';
 
@@ -217,6 +219,8 @@ export default function HomePage() {
 function ProductCard({ service }: { service: ServiceDocument }) {
   const { t: tCommon, formatCurrency, language } = useTranslation('common');
   const { t: tHome } = useTranslation('home');
+  const router = useRouter();
+  const { user } = useAuth();
 
   const requiresUpload = (service.arquivosNecessarios ?? []).length > 0;
 
@@ -278,11 +282,20 @@ function ProductCard({ service }: { service: ServiceDocument }) {
         <p className="text-lg font-bold text-primary">
           {formatCurrency(service.precoBase)}
         </p>
-        <Button size="sm" asChild>
-          <Link href={`/products/${service.id}`}>
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            {tCommon("buy")}
-          </Link>
+        <Button
+          size="sm"
+          onClick={() => {
+            const destination = `/products/${service.id}`;
+            if (!user) {
+              router.push(`/auth/login?returnUrl=${encodeURIComponent(destination)}`);
+              return;
+            }
+
+            router.push(destination);
+          }}
+        >
+          <ShoppingCart className="mr-2 h-4 w-4" />
+          {tCommon("buy")}
         </Button>
       </CardFooter>
     </Card>

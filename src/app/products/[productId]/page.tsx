@@ -205,6 +205,15 @@ export default function ProductDetailPage() {
     setIsLightboxOpen(false);
   }, [service?.id]);
 
+  useEffect(() => {
+    if (!service) return;
+    if (!user) return;
+    if (searchParams.get("buy") !== "1") return;
+
+    openModal();
+    router.replace(`/products/${productId}`);
+  }, [productId, router, searchParams, service, user]);
+
   const requiresStl =
     !!service &&
     Array.isArray(service.arquivosNecessarios) &&
@@ -221,6 +230,13 @@ export default function ProductDetailPage() {
 
   function openModal() {
     if (!service) return;
+
+    if (!user) {
+      const returnUrl = `/products/${productId}?buy=1`;
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+      return;
+    }
+
     resetFlow();
     setIsModalOpen(true);
   }
@@ -268,7 +284,8 @@ export default function ProductDetailPage() {
     if (!service) return;
 
     if (!user) {
-      router.push("/auth/login");
+      const returnUrl = `/products/${productId}?buy=1`;
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`);
       return;
     }
 
@@ -521,6 +538,7 @@ export default function ProductDetailPage() {
                         <SeletorInterativoFDI 
                           initialSelection={selectedTeeth}
                           onNext={(selection) => handleNext(selection)}
+                          onChangeSelection={(selection) => setSelectedTeeth(selection)}
                         />
                         {formErrors.teeth && <p className="text-sm text-center text-destructive mt-4">{formErrors.teeth}</p>}
                       </div>

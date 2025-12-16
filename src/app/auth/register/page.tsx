@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +13,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 import { signUpUser, AddressData } from '@/lib/authService';
 import { validateCPF, validateCNPJ, formatCPF, formatCNPJ, validateEmail, validatePassword } from '@/lib/utils/validators';
@@ -37,6 +46,7 @@ interface FormData {
 }
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [accountType, setAccountType] = useState<'pf' | 'pj'>('pf');
 
   const [form, setForm] = useState<FormData>({
@@ -63,6 +73,8 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [loading, setLoading] = useState(false);
+  const [generalError, setGeneralError] = useState('');
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   async function fetchAddressByCEP(cep: string) {
     try {
@@ -168,6 +180,7 @@ export default function RegisterPage() {
       return;
     }
 
+    setGeneralError('');
     setLoading(true);
 
     try {
@@ -197,12 +210,7 @@ export default function RegisterPage() {
         clinicName: accountType === 'pj' ? form.clinicName.trim() : undefined,
         endereco,
       });
-
-      alert('Conta criada com sucesso! Você será redirecionado para o login.');
-      // Redirecionar para a página de login após 2 segundos
-      setTimeout(() => {
-        window.location.href = '/auth/login';
-      }, 2000);
+      setSuccessDialogOpen(true);
     } catch (err: any) {
       console.error('Erro ao criar conta:', err);
       let errorMessage = 'Erro ao criar a conta. Tente novamente.';
@@ -215,7 +223,7 @@ export default function RegisterPage() {
         errorMessage = 'Email inválido. Verifique o endereço de email.';
       }
       
-      alert(errorMessage);
+      setGeneralError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -240,8 +248,9 @@ export default function RegisterPage() {
   }, [form.cep]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6">
+    <>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md space-y-6">
         <CardHeader className="space-y-1 p-0 text-center">
           <CardTitle className="text-2xl font-bold">Criar uma conta</CardTitle>
           <CardDescription className="text-muted-foreground">
@@ -249,7 +258,12 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
+          <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
+          {generalError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {generalError}
+            </div>
+          )}
           <div className="grid gap-2">
             <Label>Account Type</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -599,5 +613,27 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+
+      <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conta criada com sucesso</DialogTitle>
+            <DialogDescription>
+              Sua conta foi criada. Agora você pode fazer login para acessar sua área.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setSuccessDialogOpen(false);
+                router.push('/auth/login');
+              }}
+            >
+              Ir para o login
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

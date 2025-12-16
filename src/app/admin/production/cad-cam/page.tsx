@@ -8,7 +8,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautif
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { listAllOrders, type OrderDocument } from "@/lib/orderService";
+import { listAllOrders, type OrderDocument, updateOrderStatus } from "@/lib/orderService";
 import { getService } from "@/lib/serviceService";
 
 type Order = {
@@ -46,6 +46,7 @@ export default function CadCamPage() {
     const [columns, setColumns] = useState<Record<KanbanColumn['id'], KanbanColumn>>(emptyColumns);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [savingOrderId, setSavingOrderId] = useState<string | null>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -187,7 +188,10 @@ export default function CadCamPage() {
         };
     }, []);
 
-    const onDragEnd = (result: DropResult) => {
+    const onDragEnd = async (result: DropResult) => {
+        if (savingOrderId) {
+            return;
+        }
         const { source, destination } = result;
         if (!destination) return;
         
@@ -203,17 +207,31 @@ export default function CadCamPage() {
             const sourceItems = Array.from(columns[sourceColId].orders);
             const destItems = Array.from(columns[destColId].orders);
             const [movedItem] = sourceItems.splice(source.index, 1);
-            destItems.splice(destination.index, 0, movedItem);
-            setColumns({
-                ...columns,
-                [sourceColId]: { ...columns[sourceColId], orders: sourceItems },
-                [destColId]: { ...columns[destColId], orders: destItems },
-            });
+            if (!movedItem) return;
+
+            // Todas as etapas de CAD/CAM representam produção em andamento
+            const newStatus: OrderDocument['status'] = 'in_production';
+
+            try {
+                setSavingOrderId(movedItem.id);
+                await updateOrderStatus(movedItem.id, newStatus);
+
+                destItems.splice(destination.index, 0, movedItem);
+                setColumns({
+                    ...columns,
+                    [sourceColId]: { ...columns[sourceColId], orders: sourceItems },
+                    [destColId]: { ...columns[destColId], orders: destItems },
+                });
+            } catch (err) {
+                console.error('Erro ao atualizar status em CAD/CAM:', err);
+            } finally {
+                setSavingOrderId(null);
+            }
         }
     };
 
     return (
-        <div className="bg-[#0a0a0a] flex flex-col flex-1 h-full p-4 md:p-6 lg:p-8">
+        <div className="bg-background flex flex-col flex-1 h-full p-4 md:p-6 lg:p-8">
             <header className="mb-6">
                 <h1 className="text-2xl font-semibold text-white">Kanban de Produção - CAD/CAM</h1>
             </header>
@@ -243,8 +261,8 @@ export default function CadCamPage() {
                                         ref={provided.innerRef}
                                         {...provided.droppableProps}
                                         className={cn(
-                                            "flex flex-col w-[280px] h-full rounded-lg bg-[#1a1a1a] border border-[#2d2d2d]",
-                                            snapshot.isDraggingOver && "border-[#FFD700] bg-[#1a1a1a]/80"
+                                            "flex flex-col w-[280px] h-full rounded-lg bg-card border border-border",
+                                            snapshot.isDraggingOver && "border-primary bg-accent/40"
                                         )}
                                     >
                                         <div className="flex items-center justify-between p-4 border-b border-[#2d2d2d]">
@@ -263,8 +281,8 @@ export default function CadCamPage() {
                                                                 {...provided.draggableProps}
                                                                 {...provided.dragHandleProps}
                                                                 className={cn(
-                                                                    "bg-[#121212] rounded-[16px] border border-[#3b2f00] p-4 shadow-sm transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_0_15px_rgba(255,215,0,0.2)]",
-                                                                    snapshot.isDragging && "scale-[1.03] shadow-[0_0_15px_rgba(255,215,0,0.4)] opacity-90 border-[#ffd700]"
+                                                                    "bg-background rounded-[16px] border border-border p-4 shadow-sm transition-all duration-200 hover:scale-[1.03] hover:shadow-md",
+                                                                    snapshot.isDragging && "scale-[1.03] shadow-lg opacity-90 border-primary"
                                                                 )}
                                                             >
                                                                  <div className="flex justify-between items-start mb-2">

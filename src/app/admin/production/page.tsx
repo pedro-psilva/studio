@@ -314,23 +314,10 @@ export default function ProductionGeneralPage() {
     const handleConfirmMove = async () => {
         if (!pendingMove) return;
 
-        const { sourceColId, destColId, sourceIndex, destIndex, order } = pendingMove;
-
-        // Mapa de coluna do kanban -> novo status do pedido
-        const columnToStatus: Record<KanbanColumn['id'], OrderDocument['status']> = {
-            received: "pending_payment",   // pedidos em "Recebido" ficam aguardando pagamento
-            analysis: "paid",              // ao arrastar para "Em Análise", marcamos como pago/triagem
-            production: "in_production",   // "Em Produção" marca como em produção
-            finalized: "delivered",        // "Finalizado" marca como entregue
-            shipped: "shipped",            // "Enviado" permanece enviado
-        };
-
-        const newStatus = columnToStatus[destColId];
+        const { sourceColId, destColId, sourceIndex, destIndex } = pendingMove;
 
         setConfirming(true);
         try {
-            await updateOrderStatus(order.id, newStatus);
-
             setColumns(prev => {
                 const sourceItems = Array.from(prev[sourceColId].orders);
                 const destItems = Array.from(prev[destColId].orders);
@@ -386,14 +373,16 @@ export default function ProductionGeneralPage() {
                                 key={column.id}
                                 droppableId={column.id}
                                 isDropDisabled={false}
+                                isCombineEnabled={false}
+                                ignoreContainerClipping={false}
                             >
                                 {(provided, snapshot) => (
                                     <div
                                         ref={provided.innerRef}
                                         {...provided.droppableProps}
                                         className={cn(
-                                            "flex flex-col w-[300px] h-full rounded-lg bg-[#1a1a1a] border border-[#2d2d2d]",
-                                            snapshot.isDraggingOver && "border-[#FFD700] bg-[#1a1a1a]/80"
+                                            "flex flex-col w-[300px] h-full rounded-lg bg-card border border-border",
+                                            snapshot.isDraggingOver && "border-primary bg-accent/40"
                                         )}
                                     >
                                         <div className="flex items-center justify-between p-4 border-b border-[#2d2d2d]">
