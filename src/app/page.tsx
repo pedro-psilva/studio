@@ -95,6 +95,7 @@ export default function HomePage() {
                 className="object-cover"
                 sizes="100vw"
                 priority
+                unoptimized
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/10" />
             </>
