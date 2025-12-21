@@ -48,27 +48,10 @@ const navLinks = [
   },
   { href: '/admin/products', label: 'Produtos', icon: Package },
   { href: '/admin/users', label: 'Usuários', icon: Users },
-  {
-    href: '/admin/esap',
-    label: 'ESAP',
-    icon: TrendingUp,
-    subLinks: [
-      { href: '/admin/esap', label: 'Dashboard ESAP' },
-      { href: '/admin/esap/meu-painel', label: 'Meu Painel' },
-      { href: '/admin/esap/equipe', label: 'Equipe' },
-      { href: '/admin/esap/kpis', label: 'KPIs e Indicadores' },
-      { href: '/admin/esap/metas', label: 'Metas' },
-      { href: '/admin/esap/planos-acao', label: 'Planos de Ação' },
-      { href: '/admin/esap/registrar-atividade', label: 'Registrar Atividade' },
-      { href: '/admin/esap/acompanhamento', label: 'Acompanhamento' },
-      { href: '/admin/esap/relatorios', label: 'Relatórios' },
-    ],
-  },
   { href: '/admin/finance', label: 'Financeiro', icon: CreditCard },
   { href: '/admin/reports', label: 'Relatórios', icon: LineChart },
   { href: '/admin/coupons', label: 'Cupons', icon: BadgePercent },
   { href: '/admin/notifications', label: 'Notificações', icon: BellRing },
-  { href: '/admin/settings', label: 'Configurações', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -86,12 +69,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (path.startsWith('/admin/production')) return 'production';
     if (path.startsWith('/admin/products')) return 'products';
     if (path.startsWith('/admin/users')) return 'users';
-    if (path.startsWith('/admin/esap')) return 'esap';
     if (path.startsWith('/admin/finance')) return 'finance';
     if (path.startsWith('/admin/reports')) return 'reports';
     if (path.startsWith('/admin/coupons')) return 'coupons';
     if (path.startsWith('/admin/notifications')) return 'notifications';
-    if (path.startsWith('/admin/settings')) return 'settings';
     return 'dashboard';
   };
 
@@ -153,8 +134,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [authLoading, verifying, isColaborador, pathname, router, isAdmin, adminAccess]);
 
-  const isEsapRoute = pathname.startsWith('/admin/esap');
-
   if (verifying || authLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -173,7 +152,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <span className="font-headline">IT Lab Admin</span>
+              <span className="flex items-baseline gap-2">
+                <span className="font-headline font-bold text-base">IT Solution</span>
+                <span className="font-headline text-lg text-yellow-500 tracking-wide">Admin</span>
+              </span>
             </Link>
             <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
               <Bell className="h-4 w-4" />
@@ -189,7 +171,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 return link.subLinks ? (
                   <Collapsible
                     key={link.href}
-                    defaultOpen={isEsapRoute || pathname.startsWith(link.href)}
+                    defaultOpen={pathname.startsWith(link.href)}
                   >
                     <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary [&[data-state=open]>svg:last-child]:-rotate-180">
                       <div className="flex items-center gap-3">

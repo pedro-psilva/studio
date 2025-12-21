@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 // --- Tipos para os parâmetros dos e-mails ---
 
@@ -31,6 +32,29 @@ const transporter = nodemailer.createTransport({
 
 const FROM_EMAIL = 'ferramentas@itsolutionlabdigital.com.br';
 
+type NotificationTemplateDoc = {
+  subject?: string;
+  html?: string;
+};
+
+async function getNotificationTemplate(templateId: string): Promise<NotificationTemplateDoc | null> {
+  try {
+    const snap = await adminDb.collection('notificationTemplates').doc(templateId).get();
+    if (!snap.exists) return null;
+    return (snap.data() as any) as NotificationTemplateDoc;
+  } catch (err) {
+    console.error(`Erro ao buscar template ${templateId}:`, err);
+    return null;
+  }
+}
+
+function interpolateTemplate(input: string, vars: Record<string, string>): string {
+  return input.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, key: string) => {
+    const val = vars[key];
+    return typeof val === 'string' ? val : '';
+  });
+}
+
 // --- Função genérica para envio de e-mail ---
 
 async function sendEmail(options: { to: string; subject: string; html: string }) {
@@ -54,8 +78,8 @@ async function sendEmail(options: { to: string; subject: string; html: string })
 // --- Funções específicas para cada tipo de notificação ---
 
 export async function sendOrderConfirmationEmail(params: OrderConfirmationEmailParams) {
-  const subject = `Confirmação do seu Pedido #${params.orderId}`;
-  const html = `
+  const defaultSubject = `Confirmação do seu Pedido #${params.orderId}`;
+  const defaultHtml = `
     <h1>Olá, ${params.customerName}!</h1>
     <p>Seu pedido <strong>#${params.orderId}</strong> foi recebido com sucesso em ${params.orderDate}.</p>
     <p>Valor Total: <strong>${params.totalAmount}</strong></p>
@@ -65,12 +89,24 @@ export async function sendOrderConfirmationEmail(params: OrderConfirmationEmailP
     <p>Equipe IT Lab</p>
   `;
 
+  const template = await getNotificationTemplate('pedido-criado');
+  const vars = {
+    customerName: params.customerName,
+    orderId: params.orderId,
+    orderDate: params.orderDate,
+    totalAmount: params.totalAmount,
+    newStatus: '',
+  };
+
+  const subject = template?.subject ? interpolateTemplate(template.subject, vars) : defaultSubject;
+  const html = template?.html ? interpolateTemplate(template.html, vars) : defaultHtml;
+
   return sendEmail({ to: params.to, subject, html });
 }
 
 export async function sendOrderStatusUpdateEmail(params: OrderStatusUpdateEmailParams) {
-  const subject = `Atualização do seu Pedido #${params.orderId}`;
-  const html = `
+  const defaultSubject = `Atualização do seu Pedido #${params.orderId}`;
+  const defaultHtml = `
     <h1>Olá, ${params.customerName}!</h1>
     <p>O status do seu pedido <strong>#${params.orderId}</strong> foi atualizado para: <strong>${params.newStatus}</strong>.</p>
     <p>Acesse sua conta para ver mais detalhes.</p>
@@ -79,12 +115,24 @@ export async function sendOrderStatusUpdateEmail(params: OrderStatusUpdateEmailP
     <p>Equipe IT Lab</p>
   `;
 
+  const template = await getNotificationTemplate('pedido-atualizado');
+  const vars = {
+    customerName: params.customerName,
+    orderId: params.orderId,
+    orderDate: '',
+    totalAmount: '',
+    newStatus: params.newStatus,
+  };
+
+  const subject = template?.subject ? interpolateTemplate(template.subject, vars) : defaultSubject;
+  const html = template?.html ? interpolateTemplate(template.html, vars) : defaultHtml;
+
   return sendEmail({ to: params.to, subject, html });
 }
 
 export async function sendPaymentConfirmedEmail(params: { to: string, customerName: string, orderId: string }) {
-  const subject = `Pagamento Confirmado - Pedido #${params.orderId}`;
-  const html = `
+  const defaultSubject = `Pagamento Confirmado - Pedido #${params.orderId}`;
+  const defaultHtml = `
     <h1>Olá, ${params.customerName}!</h1>
     <p>Ótimas notícias! O pagamento do seu pedido <strong>#${params.orderId}</strong> foi confirmado.</p>
     <p>Já estamos iniciando a produção e em breve você receberá novas atualizações.</p>
@@ -92,5 +140,18 @@ export async function sendPaymentConfirmedEmail(params: { to: string, customerNa
     <p>Atenciosamente,</p>
     <p>Equipe IT Lab</p>
   `;
+
+  const template = await getNotificationTemplate('pagamento-confirmado');
+  const vars = {
+    customerName: params.customerName,
+    orderId: params.orderId,
+    orderDate: '',
+    totalAmount: '',
+    newStatus: '',
+  };
+
+  const subject = template?.subject ? interpolateTemplate(template.subject, vars) : defaultSubject;
+  const html = template?.html ? interpolateTemplate(template.html, vars) : defaultHtml;
+
   return sendEmail({ to: params.to, subject, html });
 }

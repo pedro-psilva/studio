@@ -1,14 +1,11 @@
-
 import Link from 'next/link';
-import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react';
+import { Instagram, Linkedin } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 
 const socialLinks = [
-  { href: '#', icon: Facebook, name: 'Facebook' },
-  { href: '#', icon: Instagram, name: 'Instagram' },
-  { href: '#', icon: Twitter, name: 'Twitter' },
-  { href: '#', icon: Linkedin, name: 'Linkedin' },
+  { href: 'https://www.instagram.com/itsolutionlab', icon: Instagram, name: 'Instagram' },
+  { href: 'https://www.linkedin.com/company/it-solution-lab-digital', icon: Linkedin, name: 'LinkedIn' },
 ];
 
 export function Footer() {
@@ -41,7 +38,10 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center space-x-2">
-              <span className="font-bold text-lg font-headline">IT Lab</span>
+              <span className="flex flex-col items-center text-center leading-tight">
+                <span className="font-headline font-bold text-xl">IT Solution</span>
+                <span className="font-script text-lg text-yellow-500 tracking-wide">Laboratório digital</span>
+              </span>
             </Link>
             <p className="mt-4 text-muted-foreground max-w-xs">
               {t('tagline')}

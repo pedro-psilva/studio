@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
+import nodemailer from 'nodemailer';
 
 export async function POST(req: Request) {
   try {
@@ -50,12 +51,21 @@ export async function POST(req: Request) {
       displayName: displayName || undefined,
     });
 
+    const baseUrl = process.env.BASE_URL;
+    if (!baseUrl) {
+      return NextResponse.json({ error: 'BASE_URL não configurado.' }, { status: 500 });
+    }
+
+    const verificationLink = await adminAuth.generateEmailVerificationLink(email, {
+      url: `${baseUrl}/auth/verify-email`,
+    });
+
     await adminDb.collection('users').doc(createdUser.uid).set(
       {
         email,
         displayName: displayName || null,
         tipo,
-        status: 'Ativo',
+        status: 'Pendente',
         forcePasswordReset,
         adminAccess: tipo === 'colaborador' ? adminAccess ?? {} : null,
         createdAt: FieldValue.serverTimestamp(),
@@ -63,6 +73,49 @@ export async function POST(req: Request) {
       },
       { merge: true }
     );
+
+    try {
+      const smtpHost = process.env.BREVO_SMTP_HOST;
+      const smtpPort = Number(process.env.BREVO_SMTP_PORT || 587);
+      const smtpUser = process.env.BREVO_SMTP_USER;
+      const smtpPass = process.env.BREVO_SMTP_PASS;
+
+      if (smtpHost && smtpUser && smtpPass) {
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: false,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+        });
+
+        const fromEmail = 'ferramentas@itsolutionlabdigital.com.br';
+        const subject = 'Conta criada com sucesso - confirme seu e-mail';
+
+        const html = `
+          <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
+            <h2>Olá${displayName ? `, ${displayName}` : ''}!</h2>
+            <p>Sua conta foi criada com sucesso.</p>
+            <p>Para ativar sua conta, confirme seu e-mail clicando no link abaixo:</p>
+            <p><a href="${verificationLink}" target="_blank" rel="noreferrer">Confirmar e-mail</a></p>
+            <p>Se você não solicitou esta conta, desconsidere esta mensagem.</p>
+            <hr style="border:none;border-top:1px solid #eee;margin:24px 0" />
+            <p style="font-size:12px;color:#555">IT Solution - Laboratório digital</p>
+          </div>
+        `;
+
+        await transporter.sendMail({
+          from: `"IT Solution" <${fromEmail}>`,
+          to: email,
+          subject,
+          html,
+        });
+      }
+    } catch (mailErr) {
+      console.error('Erro ao enviar e-mail de conta criada/verificação:', mailErr);
+    }
 
     return NextResponse.json(
       {

@@ -36,6 +36,13 @@ export type OrderDocument = {
   items: OrderItemFirestore[];
   subtotal: number;
   shipping: number;
+  discount?: number;
+  coupon?: {
+    id: string;
+    code: string;
+    type: 'percent' | 'fixed' | 'free_shipping';
+    value: number;
+  } | null;
   total: number;
   status: OrderStatus;
   createdAt: Date;
@@ -79,6 +86,7 @@ function mapCartItemToOrderItem(item: CartItemFirestore): OrderItemFirestore {
 export async function getOrder(orderId: string): Promise<OrderDocument | null> {
   const ref = doc(db, COLLECTION_NAME, orderId);
   const snap = await getDoc(ref);
+
   if (!snap.exists()) return null;
 
   const data = snap.data() as any;
@@ -102,9 +110,11 @@ export async function getOrder(orderId: string): Promise<OrderDocument | null> {
     id: snap.id,
     userId: data.userId,
     items: data.items ?? [],
-    subtotal: data.subtotal,
-    shipping: data.shipping,
-    total: data.total,
+    subtotal: data.subtotal ?? 0,
+    shipping: data.shipping ?? 0,
+    discount: typeof data.discount === 'number' ? data.discount : 0,
+    coupon: data.coupon ?? null,
+    total: data.total ?? 0,
     status,
     createdAt,
     updatedAt,
@@ -181,6 +191,8 @@ export async function listAllOrders(): Promise<OrderDocument[]> {
       items: data.items ?? [],
       subtotal: data.subtotal,
       shipping: data.shipping,
+      discount: typeof data.discount === 'number' ? data.discount : 0,
+      coupon: data.coupon ?? null,
       total: data.total,
       status,
       createdAt,
@@ -197,14 +209,21 @@ export type CreateOrderParams = {
   items: OrderItemFirestore[];
   subtotal: number;
   shipping: number;
+  discount?: number;
+  coupon?: {
+    id: string;
+    code: string;
+    type: 'percent' | 'fixed' | 'free_shipping';
+    value: number;
+  } | null;
 };
 
 export async function createOrderFromCart(
   params: CreateOrderParams
 ): Promise<OrderDocument> {
-  const { userId, items, subtotal, shipping } = params;
+  const { userId, items, subtotal, shipping, discount = 0, coupon = null } = params;
 
-  const total = subtotal + shipping;
+  const total = Math.max(0, subtotal - discount + shipping);
 
   const colRef = collection(db, COLLECTION_NAME);
 
@@ -232,6 +251,8 @@ export async function createOrderFromCart(
     items: firestoreItems,
     subtotal,
     shipping,
+    discount,
+    coupon,
     total,
     status: 'pending_payment',
     createdAt: now,
@@ -266,6 +287,8 @@ export async function createOrderFromCart(
     items,
     subtotal,
     shipping,
+    discount,
+    coupon,
     total,
     status: 'pending_payment',
     createdAt: new Date(),

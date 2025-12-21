@@ -6,7 +6,7 @@ import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -95,6 +95,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     checkForcePasswordReset();
+  }, [user, pathname, router]);
+
+  useEffect(() => {
+    const enforceEmailVerification = async () => {
+      if (!user) return;
+
+      const isAuthPage = pathname.startsWith('/auth');
+      const isVerifyPage = pathname === '/auth/verify-email';
+
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const snap = await getDoc(userRef);
+        const data = snap.exists() ? (snap.data() as any) : null;
+
+        if (!user.emailVerified) {
+          if (data?.status !== 'Pendente') {
+            await updateDoc(userRef, {
+              status: 'Pendente',
+              updatedAt: serverTimestamp(),
+            });
+          }
+
+          if (!isVerifyPage) {
+            router.replace('/auth/verify-email');
+          }
+          return;
+        }
+
+        if (user.emailVerified && data?.status && data.status !== 'Ativo') {
+          await updateDoc(userRef, {
+            status: 'Ativo',
+            updatedAt: serverTimestamp(),
+          });
+        }
+
+        if (user.emailVerified && isVerifyPage) {
+          router.replace('/');
+        }
+      } catch (error) {
+        console.error('Erro ao aplicar verificação de e-mail:', error);
+        if (!isAuthPage) {
+          router.replace('/auth/verify-email');
+        }
+      }
+    };
+
+    void enforceEmailVerification();
   }, [user, pathname, router]);
 
   return (

@@ -364,18 +364,37 @@ export default function CartPage() {
         userId: user.uid,
         items: orderItems,
         subtotal,
-        shipping,
+        shipping: finalShipping,
+        discount,
+        coupon: appliedCoupon
+          ? {
+              id: appliedCoupon.id,
+              code: appliedCoupon.code,
+              type: appliedCoupon.type,
+              value: appliedCoupon.value,
+            }
+          : null,
       });
 
       await setCart(user.uid, []);
       setCartItems([]);
       try {
+        const itemsForCheckout = appliedCoupon
+          ? [
+              {
+                quantity: 1,
+                price: Math.round(total * 100),
+                description: `Pedido ${order.id} (cupom ${appliedCoupon.code})`,
+              },
+            ]
+          : infinitepayItems;
+
         const response = await fetch('/api/payments/infinitepay/create-link', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ orderId: order.id, total, items: infinitepayItems, customer, address: userAddress }),
+          body: JSON.stringify({ orderId: order.id, total, items: itemsForCheckout, customer, address: userAddress }),
         });
 
         if (!response.ok) {

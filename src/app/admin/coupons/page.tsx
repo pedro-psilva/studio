@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { File, ListFilter, MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,12 +56,19 @@ import {
   getCouponStatus,
   listCoupons,
   updateCoupon,
-} from "@/lib/couponService";
+} from "@/lib/couponServiceClean";
+import { db } from "@/lib/firebase";
+
+type CollaboratorOption = {
+  id: string;
+  name: string;
+};
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<CouponDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [collaborators, setCollaborators] = useState<CollaboratorOption[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentTab, setCurrentTab] = useState<"all" | "active" | "expired" | "draft">("all");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -72,9 +80,31 @@ export default function CouponsPage() {
   const [newMaxUses, setNewMaxUses] = useState("");
   const [newMinOrderTotal, setNewMinOrderTotal] = useState("");
   const [newActive, setNewActive] = useState(true);
+  const [newAssignedToUserId, setNewAssignedToUserId] = useState<string>("none");
 
   useEffect(() => {
     let isMounted = true;
+
+    async function loadCollaborators() {
+      try {
+        const colRef = collection(db, 'users');
+        const q = query(colRef, where('tipo', '==', 'colaborador'));
+        const snap = await getDocs(q);
+
+        const options: CollaboratorOption[] = snap.docs.map((d) => {
+          const data = d.data() as any;
+          const name = data.displayName || data.clinicName || data.email || 'Sem nome';
+          return { id: d.id, name };
+        });
+
+        options.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+
+        if (!isMounted) return;
+        setCollaborators(options);
+      } catch (err) {
+        console.error('Erro ao carregar colaboradores:', err);
+      }
+    }
 
     async function loadCoupons() {
       try {
@@ -94,6 +124,7 @@ export default function CouponsPage() {
     }
 
     loadCoupons();
+    loadCollaborators();
 
     return () => {
       isMounted = false;
@@ -112,7 +143,8 @@ export default function CouponsPage() {
         const term = searchTerm.toLowerCase();
         return (
           coupon.code.toLowerCase().includes(term) ||
-          coupon.description.toLowerCase().includes(term)
+          coupon.description.toLowerCase().includes(term) ||
+          (coupon.assignedToName ?? '').toLowerCase().includes(term)
         );
       }
 
@@ -168,6 +200,12 @@ export default function CouponsPage() {
 
     try {
       setIsSaving(true);
+
+      const assigned =
+        newAssignedToUserId && newAssignedToUserId !== 'none'
+          ? collaborators.find((c) => c.id === newAssignedToUserId) ?? null
+          : null;
+
       const created = await createCoupon({
         code: trimmedCode,
         description: newDescription.trim(),
@@ -176,6 +214,8 @@ export default function CouponsPage() {
         maxUses: maxUsesNumber,
         minOrderTotal: minOrderNumber,
         active: newActive,
+        assignedToUserId: assigned?.id ?? null,
+        assignedToName: assigned?.name ?? null,
         validFrom: null,
         validUntil: null,
       });
@@ -188,6 +228,7 @@ export default function CouponsPage() {
       setNewMaxUses("");
       setNewMinOrderTotal("");
       setNewActive(true);
+      setNewAssignedToUserId('none');
       setIsSheetOpen(false);
     } finally {
       setIsSaving(false);
@@ -296,6 +337,24 @@ export default function CouponsPage() {
                         />
                       </div>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="assignedTo">Vincular ao colaborador (opcional)</Label>
+                      <Select value={newAssignedToUserId} onValueChange={setNewAssignedToUserId}>
+                        <SelectTrigger id="assignedTo">
+                          <SelectValue placeholder="Nenhum" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhum</SelectItem>
+                          {collaborators.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div className="flex items-center justify-between space-x-2 rounded-lg border p-3">
                       <div className="space-y-0.5">
                         <Label htmlFor="active">Ativo</Label>
@@ -359,6 +418,7 @@ export default function CouponsPage() {
                       <TableHead>Código</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Desconto</TableHead>
+                      <TableHead className="hidden lg:table-cell">Colaborador</TableHead>
                       <TableHead className="hidden md:table-cell">Usos</TableHead>
                       <TableHead className="hidden md:table-cell">Validade</TableHead>
                       <TableHead>Status</TableHead>
@@ -383,6 +443,9 @@ export default function CouponsPage() {
                           </TableCell>
                           <TableCell className="font-semibold">
                             {formatDiscount(coupon)}
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            {coupon.assignedToName ?? '-'}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                             {formatUses(coupon)}

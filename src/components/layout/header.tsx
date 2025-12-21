@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -127,10 +128,9 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <div className="mr-4 hidden md:flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
-            <span className="hidden font-bold sm:inline-block font-headline">
-              IT Lab
-            </span>
+          <Link href="/" className="mr-6 flex flex-col items-center text-center leading-tight">
+            <span className="font-headline font-bold text-xl">IT Solution</span>
+            <span className="font-script text-lg text-yellow-500 tracking-wide">Laboratório digital</span>
           </Link>
         </div>
 
@@ -142,8 +142,9 @@ export function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-full max-w-xs bg-background p-6">
-            <Link href="/" className="mb-8 flex items-center">
-              <span className="text-lg font-bold font-headline">IT Lab</span>
+            <Link href="/" className="mb-8 flex flex-col items-center text-center leading-tight">
+              <span className="font-headline font-bold text-2xl">IT Solution</span>
+              <span className="font-script text-xl text-yellow-500 tracking-wide">Laboratório digital</span>
             </Link>
             <nav className="flex flex-col space-y-4">
               <Link href="https://itsolutionlabdigital.com.br/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Sobre Nós</Link>

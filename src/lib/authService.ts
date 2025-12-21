@@ -3,6 +3,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithEmailAndPassword,
+  sendEmailVerification,
 } from "firebase/auth";
 import {
   doc,
@@ -51,6 +52,7 @@ export async function signUpUser(data: SignUpData) {
   // 1) Criação do usuário no Auth
   const cred = await createUserWithEmailAndPassword(auth, email, senha);
   await updateProfile(cred.user, { displayName: nome });
+  await sendEmailVerification(cred.user);
   const uid = cred.user.uid;
 
   // 2) Salva os dados do usuário no Firestore
