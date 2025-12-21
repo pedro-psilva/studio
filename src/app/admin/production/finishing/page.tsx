@@ -24,7 +24,7 @@ type Order = {
 };
 
 type KanbanColumn = {
-  id: 'entry' | 'adjustment' | 'polishing' | 'qc' | 'release' | 'exit';
+  id: 'entry' | 'finishing' | 'exit';
   title: string;
   orders: Order[];
 };
@@ -35,10 +35,7 @@ type DashboardOrder = OrderDocument & {
 
 const emptyColumns: Record<KanbanColumn['id'], KanbanColumn> = {
   entry: { id: 'entry', title: 'Entrada', orders: [] },
-  adjustment: { id: 'adjustment', title: 'Ajuste / Acabamento', orders: [] },
-  polishing: { id: 'polishing', title: 'Polimento / Caracterização', orders: [] },
-  qc: { id: 'qc', title: 'Controle de Qualidade (QC)', orders: [] },
-  release: { id: 'release', title: 'Liberação', orders: [] },
+  finishing: { id: 'finishing', title: 'Finalização', orders: [] },
   exit: { id: 'exit', title: 'Saída', orders: [] },
 };
 
@@ -136,10 +133,7 @@ export default function FinishingPage() {
 
                 const nextColumns: Record<KanbanColumn['id'], KanbanColumn> = {
                     entry: { ...emptyColumns.entry, orders: [] },
-                    adjustment: { ...emptyColumns.adjustment, orders: [] },
-                    polishing: { ...emptyColumns.polishing, orders: [] },
-                    qc: { ...emptyColumns.qc, orders: [] },
-                    release: { ...emptyColumns.release, orders: [] },
+                    finishing: { ...emptyColumns.finishing, orders: [] },
                     exit: { ...emptyColumns.exit, orders: [] },
                 };
 
@@ -169,7 +163,7 @@ export default function FinishingPage() {
                     let columnKey: KanbanColumn['id'] = 'entry';
 
                     if (order.status === 'in_production') {
-                        columnKey = 'adjustment';
+                        columnKey = 'finishing';
                     } else if (order.status === 'delivered') {
                         columnKey = 'exit';
                     }
@@ -216,10 +210,7 @@ export default function FinishingPage() {
 
             const columnToStatus: Record<KanbanColumn['id'], OrderDocument['status']> = {
                 entry: 'in_production',
-                adjustment: 'in_production',
-                polishing: 'in_production',
-                qc: 'in_production',
-                release: 'in_production',
+                finishing: 'in_production',
                 exit: 'delivered',
             };
 
@@ -254,7 +245,7 @@ export default function FinishingPage() {
     return (
         <div className="bg-background flex flex-col flex-1 h-full p-4 md:p-6 lg:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl font-semibold text-white">Kanban de Produção - Finalização</h1>
+                <h1 className="text-2xl font-semibold text-foreground">Kanban de Produção - Finalização</h1>
             </header>
             <main className="flex-1 overflow-x-auto">
                 {loading && (
@@ -287,7 +278,7 @@ export default function FinishingPage() {
                                         )}
                                     >
                                         <div className="flex items-center justify-between p-4 border-b border-[#2d2d2d]">
-                                            <h2 className="font-semibold text-white">{column.title}</h2>
+                                            <h2 className="font-semibold text-foreground">{column.title}</h2>
                                             <div className="text-sm font-bold bg-[#FFD700] text-black rounded-full px-2.5 py-0.5">
                                                 {column.orders.length}
                                             </div>

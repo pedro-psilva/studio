@@ -85,6 +85,7 @@ export default function CartPage() {
         if (!cart || !cart.items || cart.items.length === 0) {
           setCartItems([]);
         } else {
+          const originalItems = cart.items;
           const itemsWithService: CartItemWithService[] = (
             await Promise.all(
               cart.items.map(async (item, index) => {
@@ -105,6 +106,25 @@ export default function CartPage() {
           ).filter(Boolean) as CartItemWithService[];
 
           setCartItems(itemsWithService);
+
+          if (itemsWithService.length !== originalItems.length) {
+            const cleanedItems: CartItemFirestore[] = itemsWithService.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              material: item.material,
+              shade: item.shade,
+              teeth: item.teeth,
+              implantSystem: item.implantSystem,
+              stlFileUrl: item.stlFileUrl,
+              patientName: item.patientName,
+            }));
+
+            try {
+              await updateCartItems(user.uid, cleanedItems);
+            } catch (e) {
+              console.error('Erro ao limpar itens inválidos do carrinho:', e);
+            }
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar carrinho:', error);

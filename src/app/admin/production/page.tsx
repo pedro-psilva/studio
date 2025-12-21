@@ -47,7 +47,7 @@ type Order = {
 };
 
 type KanbanColumn = {
-  id: "received" | "analysis" | "production" | "finalized" | "shipped";
+  id: "received" | "analysis" | "production" | "finalized" | "shipped" | "canceled";
   title: string;
   orders: Order[];
 };
@@ -82,22 +82,27 @@ const emptyColumns: Record<KanbanColumn["id"], KanbanColumn> = {
     title: "Enviado",
     orders: [],
   },
+  canceled: {
+    id: "canceled",
+    title: "Cancelado",
+    orders: [],
+  },
 };
 
 export default function ProductionGeneralPage() {
-    const [columns, setColumns] = useState<Record<KanbanColumn['id'], KanbanColumn>>(emptyColumns);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const { toast } = useToast();
+  const [columns, setColumns] = useState<Record<KanbanColumn['id'], KanbanColumn>>(emptyColumns);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-    const [pendingMove, setPendingMove] = useState<{
-        sourceColId: KanbanColumn['id'];
-        destColId: KanbanColumn['id'];
-        sourceIndex: number;
-        destIndex: number;
-        order: Order;
-    } | null>(null);
-    const [confirming, setConfirming] = useState(false);
+  const [pendingMove, setPendingMove] = useState<{
+    sourceColId: KanbanColumn['id'];
+    destColId: KanbanColumn['id'];
+    sourceIndex: number;
+    destIndex: number;
+    order: Order;
+  } | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -185,6 +190,7 @@ export default function ProductionGeneralPage() {
                     production: { ...emptyColumns.production, orders: [] },
                     finalized: { ...emptyColumns.finalized, orders: [] },
                     shipped: { ...emptyColumns.shipped, orders: [] },
+                    canceled: { ...emptyColumns.canceled, orders: [] },
                 };
 
                 const now = new Date();
@@ -233,6 +239,7 @@ export default function ProductionGeneralPage() {
                     // - in_production: vai para "Em Produção"
                     // - delivered: "Finalizado (Aguardando Expedição)"
                     // - shipped: "Enviado"
+                    // - canceled: "Cancelado"
                     switch (order.status) {
                         case "pending_payment":
                             columnKey = "received";
@@ -248,6 +255,9 @@ export default function ProductionGeneralPage() {
                             break;
                         case "shipped":
                             columnKey = "shipped";
+                            break;
+                        case "canceled":
+                            columnKey = "canceled";
                             break;
                         default:
                             columnKey = "received";
@@ -316,8 +326,21 @@ export default function ProductionGeneralPage() {
 
         const { sourceColId, destColId, sourceIndex, destIndex } = pendingMove;
 
+        const columnToStatus: Record<KanbanColumn['id'], OrderDocument['status']> = {
+            received: 'pending_payment',
+            analysis: 'paid',
+            production: 'in_production',
+            finalized: 'delivered',
+            shipped: 'shipped',
+            canceled: 'canceled',
+        };
+
+        const newStatus = columnToStatus[destColId];
+
         setConfirming(true);
         try {
+            await updateOrderStatus(pendingMove.order.id, newStatus);
+
             setColumns(prev => {
                 const sourceItems = Array.from(prev[sourceColId].orders);
                 const destItems = Array.from(prev[destColId].orders);
@@ -386,7 +409,7 @@ export default function ProductionGeneralPage() {
                                         )}
                                     >
                                         <div className="flex items-center justify-between p-4 border-b border-[#2d2d2d]">
-                                            <h2 className="font-semibold text-white">{column.title}</h2>
+                                            <h2 className="font-semibold text-foreground">{column.title}</h2>
                                             <div className="text-sm font-bold bg-[#FFD700] text-black rounded-full px-2.5 py-0.5">
                                                 {column.orders.length}
                                             </div>

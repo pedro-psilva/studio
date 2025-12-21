@@ -20,7 +20,7 @@ type Order = {
 };
 
 type KanbanColumn = {
-  id: 'entry' | 'packing' | 'invoice' | 'ready-to-ship' | 'shipped';
+  id: 'entry' | 'packing' | 'shipped';
   title: string;
   orders: Order[];
 };
@@ -31,10 +31,8 @@ type DashboardOrder = OrderDocument & {
 
 const emptyColumns: Record<KanbanColumn['id'], KanbanColumn> = {
   entry: { id: 'entry', title: 'Entrada', orders: [] },
-  packing: { id: 'packing', title: 'Conferência / Embalagem', orders: [] },
-  invoice: { id: 'invoice', title: 'Nota Fiscal', orders: [] },
-  'ready-to-ship': { id: 'ready-to-ship', title: 'Pronto para Envio', orders: [] },
-  shipped: { id: 'shipped', title: 'Saída (Enviado)', orders: [] },
+  packing: { id: 'packing', title: 'Embalagem', orders: [] },
+  shipped: { id: 'shipped', title: 'Envio (Saída)', orders: [] },
 };
 
 export default function ShippingPage() {
@@ -104,8 +102,6 @@ export default function ShippingPage() {
                 const nextColumns: Record<KanbanColumn['id'], KanbanColumn> = {
                     entry: { ...emptyColumns.entry, orders: [] },
                     packing: { ...emptyColumns.packing, orders: [] },
-                    invoice: { ...emptyColumns.invoice, orders: [] },
-                    'ready-to-ship': { ...emptyColumns['ready-to-ship'], orders: [] },
                     shipped: { ...emptyColumns.shipped, orders: [] },
                 };
 
@@ -124,10 +120,10 @@ export default function ShippingPage() {
 
                     let columnKey: KanbanColumn['id'] = 'entry';
 
-                    if (order.status === 'delivered') {
+                    if (order.status === 'shipped') {
                         columnKey = 'shipped';
-                    } else if (order.status === 'shipped') {
-                        columnKey = 'ready-to-ship';
+                    } else if (order.status === 'delivered') {
+                        columnKey = 'entry';
                     }
 
                     nextColumns[columnKey].orders.push(shippingOrder);
@@ -171,11 +167,9 @@ export default function ShippingPage() {
             if (!movedItem) return;
 
             const columnToStatus: Record<KanbanColumn['id'], OrderDocument['status']> = {
-                entry: 'shipped',
-                packing: 'shipped',
-                invoice: 'shipped',
-                'ready-to-ship': 'shipped',
-                shipped: 'delivered',
+                entry: 'delivered',
+                packing: 'delivered',
+                shipped: 'shipped',
             };
 
             const newStatus = columnToStatus[destColId];
@@ -208,7 +202,7 @@ export default function ShippingPage() {
     return (
         <div className="bg-background flex flex-col flex-1 h-full p-4 md:p-6 lg:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl font-semibold text-white">Kanban de Produção - Expedição</h1>
+                <h1 className="text-2xl font-semibold text-foreground">Kanban de Produção - Expedição</h1>
             </header>
             <main className="flex-1 overflow-x-auto">
                 {loading && (
@@ -241,7 +235,7 @@ export default function ShippingPage() {
                                         )}
                                     >
                                         <div className="flex items-center justify-between p-4 border-b border-[#2d2d2d]">
-                                            <h2 className="font-semibold text-white">{column.title}</h2>
+                                            <h2 className="font-semibold text-foreground">{column.title}</h2>
                                             <div className="text-sm font-bold bg-[#FFD700] text-black rounded-full px-2.5 py-0.5">
                                                 {column.orders.length}
                                             </div>

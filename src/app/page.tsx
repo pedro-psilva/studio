@@ -11,6 +11,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { categories } from '@/lib/data';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { ProductsCatalog } from '@/components/products/ProductsCatalog';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/context/AuthContext';
 import type { ServiceDocument } from '@/lib/serviceService';
@@ -73,11 +74,6 @@ export default function HomePage() {
 
   const featuredServices = useMemo(
     () => services.slice(0, 4),
-    [services]
-  );
-
-  const otherServices = useMemo(
-    () => services.slice(4, 12),
     [services]
   );
 
@@ -180,36 +176,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="all-products" className="py-12 md:py-20">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center tracking-tight font-headline">
-              {t("ourProducts")}
-            </h2>
-            {loading ? (
-              <div className="mt-8 flex justify-center text-muted-foreground text-sm">
-                Carregando produtos...
-              </div>
-            ) : error ? (
-              <div className="mt-8 flex justify-center text-destructive text-sm">
-                {error}
-              </div>
-            ) : otherServices.length === 0 ? (
-              <div className="mt-8 flex justify-center text-muted-foreground text-sm">
-                Nenhum produto encontrado.
-              </div>
-            ) : (
-              <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {otherServices.map((service: ServiceDocument) => (
-                  <ProductCard key={service.id} service={service} />
-                ))}
-              </div>
-            )}
-            <div className="mt-12 text-center">
-              <Button asChild size="lg" variant="outline">
-                <Link href="/products">{t("viewAllProducts")}</Link>
-              </Button>
-            </div>
-          </div>
+        <section id="all-products">
+          <ProductsCatalog />
         </section>
       </main>
       <Footer />

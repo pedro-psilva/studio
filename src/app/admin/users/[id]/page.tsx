@@ -7,6 +7,9 @@ import { Footer } from '@/components/layout/footer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { OrderDocument, listUserOrders } from '@/lib/orderService';
@@ -15,11 +18,28 @@ import { format } from 'date-fns';
 import { updateUserById } from '@/lib/admin-utils';
 import { toast } from '@/hooks/use-toast';
 
+type AdminAccessLevel = 'reader' | 'editor';
+
+const ADMIN_ACCESS_PAGES: { key: string; label: string }[] = [
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'orders', label: 'Pedidos' },
+  { key: 'production', label: 'Produção' },
+  { key: 'products', label: 'Produtos' },
+  { key: 'users', label: 'Usuários' },
+  { key: 'esap', label: 'ESAP' },
+  { key: 'finance', label: 'Financeiro' },
+  { key: 'reports', label: 'Relatórios' },
+  { key: 'coupons', label: 'Cupons' },
+  { key: 'notifications', label: 'Notificações' },
+  { key: 'settings', label: 'Configurações' },
+];
+
 interface UserDocData {
   displayName?: string;
   email?: string;
   phone?: string;
   tipo?: string; // cliente | admin | colaborador
+  adminAccess?: Record<string, AdminAccessLevel> | null;
   pessoaTipo?: 'PF' | 'PJ';
   cpfCnpj?: string;
   clinicName?: string;
@@ -49,6 +69,8 @@ export default function AdminUserDetailPage() {
   const [orders, setOrders] = useState<OrderDocument[]>([]);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [savingRole, setSavingRole] = useState(false);
+  const [savingAccess, setSavingAccess] = useState(false);
+  const [accessDraft, setAccessDraft] = useState<Record<string, AdminAccessLevel>>({});
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -74,6 +96,8 @@ export default function AdminUserDetailPage() {
           ...data,
           email: data.email,
         });
+
+        setAccessDraft(data?.adminAccess ?? {});
 
         // Pedidos do usuário
         const userOrders = await listUserOrders(userId);
@@ -241,6 +265,98 @@ export default function AdminUserDetailPage() {
                       </div>
                     )}
                   </div>
+
+                  {userDoc.tipo === 'colaborador' && (
+                    <div className="pt-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-medium">Acessos do colaborador</p>
+                          <p className="text-sm text-muted-foreground">
+                            Marque as páginas que ele pode acessar e defina se é leitor ou editor.
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={savingAccess || !userId}
+                          onClick={async () => {
+                            if (!userId) return;
+                            try {
+                              setSavingAccess(true);
+                              await updateUserById(userId as string, { adminAccess: accessDraft });
+                              setUserDoc((prev) => (prev ? { ...prev, adminAccess: accessDraft } : prev));
+                              toast({
+                                title: 'Permissões atualizadas',
+                                description: 'Acessos do colaborador foram salvos.',
+                              });
+                            } catch (err) {
+                              console.error('Erro ao salvar permissões:', err);
+                              toast({
+                                title: 'Erro ao salvar permissões',
+                                description: 'Não foi possível salvar os acessos.',
+                                variant: 'destructive',
+                              });
+                            } finally {
+                              setSavingAccess(false);
+                            }
+                          }}
+                        >
+                          {savingAccess ? 'Salvando...' : 'Salvar acessos'}
+                        </Button>
+                      </div>
+
+                      <div className="mt-4 grid gap-3">
+                        {ADMIN_ACCESS_PAGES.map((p) => {
+                          const checked = accessDraft[p.key] != null;
+                          const level = accessDraft[p.key] ?? 'reader';
+
+                          return (
+                            <div key={p.key} className="grid gap-2 rounded-md border p-3">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    id={`edit-access-${p.key}`}
+                                    checked={checked}
+                                    onCheckedChange={(v) => {
+                                      const enabled = !!v;
+                                      setAccessDraft((prev) => {
+                                        if (!enabled) {
+                                          const next = { ...prev };
+                                          delete next[p.key];
+                                          return next;
+                                        }
+
+                                        return { ...prev, [p.key]: prev[p.key] ?? 'reader' };
+                                      });
+                                    }}
+                                  />
+                                  <Label htmlFor={`edit-access-${p.key}`}>{p.label}</Label>
+                                </div>
+                                {checked && (
+                                  <Select
+                                    value={level}
+                                    onValueChange={(val) =>
+                                      setAccessDraft((prev) => ({
+                                        ...prev,
+                                        [p.key]: val as AdminAccessLevel,
+                                      }))
+                                    }
+                                  >
+                                    <SelectTrigger className="w-[160px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="reader">Leitor</SelectItem>
+                                      <SelectItem value="editor">Editor</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </CardContent>

@@ -76,6 +76,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isColaborador, setIsColaborador] = useState(false);
+  const [adminAccess, setAdminAccess] = useState<Record<string, 'reader' | 'editor'> | null>(null);
   const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
@@ -90,11 +92,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       try {
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
-        if (userSnap.exists() && userSnap.data()?.tipo === 'admin') {
+        const data = userSnap.exists() ? (userSnap.data() as any) : null;
+        const tipo = data?.tipo;
+        const access = (data?.adminAccess && typeof data.adminAccess === 'object') ? (data.adminAccess as any) : null;
+
+        if (tipo === 'admin') {
           setIsAdmin(true);
-        } else {
-          router.replace('/');
+          setIsColaborador(false);
+          setAdminAccess(null);
+          return;
         }
+
+        if (tipo === 'colaborador') {
+          setIsAdmin(false);
+          setIsColaborador(true);
+          setAdminAccess(access ?? {});
+          return;
+        }
+
+        router.replace('/');
       } catch (error) {
         console.error('Error verifying admin status:', error);
         router.replace('/');
@@ -117,8 +133,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   if (!isAdmin) {
-    return null;
+    if (!isColaborador) return null;
   }
+
+  const resolveAccessKey = (path: string): string => {
+    if (path === '/admin') return 'dashboard';
+    if (path.startsWith('/admin/orders')) return 'orders';
+    if (path.startsWith('/admin/production')) return 'production';
+    if (path.startsWith('/admin/products')) return 'products';
+    if (path.startsWith('/admin/users')) return 'users';
+    if (path.startsWith('/admin/esap')) return 'esap';
+    if (path.startsWith('/admin/finance')) return 'finance';
+    if (path.startsWith('/admin/reports')) return 'reports';
+    if (path.startsWith('/admin/coupons')) return 'coupons';
+    if (path.startsWith('/admin/notifications')) return 'notifications';
+    if (path.startsWith('/admin/settings')) return 'settings';
+    return 'dashboard';
+  };
+
+  const canAccess = (key: string): boolean => {
+    if (isAdmin) return true;
+    if (!isColaborador) return false;
+    if (key === 'dashboard') return true;
+    return !!adminAccess?.[key];
+  };
+
+  useEffect(() => {
+    if (!isColaborador) return;
+    const key = resolveAccessKey(pathname);
+    if (!canAccess(key)) {
+      router.replace('/admin');
+    }
+  }, [isColaborador, pathname]);
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -135,8 +181,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div className="flex-1 overflow-auto">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              {navLinks.map((link) =>
-                link.subLinks ? (
+              {navLinks.map((link) => {
+                const key = resolveAccessKey(link.href);
+                if (!canAccess(key)) return null;
+
+                return link.subLinks ? (
                   <Collapsible
                     key={link.href}
                     defaultOpen={isEsapRoute || pathname.startsWith(link.href)}
@@ -182,8 +231,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <link.icon className="h-4 w-4" />
                     {link.label}
                   </Link>
-                )
-              )}
+                );
+              })}
             </nav>
           </div>
         </div>

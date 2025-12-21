@@ -29,7 +29,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const FROM_EMAIL = 'nao-responda@itlab.com';
+const FROM_EMAIL = 'ferramentas@itsolutionlabdigital.com.br';
 
 // --- Função genérica para envio de e-mail ---
 

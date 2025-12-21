@@ -11,6 +11,7 @@ import {
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Card,
   CardContent,
@@ -43,9 +44,29 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { getAllUsers, updateUserById, deleteUserById } from '@/lib/admin-utils';
+import { useAuth } from '@/context/AuthContext';
+
+type AdminAccessLevel = 'reader' | 'editor';
+
+const ADMIN_ACCESS_PAGES: { key: string; label: string }[] = [
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'orders', label: 'Pedidos' },
+  { key: 'production', label: 'Produção' },
+  { key: 'products', label: 'Produtos' },
+  { key: 'users', label: 'Usuários' },
+  { key: 'esap', label: 'ESAP' },
+  { key: 'finance', label: 'Financeiro' },
+  { key: 'reports', label: 'Relatórios' },
+  { key: 'coupons', label: 'Cupons' },
+  { key: 'notifications', label: 'Notificações' },
+  { key: 'settings', label: 'Configurações' },
+];
 
 interface UserRow {
   id: string;
@@ -63,38 +84,109 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { user } = useAuth();
+
+  const [addUserOpen, setAddUserOpen] = useState(false);
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [newUserDisplayName, setNewUserDisplayName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserTipo, setNewUserTipo] = useState<'cliente' | 'colaborador' | 'admin'>('cliente');
+  const [newUserForcePasswordReset, setNewUserForcePasswordReset] = useState(false);
+  const [newUserAdminAccess, setNewUserAdminAccess] = useState<Record<string, AdminAccessLevel>>({});
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data: any[] = await getAllUsers();
+
+      const mapped: UserRow[] = data.map((u) => ({
+        id: u.id,
+        name: u.displayName || u.clinicName || u.email || 'Sem nome',
+        type: u.pessoaTipo || 'PF',
+        role: u.tipo || 'cliente',
+        email: u.email || '',
+        phone: u.phone || '',
+        totalOrders: typeof u.totalOrders === 'number' ? u.totalOrders : 0,
+        status: u.status || 'Ativo',
+      }));
+
+      setUsers(mapped);
+    } catch (err) {
+      console.error('Erro ao buscar usuários:', err);
+      setError('Não foi possível carregar os usuários.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const data: any[] = await getAllUsers();
-
-        const mapped: UserRow[] = data.map((user) => ({
-          id: user.id,
-          name:
-            user.displayName ||
-            user.clinicName ||
-            user.email ||
-            'Sem nome',
-          type: user.pessoaTipo || 'PF',
-          role: user.tipo || 'cliente',
-          email: user.email || '',
-          phone: user.phone || '',
-          totalOrders: typeof user.totalOrders === 'number' ? user.totalOrders : 0,
-          status: user.status || 'Ativo',
-        }));
-
-        setUsers(mapped);
-      } catch (err) {
-        console.error('Erro ao buscar usuários:', err);
-        setError('Não foi possível carregar os usuários.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
+
+  const handleCreateUser = async () => {
+    if (!user) {
+      toast({
+        title: 'Sessão expirada',
+        description: 'Faça login novamente para criar usuários.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setCreatingUser(true);
+      const token = await user.getIdToken();
+
+      const res = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          displayName: newUserDisplayName,
+          email: newUserEmail,
+          password: newUserPassword,
+          tipo: newUserTipo,
+          forcePasswordReset: newUserForcePasswordReset,
+          adminAccess: newUserTipo === 'colaborador' ? newUserAdminAccess : undefined,
+        }),
+      });
+
+      const payload = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const msg = payload?.error || 'Não foi possível criar o usuário.';
+        toast({ title: 'Erro ao criar usuário', description: msg, variant: 'destructive' });
+        return;
+      }
+
+      toast({
+        title: 'Usuário criado',
+        description: `Conta criada para ${payload?.email ?? newUserEmail}.`,
+      });
+
+      setAddUserOpen(false);
+      setNewUserDisplayName('');
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUserTipo('cliente');
+      setNewUserForcePasswordReset(false);
+      setNewUserAdminAccess({});
+      await fetchUsers();
+    } catch (err) {
+      console.error('Erro ao criar usuário:', err);
+      toast({
+        title: 'Erro ao criar usuário',
+        description: 'Tente novamente em alguns instantes.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingUser(false);
+    }
+  };
 
   const handleToggleStatus = async (userId: string, currentStatus: string) => {
     const newStatus = currentStatus === 'Ativo' ? 'Inativo' : 'Ativo';
@@ -177,11 +269,9 @@ export default function UsersPage() {
                     <DropdownMenuCheckboxItem>Status</DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="sm" className="h-8 gap-1">
+                <Button size="sm" className="h-8 gap-1" onClick={() => setAddUserOpen(true)}>
                   <PlusCircle className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Adicionar Usuário
-                  </span>
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Adicionar Usuário</span>
                 </Button>
               </div>
             </div>
@@ -311,6 +401,151 @@ export default function UsersPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar usuário</DialogTitle>
+            <DialogDescription>
+              Crie uma conta para um usuário. O usuário poderá fazer login com o email e senha definidos.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form autoComplete="off" onSubmit={(e) => e.preventDefault()}>
+            <input type="text" name="username" autoComplete="username" className="hidden" />
+            <input type="password" name="password" autoComplete="current-password" className="hidden" />
+
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="newUserDisplayName">Nome</Label>
+                <Input
+                  id="newUserDisplayName"
+                  name="newUserDisplayName"
+                  autoComplete="off"
+                  value={newUserDisplayName}
+                  onChange={(e) => setNewUserDisplayName(e.target.value)}
+                  placeholder="Nome do usuário"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="newUserEmail">Email</Label>
+                <Input
+                  id="newUserEmail"
+                  name="newUserEmail"
+                  type="email"
+                  autoComplete="off"
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  placeholder="email@dominio.com"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="newUserPassword">Senha</Label>
+                <Input
+                  id="newUserPassword"
+                  name="newUserPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Perfil</Label>
+                <Select value={newUserTipo} onValueChange={(v) => setNewUserTipo(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cliente">Cliente</SelectItem>
+                    <SelectItem value="colaborador">Colaborador</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {newUserTipo === 'colaborador' && (
+                <div className="grid gap-3">
+                  <Label>Acessos do colaborador</Label>
+                  <div className="grid gap-3">
+                    {ADMIN_ACCESS_PAGES.map((p) => {
+                      const checked = newUserAdminAccess[p.key] != null;
+                      const level = newUserAdminAccess[p.key] ?? 'reader';
+
+                      return (
+                        <div key={p.key} className="grid gap-2 rounded-md border p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id={`access-${p.key}`}
+                                checked={checked}
+                                onCheckedChange={(v) => {
+                                  const enabled = !!v;
+                                  setNewUserAdminAccess((prev) => {
+                                    if (!enabled) {
+                                      const next = { ...prev };
+                                      delete next[p.key];
+                                      return next;
+                                    }
+
+                                    return { ...prev, [p.key]: prev[p.key] ?? 'reader' };
+                                  });
+                                }}
+                              />
+                              <Label htmlFor={`access-${p.key}`}>{p.label}</Label>
+                            </div>
+                            {checked && (
+                              <Select
+                                value={level}
+                                onValueChange={(val) =>
+                                  setNewUserAdminAccess((prev) => ({
+                                    ...prev,
+                                    [p.key]: val as AdminAccessLevel,
+                                  }))
+                                }
+                              >
+                                <SelectTrigger className="w-[160px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="reader">Leitor</SelectItem>
+                                  <SelectItem value="editor">Editor</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="newUserForcePasswordReset"
+                  checked={newUserForcePasswordReset}
+                  onCheckedChange={(v) => setNewUserForcePasswordReset(!!v)}
+                />
+                <Label htmlFor="newUserForcePasswordReset">Exigir redefinição de senha no primeiro acesso</Label>
+              </div>
+            </div>
+          </form>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddUserOpen(false)} disabled={creatingUser}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateUser} disabled={creatingUser}>
+              {creatingUser ? 'Criando...' : 'Criar usuário'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

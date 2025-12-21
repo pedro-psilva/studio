@@ -34,7 +34,7 @@ import { LanguageSwitcher } from '../language-switcher';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -76,30 +76,38 @@ export function Header() {
       }
     };
 
-    const loadCartCount = async () => {
-      if (!user) {
-        setCartItemCount(0);
-        return;
-      }
-      try {
-        const cartRef = doc(db, 'carts', user.uid);
-        const cartSnap = await getDoc(cartRef);
+    checkAdmin();
+
+    if (!user) {
+      setCartItemCount(0);
+      return;
+    }
+
+    const cartRef = doc(db, 'carts', user.uid);
+    const unsubscribeCart = onSnapshot(
+      cartRef,
+      (cartSnap) => {
         if (!cartSnap.exists()) {
           setCartItemCount(0);
           return;
         }
         const data = cartSnap.data() as any;
         const items = Array.isArray(data.items) ? data.items : [];
-        const count = items.reduce((acc: number, item: any) => acc + (item.quantity || 0), 0);
+        const count = items.reduce(
+          (acc: number, item: any) => acc + (Number(item?.quantity) || 0),
+          0
+        );
         setCartItemCount(count);
-      } catch (error) {
+      },
+      (error) => {
         console.error('Erro ao carregar quantidade do carrinho:', error);
         setCartItemCount(0);
       }
-    };
+    );
 
-    checkAdmin();
-    loadCartCount();
+    return () => {
+      unsubscribeCart();
+    };
   }, [user]);
 
   if (loading) {

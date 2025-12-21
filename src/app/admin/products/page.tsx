@@ -63,11 +63,15 @@ import { storage } from '@/lib/firebase';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 const PRODUCTION_STEPS = [
-  'Recebimento',
-  'Modelagem',
-  'Fresagem',
-  'Acabamento',
-  'Envio',
+  'Triagem',
+  'CAD',
+  'CAM',
+  'Impressão',
+  'Finalização - Entrada',
+  'Finalização - Saída',
+  'Expedição - Entrada',
+  'Expedição - Embalagem',
+  'Expedição - Envio (Saída)',
 ] as const;
 
 function formatCurrency(value: number): string {

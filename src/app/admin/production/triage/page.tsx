@@ -278,7 +278,7 @@ export default function TriagePage() {
     return (
         <div className="bg-background flex flex-col flex-1 h-full p-4 md:p-6 lg:p-8">
             <header className="mb-6">
-                <h1 className="text-2xl font-semibold text-white">Kanban de Produção - Triagem</h1>
+                <h1 className="text-2xl font-semibold text-foreground">Kanban de Produção - Triagem</h1>
             </header>
             <main className="flex-1 overflow-x-auto">
                 {loading && (
@@ -311,7 +311,7 @@ export default function TriagePage() {
                                         )}
                                     >
                                         <div className="flex items-center justify-between p-4 border-b border-[#2d2d2d]">
-                                            <h2 className="font-semibold text-white">{column.title}</h2>
+                                            <h2 className="font-semibold text-foreground">{column.title}</h2>
                                             <div className="text-sm font-bold bg-[#FFD700] text-black rounded-full px-2.5 py-0.5">
                                                 {column.orders.length}
                                             </div>

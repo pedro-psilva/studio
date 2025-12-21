@@ -4,6 +4,9 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -24,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const logout = useCallback(async () => {
     try {
@@ -71,6 +75,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const checkForcePasswordReset = async () => {
+      if (!user) return;
+
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const snap = await getDoc(userRef);
+        const data = snap.exists() ? (snap.data() as any) : null;
+        const forcePasswordReset = !!data?.forcePasswordReset;
+
+        if (forcePasswordReset && pathname !== '/auth/first-access-reset') {
+          router.replace('/auth/first-access-reset');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar redefinição de senha obrigatória:', error);
+      }
+    };
+
+    checkForcePasswordReset();
+  }, [user, pathname, router]);
 
   return (
     <AuthContext.Provider value={{ user, loading, logout, signIn }}>
