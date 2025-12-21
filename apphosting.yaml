@@ -1,7 +1,77 @@
-# Settings to manage and configure a Firebase App Hosting backend.
-# https://firebase.google.com/docs/app-hosting/configure
-
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  minInstances: 0
+  # maxInstances: 100
+  # concurrency: 80
+  # cpu: 1
+  # memoryMiB: 512
+
+# Environment variables and secrets.
+env:
+  # Configure environment variables.
+  # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
+  # - variable: MESSAGE
+  #   value: Hello world!
+  #   availability:
+  #     - BUILD
+  #     - RUNTIME
+
+  - variable: BASE_URL
+    value: https://studio--it-lab-solution-2-708503-699a9.us-central1.hosted.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: INFINITEPAY_HANDLE
+    secret: infinitepay_handle
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_ADMIN_PROJECT_ID
+    secret: firebase_admin_project_id
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_ADMIN_CLIENT_EMAIL
+    secret: firebase_admin_client_email
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_ADMIN_PRIVATE_KEY
+    secret: firebase_admin_private_key
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: BREVO_SMTP_HOST
+    secret: brevo_smtp_host
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: BREVO_SMTP_PORT
+    secret: brevo_smtp_port
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: BREVO_SMTP_USER
+    secret: brevo_smtp_user
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: BREVO_SMTP_PASS
+    secret: brevo_smtp_pass
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Grant access to secrets in Cloud Secret Manager.
+  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
+  # - variable: MY_SECRET
+  #   secret: mySecretRef
