@@ -403,7 +403,7 @@ export default function UsersPage() {
       </Card>
 
       <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Adicionar usuário</DialogTitle>
             <DialogDescription>

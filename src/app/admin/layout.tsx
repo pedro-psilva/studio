@@ -80,6 +80,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [adminAccess, setAdminAccess] = useState<Record<string, 'reader' | 'editor'> | null>(null);
   const [verifying, setVerifying] = useState(true);
 
+  const resolveAccessKey = (path: string): string => {
+    if (path === '/admin') return 'dashboard';
+    if (path.startsWith('/admin/orders')) return 'orders';
+    if (path.startsWith('/admin/production')) return 'production';
+    if (path.startsWith('/admin/products')) return 'products';
+    if (path.startsWith('/admin/users')) return 'users';
+    if (path.startsWith('/admin/esap')) return 'esap';
+    if (path.startsWith('/admin/finance')) return 'finance';
+    if (path.startsWith('/admin/reports')) return 'reports';
+    if (path.startsWith('/admin/coupons')) return 'coupons';
+    if (path.startsWith('/admin/notifications')) return 'notifications';
+    if (path.startsWith('/admin/settings')) return 'settings';
+    return 'dashboard';
+  };
+
+  const canAccess = (key: string): boolean => {
+    if (isAdmin) return true;
+    if (!isColaborador) return false;
+    if (key === 'dashboard') return true;
+    return !!adminAccess?.[key];
+  };
+
   useEffect(() => {
     if (authLoading) return;
 
@@ -122,6 +144,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     checkAdminStatus();
   }, [user, authLoading, router]);
 
+  useEffect(() => {
+    if (authLoading || verifying) return;
+    if (!isColaborador) return;
+    const key = resolveAccessKey(pathname);
+    if (!canAccess(key)) {
+      router.replace('/admin');
+    }
+  }, [authLoading, verifying, isColaborador, pathname, router, isAdmin, adminAccess]);
+
   const isEsapRoute = pathname.startsWith('/admin/esap');
 
   if (verifying || authLoading) {
@@ -135,36 +166,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!isAdmin) {
     if (!isColaborador) return null;
   }
-
-  const resolveAccessKey = (path: string): string => {
-    if (path === '/admin') return 'dashboard';
-    if (path.startsWith('/admin/orders')) return 'orders';
-    if (path.startsWith('/admin/production')) return 'production';
-    if (path.startsWith('/admin/products')) return 'products';
-    if (path.startsWith('/admin/users')) return 'users';
-    if (path.startsWith('/admin/esap')) return 'esap';
-    if (path.startsWith('/admin/finance')) return 'finance';
-    if (path.startsWith('/admin/reports')) return 'reports';
-    if (path.startsWith('/admin/coupons')) return 'coupons';
-    if (path.startsWith('/admin/notifications')) return 'notifications';
-    if (path.startsWith('/admin/settings')) return 'settings';
-    return 'dashboard';
-  };
-
-  const canAccess = (key: string): boolean => {
-    if (isAdmin) return true;
-    if (!isColaborador) return false;
-    if (key === 'dashboard') return true;
-    return !!adminAccess?.[key];
-  };
-
-  useEffect(() => {
-    if (!isColaborador) return;
-    const key = resolveAccessKey(pathname);
-    if (!canAccess(key)) {
-      router.replace('/admin');
-    }
-  }, [isColaborador, pathname]);
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
