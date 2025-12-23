@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, query, updateDoc, where, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, query, updateDoc, where, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { CartItemFirestore } from '@/lib/cartService';
 import { getUserDataById } from '@/lib/userService';
@@ -246,7 +246,15 @@ export async function createOrderFromCart(
     return base;
   });
 
-  const docRef = await addDoc(colRef, {
+  // Gerar ID amigável sequencial
+  const { generateOrderId } = await import('@/lib/orderIdGenerator');
+  const orderId = await generateOrderId();
+
+  // Usar setDoc com ID customizado em vez de addDoc
+  const docRef = doc(colRef, orderId);
+
+  await setDoc(docRef, {
+    id: orderId,
     userId,
     items: firestoreItems,
     subtotal,
@@ -260,10 +268,6 @@ export async function createOrderFromCart(
     paymentProvider: 'infinitepay',
     paymentStatus: 'waiting',
   });
-
-  const orderId = docRef.id;
-
-  await updateDoc(docRef, { id: orderId });
 
   // Dispara e-mail de confirmação de pedido via API route
   try {

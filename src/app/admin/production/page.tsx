@@ -1,108 +1,112 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MoreHorizontal, Paperclip, Clock, AlertTriangle } from "lucide-react";
+import { MoreHorizontal, Paperclip, Clock, AlertTriangle, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  type DropResult,
+    DragDropContext,
+    Droppable,
+    Draggable,
+    type DropResult,
 } from "react-beautiful-dnd";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { listAllOrders, type OrderDocument, updateOrderStatus } from "@/lib/orderService";
 import { useToast } from "@/hooks/use-toast";
 import { getService } from "@/lib/serviceService";
+import { downloadOrderFilesAsZip } from "@/lib/storageHelper";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 type Order = {
-  id: string;
-  client: string;
-  product: string;
-  patient?: string;
-  files: number;
-  dueDate: string;
-  urgency: boolean;
-  missingFiles: boolean;
-  isLate?: boolean;
+    id: string;
+    client: string;
+    product: string;
+    patient?: string;
+    files: number;
+    dueDate: string;
+    urgency: boolean;
+    missingFiles: boolean;
+    isLate?: boolean;
+    userId?: string;
+    productIds?: string[];
 };
 
 type KanbanColumn = {
-  id: "received" | "analysis" | "production" | "finalized" | "shipped" | "canceled";
-  title: string;
-  orders: Order[];
+    id: "received" | "analysis" | "production" | "finalized" | "shipped" | "canceled";
+    title: string;
+    orders: Order[];
 };
 
 type DashboardOrder = OrderDocument & {
-  clientName: string;
+    clientName: string;
 };
 
 const emptyColumns: Record<KanbanColumn["id"], KanbanColumn> = {
-  received: {
-    id: "received",
-    title: "Recebido",
-    orders: [],
-  },
-  analysis: {
-    id: "analysis",
-    title: "Em Análise (Triagem)",
-    orders: [],
-  },
-  production: {
-    id: "production",
-    title: "Em Produção (CAD/CAM + Finalização)",
-    orders: [],
-  },
-  finalized: {
-    id: "finalized",
-    title: "Finalizado (Aguardando Expedição)",
-    orders: [],
-  },
-  shipped: {
-    id: "shipped",
-    title: "Enviado",
-    orders: [],
-  },
-  canceled: {
-    id: "canceled",
-    title: "Cancelado",
-    orders: [],
-  },
+    received: {
+        id: "received",
+        title: "Recebido",
+        orders: [],
+    },
+    analysis: {
+        id: "analysis",
+        title: "Em Análise (Triagem)",
+        orders: [],
+    },
+    production: {
+        id: "production",
+        title: "Em Produção (CAD/CAM + Finalização)",
+        orders: [],
+    },
+    finalized: {
+        id: "finalized",
+        title: "Finalizado (Aguardando Expedição)",
+        orders: [],
+    },
+    shipped: {
+        id: "shipped",
+        title: "Enviado",
+        orders: [],
+    },
+    canceled: {
+        id: "canceled",
+        title: "Cancelado",
+        orders: [],
+    },
 };
 
 export default function ProductionGeneralPage() {
-  const [columns, setColumns] = useState<Record<KanbanColumn['id'], KanbanColumn>>(emptyColumns);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+    const [columns, setColumns] = useState<Record<KanbanColumn['id'], KanbanColumn>>(emptyColumns);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const { toast } = useToast();
 
-  const [pendingMove, setPendingMove] = useState<{
-    sourceColId: KanbanColumn['id'];
-    destColId: KanbanColumn['id'];
-    sourceIndex: number;
-    destIndex: number;
-    order: Order;
-  } | null>(null);
-  const [confirming, setConfirming] = useState(false);
+    const [pendingMove, setPendingMove] = useState<{
+        sourceColId: KanbanColumn['id'];
+        destColId: KanbanColumn['id'];
+        sourceIndex: number;
+        destIndex: number;
+        order: Order;
+    } | null>(null);
+    const [confirming, setConfirming] = useState(false);
+    const [downloadingFiles, setDownloadingFiles] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         let isMounted = true;
@@ -218,6 +222,9 @@ export default function ProductionGeneralPage() {
 
                     const urgency = isLate;
 
+                    // Armazena informações extras para download de arquivos
+                    const productIdsForDownload = order.items?.map(i => i.productId).filter(Boolean) as string[] || [];
+
                     const kanbanOrder: Order = {
                         id: order.id,
                         client: order.clientName,
@@ -228,6 +235,8 @@ export default function ProductionGeneralPage() {
                         urgency,
                         missingFiles: false,
                         isLate,
+                        userId: order.userId,
+                        productIds: productIdsForDownload,
                     };
 
                     let columnKey: KanbanColumn['id'] = "received";
@@ -373,6 +382,45 @@ export default function ProductionGeneralPage() {
         }
     };
 
+    const handleDownloadFiles = async (order: Order) => {
+        if (!order.userId || !order.productIds || order.productIds.length === 0) {
+            toast({
+                variant: "destructive",
+                title: "Sem arquivos",
+                description: "Este pedido não possui arquivos para download.",
+            });
+            return;
+        }
+
+        setDownloadingFiles(prev => new Set(prev).add(order.id));
+
+        try {
+            await downloadOrderFilesAsZip(
+                order.userId,
+                order.productIds,
+                order.id
+            );
+
+            toast({
+                title: "Download iniciado",
+                description: "Os arquivos estão sendo baixados em formato ZIP.",
+            });
+        } catch (error: any) {
+            console.error('Erro ao baixar arquivos:', error);
+            toast({
+                variant: "destructive",
+                title: "Erro no download",
+                description: error.message || "Não foi possível baixar os arquivos.",
+            });
+        } finally {
+            setDownloadingFiles(prev => {
+                const next = new Set(prev);
+                next.delete(order.id);
+                return next;
+            });
+        }
+    };
+
     return (
         <div className="bg-background flex flex-col flex-1 h-full p-4 md:p-6 lg:p-8">
             <header className="mb-6">
@@ -471,12 +519,28 @@ export default function ProductionGeneralPage() {
                                                                             </DropdownMenuContent>
                                                                         </DropdownMenu>
                                                                     </div>
+
+                                                                    {/* Botão de Download de Arquivos */}
+                                                                    {order.userId && order.productIds && order.productIds.length > 0 && (
+                                                                        <div className="mt-3 pt-3 border-t border-border">
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="sm"
+                                                                                className="w-full text-xs"
+                                                                                onClick={() => handleDownloadFiles(order)}
+                                                                                disabled={downloadingFiles.has(order.id)}
+                                                                            >
+                                                                                <Download className="h-3 w-3 mr-1.5" />
+                                                                                {downloadingFiles.has(order.id) ? 'Baixando...' : `Baixar Arquivos (${order.files})`}
+                                                                            </Button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                        )}
-                                                    </Draggable>
-                                                ))
+                                                            )}
+                                                        </Draggable>
+                                                    ))
                                             ) : (
-                                                 <div className="border-2 border-dashed border-border/60 rounded-lg h-24 flex items-center justify-center text-muted-foreground">
+                                                <div className="border-2 border-dashed border-border/60 rounded-lg h-24 flex items-center justify-center text-muted-foreground">
                                                     Nenhum pedido
                                                 </div>
                                             )}

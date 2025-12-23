@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format } from 'date-fns';
 import { updateUserById } from '@/lib/admin-utils';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 
 type AdminAccessLevel = 'reader' | 'editor';
 
@@ -62,6 +63,7 @@ export default function AdminUserDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const userId = params?.id;
+  const { user } = useAuth();
 
   const [userDoc, setUserDoc] = useState<UserDocData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,6 +73,7 @@ export default function AdminUserDetailPage() {
   const [savingRole, setSavingRole] = useState(false);
   const [savingAccess, setSavingAccess] = useState(false);
   const [accessDraft, setAccessDraft] = useState<Record<string, AdminAccessLevel>>({});
+  const [reporting, setReporting] = useState<'csv' | 'pdf' | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -128,6 +131,63 @@ export default function AdminUserDetailPage() {
     userDoc?.email?.split('@')[0] ||
     'Usuário';
 
+  async function emitReport(format: 'csv' | 'pdf') {
+    if (!userId) return;
+
+    if (!user) {
+      toast({
+        title: 'Sessão expirada',
+        description: 'Faça login novamente para emitir relatórios.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setReporting(format);
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/report?format=${format}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        const msg = payload?.error || 'Não foi possível emitir o relatório.';
+        toast({ title: 'Erro ao emitir relatório', description: msg, variant: 'destructive' });
+        return;
+      }
+
+      if (format === 'csv') {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `usuario-${userId}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        return;
+      }
+
+      const html = await res.text();
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.error('Erro ao emitir relatório:', err);
+      toast({
+        title: 'Erro ao emitir relatório',
+        description: 'Tente novamente em alguns instantes.',
+        variant: 'destructive',
+      });
+    } finally {
+      setReporting(null);
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -140,9 +200,25 @@ export default function AdminUserDetailPage() {
                 Visualize as informações de cadastro deste cliente.
               </p>
             </div>
-            <Button variant="outline" onClick={() => router.push('/admin/users')}>
-              Voltar para lista
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                disabled={reporting != null || !userId}
+                onClick={() => emitReport('csv')}
+              >
+                {reporting === 'csv' ? 'Emitindo CSV...' : 'Emitir CSV'}
+              </Button>
+              <Button
+                variant="outline"
+                disabled={reporting != null || !userId}
+                onClick={() => emitReport('pdf')}
+              >
+                {reporting === 'pdf' ? 'Emitindo PDF...' : 'Emitir PDF'}
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/admin/users')}>
+                Voltar para lista
+              </Button>
+            </div>
           </div>
 
           <Card>

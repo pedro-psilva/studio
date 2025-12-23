@@ -22,7 +22,6 @@ env:
     availability:
       - BUILD
       - RUNTIME
-
   - variable: INFINITEPAY_HANDLE
     secret: infinitepay_handle
     availability:
@@ -70,7 +69,6 @@ env:
     availability:
       - BUILD
       - RUNTIME
-
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
   # - variable: MY_SECRET

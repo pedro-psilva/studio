@@ -19,29 +19,35 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 
 const notificationTemplates = [
-  { 
-    id: "pedido-criado", 
-    title: "Confirmação de Pedido", 
-    description: "Enviado ao cliente assim que um novo pedido é registrado no sistema.", 
-    channels: { email: true } 
+  {
+    id: "confirmacao-email",
+    title: "Verificação de E-mail",
+    description: "Enviado após a criação de conta para confirmar o endereço de e-mail do usuário.",
+    channels: { email: true }
   },
-  { 
-    id: "pagamento-confirmado", 
-    title: "Pagamento Confirmado", 
-    description: "Enviado quando o gateway de pagamento confirma a transação.", 
-    channels: { email: true } 
+  {
+    id: "pedido-criado",
+    title: "Confirmação de Pedido",
+    description: "Enviado ao cliente assim que um novo pedido é registrado no sistema.",
+    channels: { email: true }
   },
-  { 
-    id: "pedido-atualizado", 
-    title: "Atualização de Status do Pedido", 
-    description: "Enviado sempre que o status de produção do pedido (ex: Em Produção, Finalizado) é alterado.", 
-    channels: { email: true } 
+  {
+    id: "pagamento-confirmado",
+    title: "Pagamento Confirmado",
+    description: "Enviado quando o gateway de pagamento confirma a transação.",
+    channels: { email: true }
   },
-  { 
-    id: "pedido-enviado", 
-    title: "Pedido Enviado", 
-    description: "Enviado quando o pedido sai para entrega, incluindo o código de rastreio.", 
-    channels: { email: true } 
+  {
+    id: "pedido-atualizado",
+    title: "Atualização de Status do Pedido",
+    description: "Enviado sempre que o status de produção do pedido (ex: Em Produção, Finalizado) é alterado.",
+    channels: { email: true }
+  },
+  {
+    id: "pedido-enviado",
+    title: "Pedido Enviado",
+    description: "Enviado quando o pedido sai para entrega, incluindo o código de rastreio.",
+    channels: { email: true }
   },
 ];
 

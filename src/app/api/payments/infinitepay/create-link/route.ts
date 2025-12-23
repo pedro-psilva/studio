@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createPaymentLinkSchema } from '@/lib/validation/schemas';
+import { z } from 'zod';
 
 const INFINITEPAY_ENDPOINT = 'https://api.infinitepay.io/invoices/public/checkout/links';
 
 export async function POST(req: NextRequest) {
   try {
-    const { orderId, total, items: rawItems, customer, address } = await req.json();
+    // Validar body com Zod
+    const body = await req.json();
+    const validatedData = createPaymentLinkSchema.parse(body);
 
-    if (!orderId || typeof orderId !== 'string') {
-      return NextResponse.json({ error: 'orderId é obrigatório' }, { status: 400 });
-    }
-
-    if (typeof total !== 'number' || !Number.isFinite(total) || total <= 0) {
-      return NextResponse.json({ error: 'total inválido' }, { status: 400 });
-    }
+    const { orderId, total, items: rawItems, customer, address } = validatedData;
 
     const handle = process.env.INFINITEPAY_HANDLE;
     const baseUrl = process.env.BASE_URL;
@@ -25,32 +23,33 @@ export async function POST(req: NextRequest) {
     const redirectUrl = `${baseUrl}/checkout/${orderId}`;
     const webhookUrl = `${baseUrl}/api/webhooks/infinitepay`;
 
+    // Validar e processar items
     const validItems = Array.isArray(rawItems)
       ? rawItems.filter(
-          (it) =>
-            typeof it === 'object' &&
-            it != null &&
-            typeof it.quantity === 'number' &&
-            it.quantity > 0 &&
-            typeof it.price === 'number' &&
-            it.price > 0 &&
-            typeof it.description === 'string' &&
-            it.description.length > 0,
-        )
+        (it) =>
+          typeof it === 'object' &&
+          it != null &&
+          typeof it.quantity === 'number' &&
+          it.quantity > 0 &&
+          typeof it.price === 'number' &&
+          it.price > 0 &&
+          typeof it.description === 'string' &&
+          it.description.length > 0,
+      )
       : [];
 
     const items =
       validItems.length > 0
         ? validItems
         : [
-            {
-              quantity: 1,
-              price: Math.round(total * 100),
-              description: `Pedido ${orderId}`,
-            },
-          ];
+          {
+            quantity: 1,
+            price: Math.round(total * 100),
+            description: `Pedido ${orderId}`,
+          },
+        ];
 
-    const body: any = {
+    const body_payload: any = {
       handle,
       redirect_url: redirectUrl,
       webhook_url: webhookUrl,
@@ -59,17 +58,17 @@ export async function POST(req: NextRequest) {
     };
 
     if (customer && (customer.name || customer.email || customer.phone_number)) {
-      body.customer = {};
-      if (customer.name) body.customer.name = customer.name;
-      if (customer.email) body.customer.email = customer.email;
-      if (customer.phone_number) body.customer.phone_number = customer.phone_number;
+      body_payload.customer = {};
+      if (customer.name) body_payload.customer.name = customer.name;
+      if (customer.email) body_payload.customer.email = customer.email;
+      if (customer.phone_number) body_payload.customer.phone_number = customer.phone_number;
     }
 
     if (address && (address.cep || address.number || address.complement)) {
-      body.address = {};
-      if (address.cep) body.address.cep = address.cep;
-      if (address.number) body.address.number = address.number;
-      if (address.complement) body.address.complement = address.complement;
+      body_payload.address = {};
+      if (address.cep) body_payload.address.cep = address.cep;
+      if (address.number) body_payload.address.number = address.number;
+      if (address.complement) body_payload.address.complement = address.complement;
     }
 
     console.log('Enviando requisição para InfinitePay:', {
@@ -85,7 +84,7 @@ export async function POST(req: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(body_payload),
     });
 
     if (!response.ok) {
@@ -108,6 +107,12 @@ export async function POST(req: NextRequest) {
     console.log('Link de pagamento InfinitePay gerado com sucesso:', data.url);
     return NextResponse.json({ url: data.url });
   } catch (error) {
+    // Tratar erros de validação Zod
+    if (error instanceof z.ZodError) {
+      const firstError = error.errors[0];
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
+    }
+
     console.error('Erro na rota create-link InfinitePay:', error);
     return NextResponse.json({ error: 'Erro interno ao criar link de pagamento' }, { status: 500 });
   }

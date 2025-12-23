@@ -1,37 +1,28 @@
 import { NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebaseAdmin';
+import { adminDb } from '@/lib/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { requireAdmin, handleAuthError } from '@/lib/middleware/adminAuth';
+import { updateNotificationTemplateSchema } from '@/lib/validation/schemas';
+import { z } from 'zod';
 
 export async function GET(
   req: Request,
   ctx: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const authHeader = req.headers.get('authorization') ?? '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    // Validar autenticação admin
+    await requireAdmin(req);
 
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Resolver parâmetro id
+    const { id } = await ctx.params;
 
-    const decoded = await adminAuth.verifyIdToken(token);
-
-    const requesterSnap = await adminDb.collection('users').doc(decoded.uid).get();
-    const requesterData = requesterSnap.exists ? (requesterSnap.data() as any) : null;
-
-    if (!requesterData || requesterData.tipo !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const resolved = await Promise.resolve(ctx.params as any);
-    const id = String(resolved?.id ?? '').trim();
-
-    if (!id) {
+    if (!id || !id.trim()) {
       return NextResponse.json({ error: 'Template id ausente.' }, { status: 400 });
     }
 
+    // Buscar template
     const snap = await adminDb.collection('notificationTemplates').doc(id).get();
-    const data = snap.exists ? (snap.data() as any) : null;
+    const data = snap.data();
 
     return NextResponse.json({
       id,
@@ -40,6 +31,11 @@ export async function GET(
       updatedAt: data?.updatedAt ?? null,
     });
   } catch (err: any) {
+    // Tratar erros de autenticação
+    if (err.name === 'UnauthorizedError' || err.name === 'ForbiddenError') {
+      return handleAuthError(err);
+    }
+
     const message = typeof err?.message === 'string' ? err.message : 'Erro ao buscar template.';
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -50,50 +46,26 @@ export async function PUT(
   ctx: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const authHeader = req.headers.get('authorization') ?? '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    // Validar autenticação admin
+    const { userData } = await requireAdmin(req);
 
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Determinar quem está atualizando
+    const updatedBy = userData.displayName?.trim() || userData.email || '';
 
-    const decoded = await adminAuth.verifyIdToken(token);
+    // Resolver parâmetro id
+    const { id } = await ctx.params;
 
-    const requesterSnap = await adminDb.collection('users').doc(decoded.uid).get();
-    const requesterData = requesterSnap.exists ? (requesterSnap.data() as any) : null;
-
-    if (!requesterData || requesterData.tipo !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const updatedBy =
-      (typeof requesterData?.displayName === 'string' && requesterData.displayName.trim()) ||
-      (typeof requesterData?.email === 'string' && requesterData.email.trim()) ||
-      decoded.uid;
-
-    const resolved = await Promise.resolve(ctx.params as any);
-    const id = String(resolved?.id ?? '').trim();
-
-    if (!id) {
+    if (!id || !id.trim()) {
       return NextResponse.json({ error: 'Template id ausente.' }, { status: 400 });
     }
 
-    const body = (await req.json().catch(() => ({}))) as {
-      subject?: string;
-      html?: string;
-    };
+    // Validar body com Zod
+    const body = await req.json().catch(() => ({}));
+    const validatedData = updateNotificationTemplateSchema.parse(body);
 
-    const subject = typeof body.subject === 'string' ? body.subject : '';
-    const html = typeof body.html === 'string' ? body.html : '';
+    const { subject, html } = validatedData;
 
-    if (subject.length > 200) {
-      return NextResponse.json({ error: 'Assunto muito longo (máx 200 caracteres).' }, { status: 400 });
-    }
-
-    if (html.length > 200_000) {
-      return NextResponse.json({ error: 'HTML muito grande.' }, { status: 400 });
-    }
-
+    // Atualizar template
     await adminDb
       .collection('notificationTemplates')
       .doc(id)
@@ -107,8 +79,26 @@ export async function PUT(
         { merge: true }
       );
 
+    console.log('✅ Template salvo:', {
+      id,
+      subjectLength: subject.length,
+      htmlLength: html.length,
+      updatedBy,
+    });
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
+    // Tratar erros de autenticação
+    if (err.name === 'UnauthorizedError' || err.name === 'ForbiddenError') {
+      return handleAuthError(err);
+    }
+
+    // Tratar erros de validação Zod
+    if (err instanceof z.ZodError) {
+      const firstError = err.errors[0];
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
+    }
+
     const message = typeof err?.message === 'string' ? err.message : 'Erro ao salvar template.';
     return NextResponse.json({ error: message }, { status: 500 });
   }

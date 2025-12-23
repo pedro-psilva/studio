@@ -33,6 +33,7 @@ export default function FinancePage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Pago' | 'Pendente' | 'Vencido'>('all');
+  const [periodFilter, setPeriodFilter] = useState<'all' | 'month' | 'quarter' | 'year'>('all');
 
   useEffect(() => {
     let isMounted = true;
@@ -114,6 +115,25 @@ export default function FinancePage() {
   const filteredInvoices = useMemo(() => {
     let result = [...invoices];
 
+    // Filtro de período
+    if (periodFilter !== 'all') {
+      const now = new Date();
+      const filterDate = new Date();
+
+      if (periodFilter === 'month') {
+        filterDate.setMonth(now.getMonth() - 1);
+      } else if (periodFilter === 'quarter') {
+        filterDate.setMonth(now.getMonth() - 3);
+      } else if (periodFilter === 'year') {
+        filterDate.setFullYear(now.getFullYear() - 1);
+      }
+
+      result = result.filter((inv) => {
+        const invDate = new Date(inv.date.split('/').reverse().join('-'));
+        return invDate >= filterDate;
+      });
+    }
+
     if (statusFilter !== 'all') {
       result = result.filter((inv) => inv.status === statusFilter);
     }
@@ -130,9 +150,67 @@ export default function FinancePage() {
     }
 
     return result;
-  }, [invoices, searchTerm, statusFilter]);
+  }, [invoices, searchTerm, statusFilter, periodFilter]);
+
+  // Métricas financeiras
+  const metrics = useMemo(() => {
+    const receitaConfirmada = invoices
+      .filter(inv => inv.status === 'Pago')
+      .reduce((acc, inv) => acc + inv.value, 0);
+
+    const aReceber = invoices
+      .filter(inv => inv.status === 'Pendente')
+      .reduce((acc, inv) => acc + inv.value, 0);
+
+    const inadimplencia = invoices
+      .filter(inv => inv.status === 'Vencido')
+      .reduce((acc, inv) => acc + inv.value, 0);
+
+    // Fluxo do mês atual
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const fluxoMes = invoices
+      .filter(inv => {
+        const invDate = new Date(inv.date.split('/').reverse().join('-'));
+        return invDate >= firstDayOfMonth && inv.status === 'Pago';
+      })
+      .reduce((acc, inv) => acc + inv.value, 0);
+
+    return { receitaConfirmada, aReceber, inadimplencia, fluxoMes };
+  }, [invoices]);
 
   const totalValue = filteredInvoices.reduce((acc, inv) => acc + inv.value, 0);
+
+  // Função para exportar CSV
+  const handleExportCSV = () => {
+    const headers = ['ID', 'Data', 'Cliente', 'Valor', 'Status', 'ID do Pedido'];
+
+    const rows = filteredInvoices.map(inv => [
+      inv.id,
+      inv.date,
+      inv.client,
+      inv.value.toFixed(2).replace('.', ','),
+      inv.status,
+      inv.orderId
+    ]);
+
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(';'))
+    ].join('\r\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const now = new Date().toISOString().slice(0, 10);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `faturas-${now}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -193,9 +271,36 @@ export default function FinancePage() {
                     >
                       Vencido
                     </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Filtrar por período</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem
+                      checked={periodFilter === 'all'}
+                      onCheckedChange={() => setPeriodFilter('all')}
+                    >
+                      Todos
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={periodFilter === 'month'}
+                      onCheckedChange={() => setPeriodFilter('month')}
+                    >
+                      Último Mês
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={periodFilter === 'quarter'}
+                      onCheckedChange={() => setPeriodFilter('quarter')}
+                    >
+                      Último Trimestre
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={periodFilter === 'year'}
+                      onCheckedChange={() => setPeriodFilter('year')}
+                    >
+                      Último Ano
+                    </DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="sm" variant="outline" className="h-8 gap-1">
+                <Button size="sm" variant="outline" className="h-8 gap-1" onClick={handleExportCSV}>
                   <File className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Exportar
@@ -281,8 +386,8 @@ export default function FinancePage() {
                           invoice.status === 'Pago'
                             ? 'default'
                             : invoice.status === 'Pendente'
-                            ? 'secondary'
-                            : 'destructive'
+                              ? 'secondary'
+                              : 'destructive'
                         }
                       >
                         {invoice.status}
@@ -302,6 +407,126 @@ export default function FinancePage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Cards de Métricas Financeiras */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Receita Confirmada</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-green-600"
+            >
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {metrics.receitaConfirmada.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Pagamentos aprovados
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">A Receber</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-yellow-600"
+            >
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">
+              {metrics.aReceber.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Pagamentos pendentes
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Inadimplência</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-red-600"
+            >
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {metrics.inadimplencia.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Recusados/Vencidos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Fluxo do Mês</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-blue-600"
+            >
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+              <polyline points="17 6 23 6 23 12" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {metrics.fluxoMes.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Recebido este mês
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 }
