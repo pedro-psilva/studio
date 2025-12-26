@@ -22,6 +22,13 @@ env:
     availability:
       - BUILD
       - RUNTIME
+
+  - variable: FROM_EMAIL
+    secret: from_email
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: INFINITEPAY_HANDLE
     secret: infinitepay_handle
     availability:

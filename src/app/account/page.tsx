@@ -184,10 +184,10 @@ export default function AccountPage() {
 
     const address = userAddress
       ? {
-          cep: userAddress.cep,
-          number: userAddress.number,
-          complement: userAddress.complement,
-        }
+        cep: userAddress.cep,
+        number: userAddress.number,
+        complement: userAddress.complement,
+      }
       : undefined;
 
     try {
@@ -445,15 +445,15 @@ export default function AccountPage() {
         setUserAddress((prev) =>
           prev
             ? {
-                ...prev,
-                cep: addressForm.cep,
-                street: addressForm.street,
-                number: addressForm.number,
-                complement: addressForm.complement,
-                neighborhood: addressForm.neighborhood,
-                city: addressForm.city,
-                state: addressForm.state,
-              }
+              ...prev,
+              cep: addressForm.cep,
+              street: addressForm.street,
+              number: addressForm.number,
+              complement: addressForm.complement,
+              neighborhood: addressForm.neighborhood,
+              city: addressForm.city,
+              state: addressForm.state,
+            }
             : prev,
         );
       } else {
@@ -483,13 +483,13 @@ export default function AccountPage() {
       setUserDoc((prev) =>
         prev
           ? {
-              ...prev,
-              displayName: profileForm.displayName || prev.displayName,
-              phone: fullPhone,
-              pessoaTipo: profileForm.pessoaTipo || prev.pessoaTipo,
-              cpfCnpj: profileForm.cpfCnpj || prev.cpfCnpj,
-              clinicName: profileForm.clinicName || prev.clinicName,
-            }
+            ...prev,
+            displayName: profileForm.displayName || prev.displayName,
+            phone: fullPhone,
+            pessoaTipo: profileForm.pessoaTipo || prev.pessoaTipo,
+            cpfCnpj: profileForm.cpfCnpj || prev.cpfCnpj,
+            clinicName: profileForm.clinicName || prev.clinicName,
+          }
           : prev,
       );
 
@@ -515,7 +515,7 @@ export default function AccountPage() {
       <Header />
       <main className="flex-1 bg-muted/20">
         <div className="container mx-auto px-4 py-10 max-w-7xl space-y-8">
-          
+
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
             <div>
               <h1 className="text-3xl font-bold font-headline">Área do Cliente</h1>
@@ -527,26 +527,26 @@ export default function AccountPage() {
               </Button>
             )}
           </div>
-          
+
           {/* Dashboard do Dentista */}
-           <Card>
-              <CardHeader>
-                <CardTitle>Dashboard de Casos</CardTitle>
-                <CardDescription>Um resumo da sua atividade recente.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {summaryCards.map(card => (
-                    <Card key={card.title} className="p-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
-                        <p className="text-2xl font-bold">{card.value}</p>
-                      </div>
-                      <card.icon className={`h-8 w-8 ${card.color}`} />
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
+          <Card>
+            <CardHeader>
+              <CardTitle>Dashboard de Casos</CardTitle>
+              <CardDescription>Um resumo da sua atividade recente.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {summaryCards.map(card => (
+                  <Card key={card.title} className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
+                      <p className="text-2xl font-bold">{card.value}</p>
+                    </div>
+                    <card.icon className={`h-8 w-8 ${card.color}`} />
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
           </Card>
 
 
@@ -579,7 +579,7 @@ export default function AccountPage() {
                       {loadingExtra ? (
                         <TableRow><TableCell colSpan={6} className="text-center">Carregando pedidos...</TableCell></TableRow>
                       ) : orders.length === 0 ? (
-                         <TableRow><TableCell colSpan={6} className="text-center h-24">Nenhum pedido encontrado.</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6} className="text-center h-24">Nenhum pedido encontrado.</TableCell></TableRow>
                       ) : (
                         orders.map(order => {
                           const statusInfo = statusMap[order.status] || { label: order.status, icon: AlertTriangle, color: 'bg-gray-500' };
@@ -589,15 +589,14 @@ export default function AccountPage() {
                             : null;
                           const patientName = mainItem?.patientName || `Pedido #${order.id.substring(0, 6)}`;
                           return (
-                            <TableRow key={order.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/account/orders/${order.id}`)}>
+                            <TableRow key={order.id} className="hover:bg-muted/50">
                               <TableCell className="font-medium">{patientName}</TableCell>
                               <TableCell>
                                 {mainServiceName
-                                  ? `${mainServiceName}${
-                                      order.items.length > 1
-                                        ? ` +${order.items.length - 1}`
-                                        : ''
-                                    }`
+                                  ? `${mainServiceName}${order.items.length > 1
+                                    ? ` +${order.items.length - 1}`
+                                    : ''
+                                  }`
                                   : 'N/A'}
                               </TableCell>
                               <TableCell className="hidden md:table-cell">{mainItem?.teeth?.join(', ') || 'N/A'}</TableCell>
@@ -636,10 +635,6 @@ export default function AccountPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/account/orders/${order.id}`);
-                                  }}
                                 >
                                   <ChevronRight className="h-4 w-4" />
                                 </Button>
@@ -653,9 +648,9 @@ export default function AccountPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="my-account">
-               <Card>
+              <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4">
                   <div>
                     <CardTitle>Minhas Informações</CardTitle>
