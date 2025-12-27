@@ -767,39 +767,57 @@ export default function AccountPage() {
                 }
               />
             </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="countryCode">Código do país</Label>
-                <Input
-                  id="countryCode"
-                  value={profileForm.countryCode}
-                  onChange={(e) =>
-                    setProfileForm((prev) => ({ ...prev, countryCode: e.target.value }))
-                  }
-                  placeholder="55"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ddd">DDD</Label>
-                <Input
-                  id="ddd"
-                  value={profileForm.ddd}
-                  onChange={(e) =>
-                    setProfileForm((prev) => ({ ...prev, ddd: e.target.value }))
-                  }
-                  placeholder="11"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phoneLocal">Telefone</Label>
-                <Input
-                  id="phoneLocal"
-                  value={profileForm.phoneLocal}
-                  onChange={(e) =>
-                    setProfileForm((prev) => ({ ...prev, phoneLocal: e.target.value }))
-                  }
-                  placeholder="999999999"
-                />
+            <div className="space-y-2">
+              <Label htmlFor="phone-section">Telefone com WhatsApp</Label>
+              <div className="grid gap-3 grid-cols-[140px_100px_1fr]">
+                <div className="space-y-2">
+                  <select
+                    id="countryCode"
+                    value={profileForm.countryCode}
+                    onChange={(e) =>
+                      setProfileForm((prev) => ({ ...prev, countryCode: e.target.value }))
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="55">🇧🇷 +55</option>
+                    <option value="1">🇺🇸 +1</option>
+                    <option value="351">🇵🇹 +351</option>
+                    <option value="34">🇪🇸 +34</option>
+                    <option value="44">🇬🇧 +44</option>
+                    <option value="33">🇫🇷 +33</option>
+                    <option value="49">🇩🇪 +49</option>
+                    <option value="39">🇮🇹 +39</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground">País</p>
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    id="ddd"
+                    value={profileForm.ddd}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 3);
+                      setProfileForm((prev) => ({ ...prev, ddd: val }));
+                    }}
+                    placeholder="11"
+                    maxLength={3}
+                    inputMode="numeric"
+                  />
+                  <p className="text-xs text-muted-foreground">DDD</p>
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    id="phoneLocal"
+                    value={profileForm.phoneLocal}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 9);
+                      setProfileForm((prev) => ({ ...prev, phoneLocal: val }));
+                    }}
+                    placeholder="999999999"
+                    maxLength={9}
+                    inputMode="numeric"
+                  />
+                  <p className="text-xs text-muted-foreground">Número (8-9 dígitos)</p>
+                </div>
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">

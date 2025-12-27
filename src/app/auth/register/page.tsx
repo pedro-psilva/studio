@@ -80,10 +80,10 @@ export default function RegisterPage() {
     try {
       const cleanedCEP = cep.replace(/[^0-9]/g, '');
       if (cleanedCEP.length !== 8) return;
-      
+
       const response = await fetch(`https://viacep.com.br/ws/${cleanedCEP}/json/`);
       const data = await response.json();
-      
+
       if (!data.erro) {
         setForm(prev => ({
           ...prev,
@@ -175,7 +175,7 @@ export default function RegisterPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -214,7 +214,7 @@ export default function RegisterPage() {
     } catch (err: any) {
       console.error('Erro ao criar conta:', err);
       let errorMessage = 'Erro ao criar a conta. Tente novamente.';
-      
+
       if (err.code === 'auth/email-already-in-use') {
         errorMessage = 'Este email já está em uso. Tente fazer login ou use outro email.';
       } else if (err.code === 'auth/weak-password') {
@@ -222,7 +222,7 @@ export default function RegisterPage() {
       } else if (err.code === 'auth/invalid-email') {
         errorMessage = 'Email inválido. Verifique o endereço de email.';
       }
-      
+
       setGeneralError(errorMessage);
     } finally {
       setLoading(false);
@@ -233,7 +233,7 @@ export default function RegisterPage() {
   useEffect(() => {
     if (form.cpfCnpj) {
       const digits = form.cpfCnpj.replace(/[\D]/g, '');
-      const formatted = accountType === 'pf' 
+      const formatted = accountType === 'pf'
         ? formatCPF(digits).slice(0, 14)
         : formatCNPJ(digits).slice(0, 18);
       setForm(prev => ({ ...prev, cpfCnpj: formatted }));
@@ -251,59 +251,59 @@ export default function RegisterPage() {
     <>
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-6">
-        <CardHeader className="space-y-1 p-0 text-center">
-          <CardTitle className="text-2xl font-bold">Criar uma conta</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Preencha os dados abaixo para criar sua conta
-          </CardDescription>
-        </CardHeader>
+          <CardHeader className="space-y-1 p-0 text-center">
+            <CardTitle className="text-2xl font-bold">Criar uma conta</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Preencha os dados abaixo para criar sua conta
+            </CardDescription>
+          </CardHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
-          {generalError && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {generalError}
-            </div>
-          )}
-          <div className="grid gap-2">
-            <Label>Account Type</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <input 
-                  type="radio" 
-                  id="pf" 
-                  name="accountType" 
-                  value="pf" 
-                  checked={accountType === 'pf'} 
-                  onChange={(e) => setAccountType(e.target.value as 'pf' | 'pj')} 
-                  className="peer sr-only"
-                />
-                <Label 
-                  htmlFor="pf" 
-                  className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-3 text-sm hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                >
-                  Pessoa Física
-                </Label>
+            {generalError && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {generalError}
               </div>
+            )}
+            <div className="grid gap-2">
+              <Label>Account Type</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <input
+                    type="radio"
+                    id="pf"
+                    name="accountType"
+                    value="pf"
+                    checked={accountType === 'pf'}
+                    onChange={(e) => setAccountType(e.target.value as 'pf' | 'pj')}
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor="pf"
+                    className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-3 text-sm hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                  >
+                    Pessoa Física
+                  </Label>
+                </div>
 
-              <div>
-                <input 
-                  type="radio" 
-                  id="pj" 
-                  name="accountType" 
-                  value="pj" 
-                  checked={accountType === 'pj'} 
-                  onChange={(e) => setAccountType(e.target.value as 'pf' | 'pj')} 
-                  className="peer sr-only"
-                />
-                <Label 
-                  htmlFor="pj" 
-                  className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-3 text-sm hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                >
-                  Pessoa Jurídica
-                </Label>
+                <div>
+                  <input
+                    type="radio"
+                    id="pj"
+                    name="accountType"
+                    value="pj"
+                    checked={accountType === 'pj'}
+                    onChange={(e) => setAccountType(e.target.value as 'pf' | 'pj')}
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor="pj"
+                    className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-3 text-sm hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                  >
+                    Pessoa Jurídica
+                  </Label>
+                </div>
               </div>
             </div>
-          </div>
 
             {accountType === 'pj' && (
               <div className="space-y-2">
@@ -347,8 +347,8 @@ export default function RegisterPage() {
                 value={form.cpfCnpj}
                 onChange={(e) => {
                   const value = e.target.value;
-                  const formatted = accountType === 'pf' 
-                    ? formatCPF(value) 
+                  const formatted = accountType === 'pf'
+                    ? formatCPF(value)
                     : formatCNPJ(value);
                   setForm(prev => ({ ...prev, cpfCnpj: formatted }));
                 }}
@@ -360,16 +360,22 @@ export default function RegisterPage() {
 
             <div className="grid gap-2">
               <Label>Telefone</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid gap-2 grid-cols-[80px_70px_140px]">
                 <div>
                   <Input
                     id="phoneCountryCode"
-                    placeholder="55"
+                    placeholder="+55"
                     value={form.phoneCountryCode}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, phoneCountryCode: e.target.value }))
-                    }
-                    className={errors.phoneCountryCode ? 'border-destructive' : ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 3) {
+                        setForm((prev) => ({ ...prev, phoneCountryCode: val }));
+                      }
+                    }}
+                    inputMode="numeric"
+                    pattern="[0-9]{1,3}"
+                    title="Código do país (1-3 dígitos)"
+                    className={`text-center ${errors.phoneCountryCode ? 'border-destructive' : ''}`}
                   />
                   {errors.phoneCountryCode && (
                     <p className="text-sm text-destructive">{errors.phoneCountryCode}</p>
@@ -380,10 +386,16 @@ export default function RegisterPage() {
                     id="phoneDDD"
                     placeholder="11"
                     value={form.phoneDDD}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, phoneDDD: e.target.value }))
-                    }
-                    className={errors.phoneDDD ? 'border-destructive' : ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 2) {
+                        setForm((prev) => ({ ...prev, phoneDDD: val }));
+                      }
+                    }}
+                    inputMode="numeric"
+                    pattern="[0-9]{2}"
+                    title="DDD (2 dígitos)"
+                    className={`text-center ${errors.phoneDDD ? 'border-destructive' : ''}`}
                   />
                   {errors.phoneDDD && (
                     <p className="text-sm text-destructive">{errors.phoneDDD}</p>
@@ -392,11 +404,17 @@ export default function RegisterPage() {
                 <div>
                   <Input
                     id="phoneLocal"
-                    placeholder="999999999"
+                    placeholder="99999-9999"
                     value={form.phoneLocal}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, phoneLocal: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 9) {
+                        setForm((prev) => ({ ...prev, phoneLocal: val }));
+                      }
+                    }}
+                    inputMode="numeric"
+                    pattern="[0-9]{8,9}"
+                    title="Telefone (8-9 dígitos)"
                     className={errors.phoneLocal ? 'border-destructive' : ''}
                   />
                   {errors.phoneLocal && (
@@ -452,167 +470,167 @@ export default function RegisterPage() {
                 <p className="text-sm text-destructive">{errors.confirmPassword}</p>
               )}
             </div>
-          
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2 border-t pt-4">
-              <h3 className="text-lg font-medium">Endereço</h3>
-              <p className="text-sm text-muted-foreground">
-                Informe o endereço da {accountType === 'pf' ? 'sua residência' : 'sua clínica'}
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="cep">CEP</Label>
-                <div className="flex space-x-2">
-                  <Input
-                    id="cep"
-                    placeholder="00000-000"
-                    value={form.cep}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '');
-                      const formatted = value.replace(/^(\d{5})(\d{1,3})?$/, (_, p1, p2) =>
-                        p2 ? `${p1}-${p2}` : p1
-                      );
-                      setForm((prev) => ({ ...prev, cep: formatted }));
-                    }}
-                    maxLength={9}
-                    className={errors.cep ? 'border-destructive' : ''}
-                    onBlur={() => {
-                      if (form.cep.replace(/\D/g, '').length === 8) {
-                        fetchAddressByCEP(form.cep);
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fetchAddressByCEP(form.cep)}
-                    disabled={form.cep.replace(/\D/g, '').length !== 8}
-                    className="shrink-0"
-                  >
-                    Buscar
-                  </Button>
+
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2 border-t pt-4">
+                <h3 className="text-lg font-medium">Endereço</h3>
+                <p className="text-sm text-muted-foreground">
+                  Informe o endereço da {accountType === 'pf' ? 'sua residência' : 'sua clínica'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cep">CEP</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      id="cep"
+                      placeholder="00000-000"
+                      value={form.cep}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        const formatted = value.replace(/^(\d{5})(\d{1,3})?$/, (_, p1, p2) =>
+                          p2 ? `${p1}-${p2}` : p1
+                        );
+                        setForm((prev) => ({ ...prev, cep: formatted }));
+                      }}
+                      maxLength={9}
+                      className={errors.cep ? 'border-destructive' : ''}
+                      onBlur={() => {
+                        if (form.cep.replace(/\D/g, '').length === 8) {
+                          fetchAddressByCEP(form.cep);
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fetchAddressByCEP(form.cep)}
+                      disabled={form.cep.replace(/\D/g, '').length !== 8}
+                      className="shrink-0"
+                    >
+                      Buscar
+                    </Button>
+                  </div>
+                  {errors.cep && <p className="text-sm text-destructive">{errors.cep}</p>}
                 </div>
-                {errors.cep && <p className="text-sm text-destructive">{errors.cep}</p>}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="logradouro">Logradouro</Label>
-                <Input
-                  id="logradouro"
-                  placeholder="Rua, Avenida, etc."
-                  value={form.logradouro}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, logradouro: e.target.value }))
-                  }
-                  className={errors.logradouro ? 'border-destructive' : ''}
-                />
-                {errors.logradouro && <p className="text-sm text-destructive">{errors.logradouro}</p>}
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="logradouro">Logradouro</Label>
+                  <Input
+                    id="logradouro"
+                    placeholder="Rua, Avenida, etc."
+                    value={form.logradouro}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, logradouro: e.target.value }))
+                    }
+                    className={errors.logradouro ? 'border-destructive' : ''}
+                  />
+                  {errors.logradouro && <p className="text-sm text-destructive">{errors.logradouro}</p>}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="numero">Número</Label>
-                <Input
-                  id="numero"
-                  placeholder="Número"
-                  required
-                  value={form.numero}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, numero: e.target.value }))
-                  }
-                  className={errors.numero ? 'border-destructive' : ''}
-                />
-                {errors.numero && <p className="text-sm text-destructive">{errors.numero}</p>}
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="numero">Número</Label>
+                  <Input
+                    id="numero"
+                    placeholder="Número"
+                    required
+                    value={form.numero}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, numero: e.target.value }))
+                    }
+                    className={errors.numero ? 'border-destructive' : ''}
+                  />
+                  {errors.numero && <p className="text-sm text-destructive">{errors.numero}</p>}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="complemento">Complemento</Label>
-                <Input
-                  id="complemento"
-                  placeholder="Apto, Bloco, etc."
-                  value={form.complemento}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, complemento: e.target.value }))
-                  }
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="complemento">Complemento</Label>
+                  <Input
+                    id="complemento"
+                    placeholder="Apto, Bloco, etc."
+                    value={form.complemento}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, complemento: e.target.value }))
+                    }
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="bairro">Bairro</Label>
-                <Input
-                  id="bairro"
-                  placeholder="Bairro"
-                  required
-                  value={form.bairro}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, bairro: e.target.value }))
-                  }
-                  className={errors.bairro ? 'border-destructive' : ''}
-                />
-                {errors.bairro && <p className="text-sm text-destructive">{errors.bairro}</p>}
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bairro">Bairro</Label>
+                  <Input
+                    id="bairro"
+                    placeholder="Bairro"
+                    required
+                    value={form.bairro}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, bairro: e.target.value }))
+                    }
+                    className={errors.bairro ? 'border-destructive' : ''}
+                  />
+                  {errors.bairro && <p className="text-sm text-destructive">{errors.bairro}</p>}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="cidade">Cidade</Label>
-                <Input
-                  id="cidade"
-                  placeholder="Cidade"
-                  required
-                  value={form.cidade}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, cidade: e.target.value }))
-                  }
-                  className={errors.cidade ? 'border-destructive' : ''}
-                />
-                {errors.cidade && <p className="text-sm text-destructive">{errors.cidade}</p>}
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cidade">Cidade</Label>
+                  <Input
+                    id="cidade"
+                    placeholder="Cidade"
+                    required
+                    value={form.cidade}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, cidade: e.target.value }))
+                    }
+                    className={errors.cidade ? 'border-destructive' : ''}
+                  />
+                  {errors.cidade && <p className="text-sm text-destructive">{errors.cidade}</p>}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="estado">Estado</Label>
-                <Input
-                  id="estado"
-                  placeholder="UF"
-                  required
-                  value={form.estado}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, estado: e.target.value }))
-                  }
-                  maxLength={2}
-                  className={`uppercase ${errors.estado ? 'border-destructive' : ''}`}
-                />
-                {errors.estado && <p className="text-sm text-destructive">{errors.estado}</p>}
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="estado">Estado</Label>
+                  <Input
+                    id="estado"
+                    placeholder="UF"
+                    required
+                    value={form.estado}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, estado: e.target.value }))
+                    }
+                    maxLength={2}
+                    className={`uppercase ${errors.estado ? 'border-destructive' : ''}`}
+                  />
+                  {errors.estado && <p className="text-sm text-destructive">{errors.estado}</p>}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="pais">País</Label>
-                <Input
-                  id="pais"
-                  value={form.pais}
-                  disabled
-                  className="text-muted-foreground"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="pais">País</Label>
+                  <Input
+                    id="pais"
+                    value={form.pais}
+                    disabled
+                    className="text-muted-foreground"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground mt-4"
-          >
-            {loading ? 'Criando conta...' : 'Criar conta'}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground mt-4"
+            >
+              {loading ? 'Criando conta...' : 'Criar conta'}
+            </Button>
+          </form>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Já tem uma conta?{' '}
-          <Link href="/auth/login" className="font-medium text-foreground hover:underline">
-            Faça login
-          </Link>
-        </p>
+          <p className="text-center text-sm text-muted-foreground">
+            Já tem uma conta?{' '}
+            <Link href="/auth/login" className="font-medium text-foreground hover:underline">
+              Faça login
+            </Link>
+          </p>
+        </div>
       </div>
-    </div>
 
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>

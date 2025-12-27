@@ -9,6 +9,12 @@ import { sendPaymentConfirmedEmail } from '@/lib/emailService';
  * 
  * NOTA: A InfinitePay não fornece assinatura HMAC para validação de webhook.
  * Como alternativa, você pode configurar whitelist de IPs se necessário.
+ * 
+ * COMPORTAMENTO DE RETRY:
+ * - Responda rapidamente (< 1 segundo) com status 200 (sucesso) ou 400 (erro)
+ * - Status 200: Webhook processado com sucesso
+ * - Status 400: Erro processável - InfinitePay tentará reenviar
+ * - Outros status: Erro não recuperável
  */
 function validateWebhookOrigin(req: NextRequest): boolean {
   const allowedIps = process.env.INFINITEPAY_ALLOWED_IPS;
@@ -71,6 +77,7 @@ export async function POST(req: NextRequest) {
 
     if (!orderId) {
       console.error('Webhook InfinitePay sem orderId válido:', data);
+      // Retorna 400 para que a InfinitePay tente reenviar
       return NextResponse.json({ success: false, message: 'ID do pedido ausente.' }, { status: 400 });
     }
 
@@ -79,7 +86,8 @@ export async function POST(req: NextRequest) {
 
     if (!orderSnap.exists) {
       console.error(`Pedido ${orderId} não encontrado no Firestore.`);
-      return NextResponse.json({ success: false, message: 'Pedido não encontrado.' }, { status: 404 });
+      // Retorna 400 para retry (pedido pode ainda não ter sido criado)
+      return NextResponse.json({ success: false, message: 'Pedido não encontrado.' }, { status: 400 });
     }
 
     const orderData = orderSnap.data()!;

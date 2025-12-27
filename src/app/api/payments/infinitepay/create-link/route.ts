@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       items,
     };
 
+    // Dados do cliente (opcional) - facilita o checkout pré-preenchendo informações
     if (customer && (customer.name || customer.email || customer.phone_number)) {
       body_payload.customer = {};
       if (customer.name) body_payload.customer.name = customer.name;
@@ -64,9 +65,12 @@ export async function POST(req: NextRequest) {
       if (customer.phone_number) body_payload.customer.phone_number = customer.phone_number;
     }
 
-    if (address && (address.cep || address.number || address.complement)) {
+    // Endereço de entrega (opcional) - para produtos que requerem entrega física
+    if (address && (address.cep || address.street || address.neighborhood || address.number || address.complement)) {
       body_payload.address = {};
       if (address.cep) body_payload.address.cep = address.cep;
+      if (address.street) body_payload.address.street = address.street;
+      if (address.neighborhood) body_payload.address.neighborhood = address.neighborhood;
       if (address.number) body_payload.address.number = address.number;
       if (address.complement) body_payload.address.complement = address.complement;
     }

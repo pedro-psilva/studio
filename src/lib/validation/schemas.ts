@@ -58,6 +58,8 @@ export const createPaymentLinkSchema = z.object({
     address: z
         .object({
             cep: z.string().optional(),
+            street: z.string().optional(),
+            neighborhood: z.string().optional(),
             number: z.string().optional(),
             complement: z.string().optional(),
         })
@@ -65,6 +67,17 @@ export const createPaymentLinkSchema = z.object({
 });
 
 export type CreatePaymentLinkInput = z.infer<typeof createPaymentLinkSchema>;
+
+/**
+ * Schema de validação para verificação de status de pagamento InfinitePay
+ */
+export const paymentCheckSchema = z.object({
+    orderNsu: z.string().min(1, 'order_nsu é obrigatório'),
+    transactionNsu: z.string().min(1, 'transaction_nsu é obrigatório'),
+    slug: z.string().min(1, 'slug é obrigatório'),
+});
+
+export type PaymentCheckInput = z.infer<typeof paymentCheckSchema>;
 
 /**
  * Schema de validação para confirmação de pedido por email

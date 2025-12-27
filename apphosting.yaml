@@ -18,7 +18,7 @@ env:
   #     - RUNTIME
 
   - variable: BASE_URL
-    value: https://studio--it-lab-solution-2-708503-699a9.us-central1.hosted.app
+    value: https://e-shop-itsolution.com.br
     availability:
       - BUILD
       - RUNTIME
