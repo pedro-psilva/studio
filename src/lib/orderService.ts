@@ -334,9 +334,17 @@ export async function updateOrderPayment(
   paymentId?: string
 ): Promise<void> {
   const ref = doc(db, COLLECTION_NAME, orderId);
-  await updateDoc(ref, {
+
+  const updateData: Record<string, unknown> = {
     paymentStatus,
     paymentId: paymentId ?? null,
     updatedAt: serverTimestamp(),
-  });
+  };
+
+  // Se aprovado, também atualiza o status geral do pedido
+  if (paymentStatus === 'approved') {
+    updateData.status = 'paid';
+  }
+
+  await updateDoc(ref, updateData);
 }

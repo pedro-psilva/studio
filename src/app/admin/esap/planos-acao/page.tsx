@@ -28,41 +28,47 @@ const initialAcoes = [
 
 export default function PlanosAcaoPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [date, setDate] = useState<Date>();
   const [acoes, setAcoes] = useState(initialAcoes);
-  const [newAction, setNewAction] = useState({ meta: '', acao_nome: '', descricao: '', responsavel: ''});
+  const [newAction, setNewAction] = useState({ meta: '', acao_nome: '', descricao: '', responsavel: '' });
   const { toast } = useToast();
 
   const handleCreateAction = () => {
-      const { meta, acao_nome, responsavel } = newAction;
-      if(!meta || !acao_nome || !responsavel || !date) {
-           toast({
-              title: "Campos obrigatórios",
-              description: "Por favor, preencha todos os campos para criar a ação.",
-              variant: "destructive",
-          });
-          return;
-      }
-      
-      const newEntry = {
-          id: `a${acoes.length + 1}`,
-          meta,
-          acao_nome,
-          responsavel,
-          progresso: 0,
-          prazo: format(date, 'yyyy-MM-dd'),
-          status: 'Não Iniciado'
-      };
+    if (isSaving) return;
 
-      setAcoes([newEntry, ...acoes]);
-      setIsModalOpen(false);
-      setNewAction({ meta: '', acao_nome: '', descricao: '', responsavel: '' }); // Reset form
-      setDate(undefined);
-
-       toast({
-          title: "Ação criada com sucesso!",
-          description: `A ação "${acao_nome}" foi adicionada.`,
+    const { meta, acao_nome, responsavel } = newAction;
+    if (!meta || !acao_nome || !responsavel || !date) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos para criar a ação.",
+        variant: "destructive",
       });
+      return;
+    }
+
+    setIsSaving(true);
+
+    const newEntry = {
+      id: `a${acoes.length + 1}`,
+      meta,
+      acao_nome,
+      responsavel,
+      progresso: 0,
+      prazo: format(date, 'yyyy-MM-dd'),
+      status: 'Não Iniciado'
+    };
+
+    setAcoes([newEntry, ...acoes]);
+    setIsModalOpen(false);
+    setNewAction({ meta: '', acao_nome: '', descricao: '', responsavel: '' }); // Reset form
+    setDate(undefined);
+
+    toast({
+      title: "Ação criada com sucesso!",
+      description: `A ação "${acao_nome}" foi adicionada.`,
+    });
+    setIsSaving(false);
   };
 
   return (
@@ -87,53 +93,55 @@ export default function PlanosAcaoPage() {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                    <Label htmlFor="meta">Selecionar Meta</Label>
-                    <Select onValueChange={(v) => setNewAction(p => ({...p, meta: v}))}>
-                        <SelectTrigger><SelectValue placeholder="Vincule a uma meta existente" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Aumentar faturamento em 20%">Aumentar faturamento em 20%</SelectItem>
-                            <SelectItem value="Reduzir para 4 dias">Reduzir para 4 dias</SelectItem>
-                             <SelectItem value="Atingir 5% de conversão">Atingir 5% de conversão</SelectItem>
-                        </SelectContent>
+                  <Label htmlFor="meta">Selecionar Meta</Label>
+                  <Select onValueChange={(v) => setNewAction(p => ({ ...p, meta: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Vincule a uma meta existente" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Aumentar faturamento em 20%">Aumentar faturamento em 20%</SelectItem>
+                      <SelectItem value="Reduzir para 4 dias">Reduzir para 4 dias</SelectItem>
+                      <SelectItem value="Atingir 5% de conversão">Atingir 5% de conversão</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="acao_nome">Nome da Ação</Label>
+                  <Input id="acao_nome" placeholder="Ex: Criar campanha de e-mail marketing" value={newAction.acao_nome} onChange={(e) => setNewAction(p => ({ ...p, acao_nome: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="descricao">Descrição</Label>
+                  <Textarea id="descricao" placeholder="Detalhes sobre a ação a ser executada" value={newAction.descricao} onChange={(e) => setNewAction(p => ({ ...p, descricao: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="responsavel">Responsável</Label>
+                    <Select onValueChange={(v) => setNewAction(p => ({ ...p, responsavel: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Atribuir a um responsável" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Ana (Comercial)">Ana (Comercial)</SelectItem>
+                        <SelectItem value="Beatriz (Marketing)">Beatriz (Marketing)</SelectItem>
+                        <SelectItem value="Carlos (Produção)">Carlos (Produção)</SelectItem>
+                      </SelectContent>
                     </Select>
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="acao_nome">Nome da Ação</Label>
-                    <Input id="acao_nome" placeholder="Ex: Criar campanha de e-mail marketing" value={newAction.acao_nome} onChange={(e) => setNewAction(p => ({...p, acao_nome: e.target.value}))}/>
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="descricao">Descrição</Label>
-                    <Textarea id="descricao" placeholder="Detalhes sobre a ação a ser executada" value={newAction.descricao} onChange={(e) => setNewAction(p => ({...p, descricao: e.target.value}))}/>
-                </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="responsavel">Responsável</Label>
-                        <Select onValueChange={(v) => setNewAction(p => ({...p, responsavel: v}))}>
-                            <SelectTrigger><SelectValue placeholder="Atribuir a um responsável" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Ana (Comercial)">Ana (Comercial)</SelectItem>
-                                <SelectItem value="Beatriz (Marketing)">Beatriz (Marketing)</SelectItem>
-                                <SelectItem value="Carlos (Produção)">Carlos (Produção)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="prazo">Prazo</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date ? format(date, "PPP") : <span>Escolha um prazo</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={setDate} initialFocus /></PopoverContent>
-                        </Popover>
-                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="prazo">Prazo</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {date ? format(date, "PPP") : <span>Escolha um prazo</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={setDate} initialFocus /></PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                <Button type="submit" onClick={handleCreateAction}>Salvar Ação</Button>
+                <Button type="submit" onClick={handleCreateAction} disabled={isSaving}>
+                  {isSaving ? 'Salvando...' : 'Salvar Ação'}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -162,20 +170,20 @@ export default function PlanosAcaoPage() {
                   <TableCell>{acao.responsavel}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                        <Progress value={acao.progresso} className="w-[60%]" />
-                        <span className="text-sm text-muted-foreground">{acao.progresso}%</span>
+                      <Progress value={acao.progresso} className="w-[60%]" />
+                      <span className="text-sm text-muted-foreground">{acao.progresso}%</span>
                     </div>
                   </TableCell>
                   <TableCell>{format(new Date(acao.prazo), 'dd/MM/yyyy')}</TableCell>
                   <TableCell>
-                    <Badge 
+                    <Badge
                       variant={
-                          acao.status === 'Atrasado' ? 'destructive' :
+                        acao.status === 'Atrasado' ? 'destructive' :
                           acao.status === 'Concluído' ? 'secondary' :
-                          'default'
+                            'default'
                       }
                       className={
-                          acao.status === 'Concluído' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''
+                        acao.status === 'Concluído' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''
                       }
                     >
                       {acao.status}

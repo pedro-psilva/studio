@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { adminDb } from '@/lib/firebaseAdmin';
+import { sendPaymentConfirmedEmail } from '@/lib/emailService';
 
 const INFINITEPAY_PAYMENT_CHECK_ENDPOINT = 'https://api.infinitepay.io/invoices/public/checkout/payment_check';
 
@@ -13,12 +15,30 @@ const paymentCheckSchema = z.object({
 });
 
 /**
+ * Busca o e-mail do usuário pelo ID
+ */
+async function getUserEmail(userId: string): Promise<string | null> {
+    try {
+        const userRef = adminDb.collection('users').doc(userId);
+        const doc = await userRef.get();
+        if (doc.exists) {
+            return doc.data()?.email || null;
+        }
+        return null;
+    } catch (error) {
+        console.error(`Erro ao buscar e-mail do usuário ${userId}:`, error);
+        return null;
+    }
+}
+
+/**
  * POST /api/payments/infinitepay/payment-check
  * 
  * Endpoint para verificar o status de um pagamento na InfinitePay.
  * Usado como fallback caso o webhook falhe ou para consultas manuais.
  * 
- * Documentação: https://api.infinitepay.io/invoices/public/checkout/payment_check
+ * IMPORTANTE: Este endpoint também atualiza o status do pedido no banco
+ * quando o pagamento é confirmado.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -67,26 +87,89 @@ export async function POST(req: NextRequest) {
 
         const data = await response.json() as {
             success?: boolean;
-            paid?: boolean;
+            paid?: number | boolean | string;
             amount?: number;
             paid_amount?: number;
             installments?: number;
             capture_method?: string;
+            payment_method?: string;
+            status?: string;
         };
+
+        // Determinar se o pagamento foi realizado
+        // A API pode retornar paid como boolean, número (100 = pago) ou string
+        const isPaid = (() => {
+            if (typeof data.paid === 'boolean') return data.paid;
+            if (typeof data.paid === 'number') return data.paid === 100 || data.paid > 0;
+            if (typeof data.paid === 'string') return data.paid === 'true' || data.paid === '100' || data.paid.toLowerCase() === 'paid';
+            if (data.status === 'approved' || data.status === 'paid') return true;
+            return false;
+        })();
 
         console.log('Status de pagamento obtido com sucesso:', {
             orderNsu: validatedData.orderNsu,
-            paid: data.paid,
+            paidRaw: data.paid,
+            paidType: typeof data.paid,
+            isPaid,
+            status: data.status,
             captureMethod: data.capture_method,
         });
 
+        // Se o pagamento foi confirmado, atualizar o pedido no banco de dados
+        if (isPaid) {
+            try {
+                const orderId = validatedData.orderNsu;
+                const orderRef = adminDb.collection('orders').doc(orderId);
+                const orderSnap = await orderRef.get();
+
+                if (orderSnap.exists) {
+                    const orderData = orderSnap.data()!;
+
+                    // Só atualiza se ainda não estava marcado como pago
+                    if (orderData.paymentStatus !== 'approved') {
+                        console.log(`Atualizando pedido ${orderId} para pago via payment-check...`);
+
+                        await orderRef.update({
+                            paymentStatus: 'approved',
+                            status: 'paid',
+                            paymentId: validatedData.transactionNsu,
+                            updatedAt: new Date(),
+                        });
+
+                        // Enviar e-mail de confirmação
+                        const userEmail = await getUserEmail(orderData.userId);
+                        if (userEmail) {
+                            try {
+                                await sendPaymentConfirmedEmail({
+                                    to: userEmail,
+                                    customerName: orderData.customerName || 'Cliente',
+                                    orderId: orderId,
+                                });
+                                console.log(`E-mail de confirmação enviado para ${userEmail}`);
+                            } catch (emailError) {
+                                console.error('Erro ao enviar e-mail de confirmação:', emailError);
+                            }
+                        }
+                    } else {
+                        console.log(`Pedido ${orderId} já estava marcado como pago.`);
+                    }
+                } else {
+                    console.error(`Pedido ${orderId} não encontrado no Firestore.`);
+                }
+            } catch (dbError) {
+                console.error('Erro ao atualizar pedido no banco:', dbError);
+                // Não falha a requisição, apenas loga o erro
+            }
+        }
+
         return NextResponse.json({
             success: data.success ?? true,
-            paid: data.paid ?? false,
+            paid: isPaid,
             amount: data.amount,
             paidAmount: data.paid_amount,
             installments: data.installments,
             captureMethod: data.capture_method,
+            paymentMethod: data.payment_method,
         });
     } catch (error) {
         if (error instanceof z.ZodError) {

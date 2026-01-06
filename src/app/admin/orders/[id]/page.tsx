@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft } from 'lucide-react';
-import { getOrder, OrderDocument } from '@/lib/orderService';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { getOrder, OrderDocument, updateOrderPayment } from '@/lib/orderService';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { getService } from '@/lib/serviceService';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserInfo {
   displayName?: string;
@@ -61,12 +62,14 @@ export default function AdminOrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { id } = params as { id: string };
+  const { toast } = useToast();
 
   const [order, setOrder] = useState<OrderDocument | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [serviceNames, setServiceNames] = useState<Record<string, string>>({});
+  const [isMarkingAsPaid, setIsMarkingAsPaid] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -136,6 +139,41 @@ export default function AdminOrderDetailPage() {
     loadData();
   }, [id]);
 
+  const handleMarkAsPaid = async () => {
+    if (!order || isMarkingAsPaid) return;
+
+    setIsMarkingAsPaid(true);
+    try {
+      // Atualiza diretamente no Firestore
+      await updateOrderPayment(order.id, 'approved');
+
+      // Atualiza o estado local
+      setOrder((prev) =>
+        prev
+          ? {
+            ...prev,
+            paymentStatus: 'approved',
+            status: 'paid',
+          }
+          : prev
+      );
+
+      toast({
+        title: 'Pagamento confirmado',
+        description: 'O status do pedido foi atualizado com sucesso.',
+      });
+    } catch (err) {
+      console.error('Erro ao marcar como pago:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar',
+        description: 'Não foi possível marcar o pedido como pago.',
+      });
+    } finally {
+      setIsMarkingAsPaid(false);
+    }
+  };
+
   const totalItems = order?.items?.length ?? 0;
 
   return (
@@ -187,7 +225,20 @@ export default function AdminOrderDetailPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Status do pagamento</p>
-                    <p className="text-sm font-medium">{getPaymentStatusLabel(order.paymentStatus)}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">{getPaymentStatusLabel(order.paymentStatus)}</p>
+                      {order.paymentStatus === 'waiting' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleMarkAsPaid}
+                          disabled={isMarkingAsPaid}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          {isMarkingAsPaid ? 'Marcando...' : 'Marcar como Pago'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Itens</p>

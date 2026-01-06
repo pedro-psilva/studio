@@ -10,12 +10,12 @@ import { Label } from '@/components/ui/label';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
 
 const metaData = {
@@ -25,24 +25,27 @@ const metaData = {
 };
 
 const initialResultados = [
-  { id: 'r1', data_registro: '2024-07-01', valor_real: 42000, crescimento: -16.00, observacao: 'Início do trimestre, vendas sazonais baixas.' },
-  { id: 'r2', data_registro: '2024-07-15', valor_real: 48000, crescimento: -4.00, observacao: 'Aumento após campanha de e-mail.' },
-  { id: 'r3', data_registro: '2024-07-30', valor_real: 51500, crescimento: 3.00, observacao: 'Meta batida no final do mês.' },
+    { id: 'r1', data_registro: '2024-07-01', valor_real: 42000, crescimento: -16.00, observacao: 'Início do trimestre, vendas sazonais baixas.' },
+    { id: 'r2', data_registro: '2024-07-15', valor_real: 48000, crescimento: -4.00, observacao: 'Aumento após campanha de e-mail.' },
+    { id: 'r3', data_registro: '2024-07-30', valor_real: 51500, crescimento: 3.00, observacao: 'Meta batida no final do mês.' },
 ];
 
 export default function AcompanhamentoPage() {
     const [isAddingResult, setIsAddingResult] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [resultados, setResultados] = useState(initialResultados);
     const [newResult, setNewResult] = useState({ valor_real: '', observacao: '' });
     const { toast } = useToast();
 
     const chartData = resultados.map(r => ({
-      date: new Date(r.data_registro).toLocaleDateString('pt-BR'),
-      'Valor Real': r.valor_real,
-      'Valor Meta': metaData.valor_meta
+        date: new Date(r.data_registro).toLocaleDateString('pt-BR'),
+        'Valor Real': r.valor_real,
+        'Valor Meta': metaData.valor_meta
     })).sort((a, b) => new Date(a.date.split('/').reverse().join('-')).getTime() - new Date(b.date.split('/').reverse().join('-')).getTime());
 
     const handleAddResult = () => {
+        if (isSaving) return;
+
         if (!newResult.valor_real) {
             toast({
                 title: "Campo obrigatório",
@@ -52,10 +55,12 @@ export default function AcompanhamentoPage() {
             return;
         }
 
+        setIsSaving(true);
+
         const valorRealNum = parseFloat(newResult.valor_real);
         const ultimoResultado = resultados.length > 0 ? resultados[resultados.length - 1].valor_real : metaData.valor_meta;
         const crescimento = ((valorRealNum - ultimoResultado) / ultimoResultado) * 100;
-        
+
         const newEntry = {
             id: `r${resultados.length + 1}`,
             data_registro: new Date().toISOString().split('T')[0],
@@ -72,6 +77,7 @@ export default function AcompanhamentoPage() {
             title: "Resultado adicionado!",
             description: "O novo registro de acompanhamento foi salvo com sucesso.",
         });
+        setIsSaving(false);
     };
 
     return (
@@ -83,7 +89,7 @@ export default function AcompanhamentoPage() {
                 </div>
                 <div className="ml-auto">
                     {!isAddingResult && (
-                         <Button onClick={() => setIsAddingResult(true)}>
+                        <Button onClick={() => setIsAddingResult(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Adicionar Resultado
                         </Button>
@@ -95,10 +101,10 @@ export default function AcompanhamentoPage() {
                 <CardHeader>
                     <div className="flex justify-between items-start">
                         <div>
-                             <CardTitle className="text-2xl">Meta: {metaData.nome}</CardTitle>
-                             <CardDescription>
+                            <CardTitle className="text-2xl">Meta: {metaData.nome}</CardTitle>
+                            <CardDescription>
                                 Valor da Meta: {metaData.valor_meta.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                             </CardDescription>
+                            </CardDescription>
                         </div>
                         <Badge variant="default">{metaData.status}</Badge>
                     </div>
@@ -112,31 +118,31 @@ export default function AcompanhamentoPage() {
                             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="valor_real">Valor Real</Label>
-                                    <Input 
-                                      id="valor_real" 
-                                      type="number" 
-                                      placeholder="Ex: 52000" 
-                                      value={newResult.valor_real}
-                                      onChange={(e) => setNewResult(prev => ({...prev, valor_real: e.target.value}))}
+                                    <Input
+                                        id="valor_real"
+                                        type="number"
+                                        placeholder="Ex: 52000"
+                                        value={newResult.valor_real}
+                                        onChange={(e) => setNewResult(prev => ({ ...prev, valor_real: e.target.value }))}
                                     />
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
                                     <Label htmlFor="observacao">Observação</Label>
-                                    <Input 
-                                      id="observacao" 
-                                      placeholder="Algum comentário sobre o resultado" 
-                                      value={newResult.observacao}
-                                      onChange={(e) => setNewResult(prev => ({...prev, observacao: e.target.value}))}
+                                    <Input
+                                        id="observacao"
+                                        placeholder="Algum comentário sobre o resultado"
+                                        value={newResult.observacao}
+                                        onChange={(e) => setNewResult(prev => ({ ...prev, observacao: e.target.value }))}
                                     />
                                 </div>
                             </CardContent>
-                             <CardContent className="flex justify-end gap-2">
+                            <CardContent className="flex justify-end gap-2">
                                 <Button variant="outline" onClick={() => setIsAddingResult(false)}>Cancelar</Button>
-                                <Button onClick={handleAddResult}>Salvar Resultado</Button>
+                                <Button onClick={handleAddResult} disabled={isSaving}>{isSaving ? 'Salvando...' : 'Salvar Resultado'}</Button>
                             </CardContent>
                         </Card>
                     )}
-                    
+
                     <div className="mb-8">
                         <h3 className="text-lg font-semibold mb-2">Gráfico: Meta vs. Real</h3>
                         <ResponsiveContainer width="100%" height={300}>

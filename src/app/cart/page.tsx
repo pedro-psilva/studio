@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
@@ -20,6 +20,9 @@ import { getService, type ServiceDocument } from '@/lib/serviceService';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, getDocs, query, where, limit } from 'firebase/firestore';
 
+// Valor mínimo aceito pelo InfinitePay (em reais)
+const MIN_ORDER_TOTAL = 1.00;
+
 type CartItemWithService = CartItemFirestore & {
   uniqueId: string;
   service: ServiceDocument;
@@ -28,6 +31,7 @@ type CartItemWithService = CartItemFirestore & {
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItemWithService[]>([]);
   const [loadingCart, setLoadingCart] = useState(true);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [userAddress, setUserAddress] = useState<{ cep?: string; number?: string; complement?: string } | null>(null);
   const [couponCode, setCouponCode] = useState('');
@@ -242,6 +246,8 @@ export default function CartPage() {
     return base < 0 ? 0 : base;
   }, [subtotal, discount, finalShipping]);
 
+  const isBelowMinimum = total < MIN_ORDER_TOTAL && total > 0;
+
   const handleApplyCoupon = async () => {
     const raw = couponCode.trim();
     if (!raw) {
@@ -302,8 +308,8 @@ export default function CartPage() {
         data.type === 'fixed'
           ? 'fixed'
           : data.type === 'free_shipping'
-          ? 'free_shipping'
-          : 'percent';
+            ? 'free_shipping'
+            : 'percent';
 
       setAppliedCoupon({
         id: docSnap.id,
@@ -328,6 +334,9 @@ export default function CartPage() {
   };
 
   const handleCheckout = async () => {
+    // Previne múltiplos cliques
+    if (isCheckingOut) return;
+
     if (!user) {
       const returnUrl = '/cart';
       router.push(`/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`);
@@ -335,6 +344,8 @@ export default function CartPage() {
     }
 
     if (cartItems.length === 0) return;
+
+    setIsCheckingOut(true);
 
     const orderItems: OrderItemFirestore[] = cartItems.map((item) => ({
       productId: item.productId,
@@ -368,11 +379,11 @@ export default function CartPage() {
         discount,
         coupon: appliedCoupon
           ? {
-              id: appliedCoupon.id,
-              code: appliedCoupon.code,
-              type: appliedCoupon.type,
-              value: appliedCoupon.value,
-            }
+            id: appliedCoupon.id,
+            code: appliedCoupon.code,
+            type: appliedCoupon.type,
+            value: appliedCoupon.value,
+          }
           : null,
       });
 
@@ -381,12 +392,12 @@ export default function CartPage() {
       try {
         const itemsForCheckout = appliedCoupon
           ? [
-              {
-                quantity: 1,
-                price: Math.round(total * 100),
-                description: `Pedido ${order.id} (cupom ${appliedCoupon.code})`,
-              },
-            ]
+            {
+              quantity: 1,
+              price: Math.round(total * 100),
+              description: `Pedido ${order.id} (cupom ${appliedCoupon.code})`,
+            },
+          ]
           : infinitepayItems;
 
         const response = await fetch('/api/payments/infinitepay/create-link', {
@@ -418,6 +429,8 @@ export default function CartPage() {
       }
     } catch (error) {
       console.error('Erro ao finalizar compra:', error);
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
@@ -427,8 +440,8 @@ export default function CartPage() {
       <main className="flex-1 bg-muted/20">
         <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="mb-8">
-             <h1 className="text-3xl md:text-4xl font-bold font-headline">Seu Carrinho</h1>
-             <p className="text-muted-foreground mt-2">Revise os itens e prossiga para a finalização da compra.</p>
+            <h1 className="text-3xl md:text-4xl font-bold font-headline">Seu Carrinho</h1>
+            <p className="text-muted-foreground mt-2">Revise os itens e prossiga para a finalização da compra.</p>
           </div>
 
           {loadingCart ? (
@@ -437,145 +450,150 @@ export default function CartPage() {
             </div>
           ) : (
 
-          cartItems.length === 0 ? (
-             <div className="text-center bg-card p-12 rounded-lg border border-dashed">
+            cartItems.length === 0 ? (
+              <div className="text-center bg-card p-12 rounded-lg border border-dashed">
                 <ShoppingCartIcon className="mx-auto h-16 w-16 text-muted-foreground" />
                 <h2 className="mt-6 text-2xl font-semibold">Seu carrinho está vazio</h2>
                 <p className="mt-2 text-muted-foreground">Parece que você ainda não adicionou nenhum produto.</p>
                 <Button asChild className="mt-6">
                   <Link href="/products">Explorar Produtos</Link>
                 </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
-              {/* Cart Items */}
-              <div className="lg:col-span-2 space-y-6">
-                {cartItems.map((item) => {
-                  const isCustom = Array.isArray(item.service.arquivosNecessarios) && item.service.arquivosNecessarios.length > 0;
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
+                {/* Cart Items */}
+                <div className="lg:col-span-2 space-y-6">
+                  {cartItems.map((item) => {
+                    const isCustom = Array.isArray(item.service.arquivosNecessarios) && item.service.arquivosNecessarios.length > 0;
 
-                  return (
-                    <Card key={item.uniqueId} className="overflow-hidden">
-                      <div className="flex flex-col sm:flex-row items-start gap-4 p-4">
-                        {item.service.imagemUrl && (
-                          <Image
-                            src={item.service.imagemUrl}
-                            alt={item.service.nome}
-                            width={120}
-                            height={120}
-                            className="w-full sm:w-32 h-32 sm:h-auto aspect-square rounded-md object-cover"
-                          />
-                        )}
-                        <div className="flex-1 w-full">
-                          <Link href={`/products/${item.productId}`} className="font-semibold hover:underline">
-                            {item.service.nome}
-                          </Link>
-                          {item.patientName && <p className="text-sm font-medium text-primary">Paciente: {item.patientName}</p>}
-                          <p className="text-sm text-muted-foreground">{formatCurrency(item.service.precoBase)}</p>
-                           <div className="flex items-center justify-between mt-4">
-                             <div className="flex items-center border rounded-md">
-                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)} disabled={isCustom}>
-                                 <Minus className="h-4 w-4" />
-                               </Button>
-                               <Input type="number" value={item.quantity} readOnly className="h-8 w-12 border-0 text-center" />
-                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity + 1)} disabled={isCustom}>
-                                 <Plus className="h-4 w-4" />
-                               </Button>
-                             </div>
+                    return (
+                      <Card key={item.uniqueId} className="overflow-hidden">
+                        <div className="flex flex-col sm:flex-row items-start gap-4 p-4">
+                          {item.service.imagemUrl && (
+                            <Image
+                              src={item.service.imagemUrl}
+                              alt={item.service.nome}
+                              width={120}
+                              height={120}
+                              className="w-full sm:w-32 h-32 sm:h-auto aspect-square rounded-md object-cover"
+                            />
+                          )}
+                          <div className="flex-1 w-full">
+                            <Link href={`/products/${item.productId}`} className="font-semibold hover:underline">
+                              {item.service.nome}
+                            </Link>
+                            {item.patientName && <p className="text-sm font-medium text-primary">Paciente: {item.patientName}</p>}
+                            <p className="text-sm text-muted-foreground">{formatCurrency(item.service.precoBase)}</p>
+                            <div className="flex items-center justify-between mt-4">
+                              <div className="flex items-center border rounded-md">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)} disabled={isCustom}>
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <Input type="number" value={item.quantity} readOnly className="h-8 w-12 border-0 text-center" />
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.uniqueId, item.quantity + 1)} disabled={isCustom}>
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
                               <Button variant="ghost" size="icon" onClick={() => removeItem(item.uniqueId)}>
                                 <X className="h-5 w-5 text-muted-foreground hover:text-destructive" />
                               </Button>
-                           </div>
-                        </div>
-                         <p className="text-lg font-bold w-full sm:w-auto text-right">{formatCurrency(item.service.precoBase * item.quantity)}</p>
-                      </div>
-                      
-                      {/* Customization Details */}
-                      {isCustom && (
-                        <div className="bg-muted/50 px-4 py-3 border-t">
-                           <h4 className="text-sm font-semibold mb-3">Detalhes do Caso Clínico:</h4>
-                           <div className='grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mb-4'>
-                            {item.teeth && item.teeth.length > 0 && <div><strong>Dentes:</strong> {item.teeth.join(', ')}</div>}
-                            {item.shade && <div><strong>Cor:</strong> <Badge variant="secondary">{item.shade}</Badge></div>}
-                            {item.stlFileUrl && <div className="flex items-center gap-1 col-span-2"><strong>Arquivo:</strong> <FileText className="h-3 w-3"/> {item.stlFileUrl}</div>}
-                           </div>
-                           
-                           <div className="flex gap-2">
-                             <Button
-                               variant="outline"
-                               size="sm"
-                               onClick={() => handleEditCase(item)}
-                             >
-                               <Edit className="mr-2 h-4 w-4" /> Editar Caso
-                             </Button>
-                           </div>
-                        </div>
-                      )}
-
-                    </Card>
-                  );
-                })}
-              </div>
-
-              {/* Order Summary */}
-              <div className="lg:col-span-1">
-                 <Card className="sticky top-24">
-                    <CardHeader>
-                        <CardTitle>Resumo do Pedido</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex justify-between">
-                            <span>Subtotal</span>
-                            <span>{formatCurrency(subtotal)}</span>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="Código do cupom"
-                              value={couponCode}
-                              onChange={(e) => setCouponCode(e.target.value)}
-                              className="flex-1"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              disabled={applyingCoupon || cartItems.length === 0}
-                              onClick={handleApplyCoupon}
-                            >
-                              {applyingCoupon ? 'Aplicando...' : 'Aplicar'}
-                            </Button>
+                            </div>
                           </div>
-                          {couponError && (
-                            <p className="text-xs text-destructive">{couponError}</p>
-                          )}
-                          {appliedCoupon && !couponError && (
-                            <p className="text-xs text-emerald-600">
-                              Cupom {appliedCoupon.code} aplicado.
-                            </p>
-                          )}
+                          <p className="text-lg font-bold w-full sm:w-auto text-right">{formatCurrency(item.service.precoBase * item.quantity)}</p>
                         </div>
-                        {discount > 0 && (
-                          <div className="flex justify-between text-sm text-emerald-700">
-                            <span>Desconto</span>
-                            <span>-{formatCurrency(discount)}</span>
+
+                        {/* Customization Details */}
+                        {isCustom && (
+                          <div className="bg-muted/50 px-4 py-3 border-t">
+                            <h4 className="text-sm font-semibold mb-3">Detalhes do Caso Clínico:</h4>
+                            <div className='grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mb-4'>
+                              {item.teeth && item.teeth.length > 0 && <div><strong>Dentes:</strong> {item.teeth.join(', ')}</div>}
+                              {item.shade && <div><strong>Cor:</strong> <Badge variant="secondary">{item.shade}</Badge></div>}
+                              {item.stlFileUrl && <div className="flex items-center gap-1 col-span-2"><strong>Arquivo:</strong> <FileText className="h-3 w-3" /> {item.stlFileUrl}</div>}
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditCase(item)}
+                              >
+                                <Edit className="mr-2 h-4 w-4" /> Editar Caso
+                              </Button>
+                            </div>
                           </div>
                         )}
-                         <div className="flex justify-between">
-                            <span>Frete</span>
-                            <span>{formatCurrency(finalShipping)}</span>
-                         </div>
-                        <Separator />
-                        <div className="flex justify-between font-bold text-lg">
-                            <span>Total</span>
-                            <span>{formatCurrency(total)}</span>
+
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {/* Order Summary */}
+                <div className="lg:col-span-1">
+                  <Card className="sticky top-24">
+                    <CardHeader>
+                      <CardTitle>Resumo do Pedido</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>{formatCurrency(subtotal)}</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Código do cupom"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value)}
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={applyingCoupon || cartItems.length === 0}
+                            onClick={handleApplyCoupon}
+                          >
+                            {applyingCoupon ? 'Aplicando...' : 'Aplicar'}
+                          </Button>
                         </div>
-                         <Button size="lg" className="w-full mt-4" onClick={handleCheckout}>
-                            Finalizar Compra <ArrowRight className="ml-2 h-4 w-4"/>
-                         </Button>
+                        {couponError && (
+                          <p className="text-xs text-destructive">{couponError}</p>
+                        )}
+                        {appliedCoupon && !couponError && (
+                          <p className="text-xs text-emerald-600">
+                            Cupom {appliedCoupon.code} aplicado.
+                          </p>
+                        )}
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-sm text-emerald-700">
+                          <span>Desconto</span>
+                          <span>-{formatCurrency(discount)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span>Frete</span>
+                        <span>{formatCurrency(finalShipping)}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between font-bold text-lg">
+                        <span>Total</span>
+                        <span>{formatCurrency(total)}</span>
+                      </div>
+                      {isBelowMinimum && (
+                        <p className="text-xs text-destructive mt-2">
+                          O valor mínimo para pagamento é de R$ 1,00.
+                        </p>
+                      )}
+                      <Button size="lg" className="w-full mt-4" onClick={handleCheckout} disabled={isCheckingOut || cartItems.length === 0 || isBelowMinimum}>
+                        {isCheckingOut ? 'Processando...' : 'Finalizar Compra'} {!isCheckingOut && <ArrowRight className="ml-2 h-4 w-4" />}
+                      </Button>
                     </CardContent>
-                 </Card>
+                  </Card>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </main>
       <Footer />

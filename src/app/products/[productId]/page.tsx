@@ -121,6 +121,7 @@ export default function ProductDetailPage() {
     dentistNotes: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const progress = useMemo(
     () => ((currentStep + 1) / STEPS.length) * 100,
@@ -264,9 +265,9 @@ export default function ProductDetailPage() {
     if (currentStep === 0) {
       setSelectedTeeth(data as number[]);
     }
-    
+
     if (!validateStep()) return;
-    
+
     if (currentStep < STEPS.length - 1) {
       setCurrentStep((prev) => prev + 1);
     } else {
@@ -281,6 +282,7 @@ export default function ProductDetailPage() {
   }
 
   async function handleAddToCart() {
+    if (isAddingToCart) return;
     if (!service) return;
 
     if (!user) {
@@ -290,6 +292,8 @@ export default function ProductDetailPage() {
     }
 
     if (!validateStep()) return;
+
+    setIsAddingToCart(true);
 
     let stlFileUrl: string | undefined = existingStlFileName ?? undefined;
 
@@ -333,6 +337,8 @@ export default function ProductDetailPage() {
       router.push("/cart");
     } catch (err) {
       console.error("Erro ao adicionar item ao carrinho:", err);
+    } finally {
+      setIsAddingToCart(false);
     }
   }
 
@@ -363,7 +369,7 @@ export default function ProductDetailPage() {
     : '...';
 
   const productDescription = service ? tProducts(`${service.codigo}.description`) || service.descricao : '...';
-  
+
   const translatedTags = service ? tProducts(`${service.codigo}.tags`) : null;
   const productTags = Array.isArray(translatedTags) ? translatedTags : (service?.tags ?? []);
 
@@ -535,7 +541,7 @@ export default function ProductDetailPage() {
                     <div className="flex-1 overflow-y-auto pr-6 -mr-6">
                       {/* Step 1: Teeth Selection */}
                       <div className={currentStep === 0 ? 'block' : 'hidden'}>
-                        <SeletorInterativoFDI 
+                        <SeletorInterativoFDI
                           initialSelection={selectedTeeth}
                           onNext={(selection) => handleNext(selection)}
                           onChangeSelection={(selection) => setSelectedTeeth(selection)}
@@ -568,11 +574,10 @@ export default function ProductDetailPage() {
                                           <Label
                                             key={color}
                                             htmlFor={color}
-                                            className={`flex items-center justify-center p-3 rounded-md border-2 cursor-pointer transition-colors text-xs sm:text-sm ${
-                                              selectedColor === color
+                                            className={`flex items-center justify-center p-3 rounded-md border-2 cursor-pointer transition-colors text-xs sm:text-sm ${selectedColor === color
                                                 ? "border-primary bg-primary/10"
                                                 : "border-muted"
-                                            }`}
+                                              }`}
                                           >
                                             <RadioGroupItem
                                               value={color}
@@ -786,7 +791,7 @@ export default function ProductDetailPage() {
                           <div className="flex justify-between items-center">
                             <span>{tProduct('modal.review.files')}:</span>
                             <span className="font-medium text-right">
-                              {uploadedFiles.length > 0 ? `${uploadedFiles.length} ${tProduct('modal.review.newFiles')}` : (existingStlFileName ? `1 ${tProduct('modal.review.existingFile')}`: tProduct('modal.review.none'))}
+                              {uploadedFiles.length > 0 ? `${uploadedFiles.length} ${tProduct('modal.review.newFiles')}` : (existingStlFileName ? `1 ${tProduct('modal.review.existingFile')}` : tProduct('modal.review.none'))}
                             </span>
                           </div>
                           <Separator />
@@ -801,7 +806,7 @@ export default function ProductDetailPage() {
                     </div>
 
                     <DialogFooter className="pt-4 mt-auto border-t">
-                     <div className="flex justify-between w-full items-center">
+                      <div className="flex justify-between w-full items-center">
                         <div className="text-lg font-bold text-primary">
                           {formatCurrency(totalPrice)}
                         </div>
@@ -818,10 +823,10 @@ export default function ProductDetailPage() {
                               <ChevronsRight className="ml-2 h-4 w-4" />
                             </Button>
                           )}
-                          
+
                           {currentStep === STEPS.length - 1 && (
-                            <Button onClick={handleAddToCart}>
-                              {tProduct('modal.buttons.addToCart')}
+                            <Button onClick={handleAddToCart} disabled={isAddingToCart}>
+                              {isAddingToCart ? 'Adicionando...' : tProduct('modal.buttons.addToCart')}
                             </Button>
                           )}
                         </div>
@@ -882,22 +887,22 @@ export default function ProductDetailPage() {
                   )}
 
                 {productFlow && productFlow.length > 0 && productFlow[0] !== "N/A" && (
-                <div className="mt-6">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                    {tProduct('productionFlow')}
-                  </h2>
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    {productFlow.map((step, index) => (
-                      <span
-                        key={`${step}-${index}`}
-                        className="rounded-full border px-3 py-1"
-                      >
-                        {step}
-                      </span>
-                    ))}
+                  <div className="mt-6">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                      {tProduct('productionFlow')}
+                    </h2>
+                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      {productFlow.map((step, index) => (
+                        <span
+                          key={`${step}-${index}`}
+                          className="rounded-full border px-3 py-1"
+                        >
+                          {step}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               </div>
             </div>
           ) : null}

@@ -47,6 +47,7 @@ type Order = {
     isLate?: boolean;
     userId?: string;
     productIds?: string[];
+    paymentStatus?: 'waiting' | 'approved' | 'refused' | 'refunded' | null;
 };
 
 type KanbanColumn = {
@@ -237,6 +238,7 @@ export default function ProductionGeneralPage() {
                         isLate,
                         userId: order.userId,
                         productIds: productIdsForDownload,
+                        paymentStatus: order.paymentStatus,
                     };
 
                     let columnKey: KanbanColumn['id'] = "received";
@@ -479,7 +481,16 @@ export default function ProductionGeneralPage() {
                                                                     )}
                                                                 >
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <div className="flex items-center gap-2">
+                                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                                            {order.paymentStatus === 'approved' && (
+                                                                                <Badge className="bg-emerald-600 text-white h-5">Aprovado</Badge>
+                                                                            )}
+                                                                            {order.paymentStatus === 'waiting' && (
+                                                                                <Badge className="bg-amber-500 text-white h-5">Pendente</Badge>
+                                                                            )}
+                                                                            {(order.paymentStatus === 'refused' || order.paymentStatus === 'refunded') && (
+                                                                                <Badge className="bg-red-600 text-white h-5">Recusado</Badge>
+                                                                            )}
                                                                             {order.missingFiles && (
                                                                                 <AlertTriangle className="h-4 w-4 text-destructive" />
                                                                             )}
@@ -488,6 +499,7 @@ export default function ProductionGeneralPage() {
                                                                         </div>
                                                                     </div>
                                                                     <p className="font-semibold text-foreground mb-1">{order.client}</p>
+                                                                    <p className="text-xs text-muted-foreground font-mono mb-1">#{order.id}</p>
                                                                     <p className="text-sm text-muted-foreground mb-1">{order.product}</p>
                                                                     <p className="text-xs text-muted-foreground mb-2">Paciente: {order.patient ?? "Paciente"}</p>
 
@@ -521,8 +533,8 @@ export default function ProductionGeneralPage() {
                                                                     </div>
 
                                                                     {/* Botão de Download de Arquivos */}
-                                                                    {order.userId && order.productIds && order.productIds.length > 0 && (
-                                                                        <div className="mt-3 pt-3 border-t border-border">
+                                                                    <div className="mt-3 pt-3 border-t border-border">
+                                                                        {order.userId && order.productIds && order.productIds.length > 0 && order.files > 0 ? (
                                                                             <Button
                                                                                 variant="outline"
                                                                                 size="sm"
@@ -533,8 +545,13 @@ export default function ProductionGeneralPage() {
                                                                                 <Download className="h-3 w-3 mr-1.5" />
                                                                                 {downloadingFiles.has(order.id) ? 'Baixando...' : `Baixar Arquivos (${order.files})`}
                                                                             </Button>
-                                                                        </div>
-                                                                    )}
+                                                                        ) : (
+                                                                            <div className="text-xs text-muted-foreground text-center py-1">
+                                                                                <Paperclip className="h-3 w-3 inline mr-1" />
+                                                                                Sem Arquivos
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </Draggable>

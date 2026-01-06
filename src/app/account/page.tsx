@@ -148,13 +148,25 @@ export default function AccountPage() {
       console.error('Erro ao atualizar pedidos:', err);
       toast({
         variant: 'destructive',
-        title: 'Erro ao verificar pagamento',
-        description: 'Não foi possível atualizar o status dos pedidos.',
+        title: 'Erro ao atualizar pedidos',
+        description: 'Não foi possível atualizar a lista de pedidos.',
       });
     } finally {
       setLoadingExtra(false);
     }
   };
+
+  const handleVerifyPayment = (order: OrderDocument) => {
+    // Redireciona para a página de checkout onde a verificação será feita
+    // Se o pedido tiver paymentId salvo, usa como transactionNsu
+    if (order.paymentId) {
+      router.push(`/checkout/${order.id}?transaction_nsu=${order.paymentId}&slug=infinitepay`);
+    } else {
+      // Se não tiver, apenas abre a página de checkout para mostrar status
+      router.push(`/checkout/${order.id}`);
+    }
+  };
+
 
   const handlePayOrder = async (order: OrderDocument) => {
     // Monta descrição amigável com os nomes dos serviços do pedido
@@ -625,7 +637,7 @@ export default function AccountPage() {
                                       size="sm"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        void refreshOrders();
+                                        handleVerifyPayment(order);
                                       }}
                                     >
                                       Verificar pagamento

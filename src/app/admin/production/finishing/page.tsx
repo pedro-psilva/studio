@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { MoreHorizontal, User, Clock, Image as ImageIcon } from "lucide-react";
+import { MoreHorizontal, User, Clock, Image as ImageIcon, Download, Paperclip } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
@@ -11,32 +11,37 @@ import { doc, getDoc } from "firebase/firestore";
 import { listAllOrders, type OrderDocument, updateOrderStatus } from "@/lib/orderService";
 import { useToast } from "@/hooks/use-toast";
 import { getService } from "@/lib/serviceService";
+import { downloadOrderFilesAsZip } from "@/lib/storageHelper";
 
 type Order = {
-  id: string;
-  client: string;
-  product: string;
-  patient?: string;
-  responsible: string;
-  photos: number;
-  lastUpdate: string;
-  stlFileUrl?: string;
+    id: string;
+    client: string;
+    product: string;
+    patient?: string;
+    responsible: string;
+    photos: number;
+    lastUpdate: string;
+    stlFileUrl?: string;
+    paymentStatus?: 'waiting' | 'approved' | 'refused' | 'refunded' | null;
+    userId?: string;
+    productIds?: string[];
+    files: number;
 };
 
 type KanbanColumn = {
-  id: 'entry' | 'finishing' | 'exit';
-  title: string;
-  orders: Order[];
+    id: 'entry' | 'finishing' | 'exit';
+    title: string;
+    orders: Order[];
 };
 
 type DashboardOrder = OrderDocument & {
-  clientName: string;
+    clientName: string;
 };
 
 const emptyColumns: Record<KanbanColumn['id'], KanbanColumn> = {
-  entry: { id: 'entry', title: 'Entrada', orders: [] },
-  finishing: { id: 'finishing', title: 'Finalização', orders: [] },
-  exit: { id: 'exit', title: 'Saída', orders: [] },
+    entry: { id: 'entry', title: 'Entrada', orders: [] },
+    finishing: { id: 'finishing', title: 'Finalização', orders: [] },
+    exit: { id: 'exit', title: 'Saída', orders: [] },
 };
 
 export default function FinishingPage() {
@@ -44,6 +49,7 @@ export default function FinishingPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [savingOrderId, setSavingOrderId] = useState<string | null>(null);
+    const [downloadingFiles, setDownloadingFiles] = useState<Set<string>>(new Set());
     const { toast } = useToast();
 
     useEffect(() => {
@@ -149,6 +155,9 @@ export default function FinishingPage() {
                         ? order.updatedAt.toISOString()
                         : new Date().toISOString();
 
+                    const productIdsForDownload = order.items?.map(i => i.productId).filter(Boolean) as string[] || [];
+                    const files = order.items?.length ?? 0;
+
                     const finishingOrder: Order = {
                         id: order.id,
                         client: order.clientName,
@@ -158,6 +167,10 @@ export default function FinishingPage() {
                         photos: 0,
                         lastUpdate,
                         stlFileUrl: firstItem?.stlFileUrl,
+                        paymentStatus: order.paymentStatus,
+                        userId: order.userId,
+                        productIds: productIdsForDownload,
+                        files,
                     };
 
                     let columnKey: KanbanColumn['id'] = 'entry';
@@ -191,6 +204,8 @@ export default function FinishingPage() {
     }, []);
 
     const onDragEnd = async (result: DropResult) => {
+        if (savingOrderId) return;
+
         const { source, destination } = result;
         if (!destination) return;
 
@@ -215,17 +230,19 @@ export default function FinishingPage() {
             };
 
             const newStatus = columnToStatus[destColId];
+            const previousColumns = { ...columns };
+
+            // Atualização Otimista
+            destItems.splice(destination.index, 0, movedItem);
+            setColumns({
+                ...columns,
+                [sourceColId]: { ...columns[sourceColId], orders: sourceItems },
+                [destColId]: { ...columns[destColId], orders: destItems },
+            });
 
             try {
                 setSavingOrderId(movedItem.id);
                 await updateOrderStatus(movedItem.id, newStatus);
-
-                destItems.splice(destination.index, 0, movedItem);
-                setColumns({
-                    ...columns,
-                    [sourceColId]: { ...columns[sourceColId], orders: sourceItems },
-                    [destColId]: { ...columns[destColId], orders: destItems },
-                });
 
                 // Finalizado -> Envio: aqui representamos o pedido pronto para expedição
                 if (destColId === 'exit') {
@@ -236,9 +253,54 @@ export default function FinishingPage() {
                 }
             } catch (err) {
                 console.error('Erro ao atualizar status em Finalização:', err);
+                setColumns(previousColumns);
+                toast({
+                    variant: "destructive",
+                    title: "Erro ao mover pedido",
+                    description: "Não foi possível atualizar o status do pedido."
+                });
             } finally {
                 setSavingOrderId(null);
             }
+        }
+    };
+
+    const handleDownloadFiles = async (order: Order) => {
+        if (!order.userId || !order.productIds || order.productIds.length === 0) {
+            toast({
+                variant: "destructive",
+                title: "Sem arquivos",
+                description: "Este pedido não possui arquivos para download.",
+            });
+            return;
+        }
+
+        setDownloadingFiles(prev => new Set(prev).add(order.id));
+
+        try {
+            await downloadOrderFilesAsZip(
+                order.userId,
+                order.productIds,
+                order.id
+            );
+
+            toast({
+                title: "Download iniciado",
+                description: "Os arquivos estão sendo baixados em formato ZIP.",
+            });
+        } catch (error: any) {
+            console.error('Erro ao baixar arquivos:', error);
+            toast({
+                variant: "destructive",
+                title: "Erro no download",
+                description: error.message || "Não foi possível baixar os arquivos.",
+            });
+        } finally {
+            setDownloadingFiles(prev => {
+                const next = new Set(prev);
+                next.delete(order.id);
+                return next;
+            });
         }
     };
 
@@ -297,10 +359,23 @@ export default function FinishingPage() {
                                                                     snapshot.isDragging && "scale-[1.03] shadow-lg opacity-90 border-primary"
                                                                 )}
                                                             >
-                                                                <div className="flex justify-between items-start mb-2" />
-                                                                <p className="font-semibold text-white mb-1">{order.client}</p>
-                                                                <p className="text-sm text-gray-400 mb-1">{order.product}</p>
-                                                                <p className="text-xs text-gray-500 mb-2">Paciente: {order.patient ?? "Paciente"}</p>
+                                                                <div className="flex justify-between items-start mb-2">
+                                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                                        {order.paymentStatus === 'approved' && (
+                                                                            <Badge className="bg-emerald-600 text-white h-5">Aprovado</Badge>
+                                                                        )}
+                                                                        {order.paymentStatus === 'waiting' && (
+                                                                            <Badge className="bg-amber-500 text-white h-5">Pendente</Badge>
+                                                                        )}
+                                                                        {(order.paymentStatus === 'refused' || order.paymentStatus === 'refunded') && (
+                                                                            <Badge className="bg-red-600 text-white h-5">Recusado</Badge>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <p className="font-semibold text-foreground mb-1">{order.client}</p>
+                                                                <p className="text-xs text-muted-foreground font-mono mb-1">#{order.id}</p>
+                                                                <p className="text-sm text-muted-foreground mb-1">{order.product}</p>
+                                                                <p className="text-xs text-muted-foreground mb-2">Paciente: {order.patient ?? "Paciente"}</p>
                                                                 {order.stlFileUrl && (
                                                                     <a
                                                                         href={order.stlFileUrl}
@@ -311,27 +386,48 @@ export default function FinishingPage() {
                                                                         Baixar arquivos clínicos
                                                                     </a>
                                                                 )}
-                                                                <div className="flex justify-between items-center text-xs text-gray-500">
-                                                                     <div className="flex items-center gap-1.5">
+                                                                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                                                    <div className="flex items-center gap-1.5">
                                                                         <User className="h-3 w-3" />
                                                                         <span>{order.responsible}</span>
                                                                     </div>
                                                                     <div className="flex items-center gap-1.5">
-                                                                        <ImageIcon className="h-3 w-3" />
-                                                                        <span>{order.photos}</span>
-                                                                    </div>
-                                                                     <div className="flex items-center gap-1.5">
                                                                         <Clock className="h-3 w-3" />
                                                                         <span>{new Date(order.lastUpdate).toLocaleDateString()}</span>
                                                                     </div>
                                                                     <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost" className="h-6 w-6 text-gray-400 hover:text-white"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                                                        <DropdownMenuContent align="end" className="bg-[#1a1a1a] text-white border-[#2d2d2d]">
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <Button aria-haspopup="true" size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-foreground">
+                                                                                <MoreHorizontal className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent align="end">
                                                                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                                            <DropdownMenuItem className="focus:bg-[#333] focus:text-white">Ver Detalhes</DropdownMenuItem>
-                                                                            <DropdownMenuSeparator className="bg-[#2d2d2d]" />
+                                                                            <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
+                                                                            <DropdownMenuSeparator />
                                                                         </DropdownMenuContent>
                                                                     </DropdownMenu>
+                                                                </div>
+
+                                                                {/* Botão de Download de Arquivos ZIP */}
+                                                                <div className="mt-2 pt-2 border-t border-border">
+                                                                    {order.userId && order.productIds && order.productIds.length > 0 && order.files > 0 ? (
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            className="w-full text-xs"
+                                                                            onClick={() => handleDownloadFiles(order)}
+                                                                            disabled={downloadingFiles.has(order.id)}
+                                                                        >
+                                                                            <Download className="h-3 w-3 mr-1.5" />
+                                                                            {downloadingFiles.has(order.id) ? 'Baixando...' : `Baixar Arquivos (${order.files})`}
+                                                                        </Button>
+                                                                    ) : (
+                                                                        <div className="text-xs text-muted-foreground text-center py-1">
+                                                                            <Paperclip className="h-3 w-3 inline mr-1" />
+                                                                            Sem Arquivos
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         )}

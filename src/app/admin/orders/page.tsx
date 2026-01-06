@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { File, ListFilter, MoreHorizontal, Search } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -88,6 +89,7 @@ export default function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatusFilter>('all');
+  const router = useRouter();
 
   useEffect(() => {
     let isMounted = true;
@@ -310,7 +312,11 @@ export default function OrdersPage() {
 
               {!loading && !error &&
                 filteredRows.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow
+                    key={order.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => router.push(`/admin/orders/${order.id}`)}
+                  >
                     <TableCell>{order.client}</TableCell>
                     <TableCell className="hidden md:table-cell">{order.date}</TableCell>
                     <TableCell className="hidden md:table-cell">
@@ -326,10 +332,10 @@ export default function OrdersPage() {
                           order.orderStatus === 'paid' || order.orderStatus === 'delivered'
                             ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
                             : order.orderStatus === 'pending_payment'
-                            ? 'bg-amber-100 text-amber-700 border-amber-200'
-                            : order.orderStatus === 'in_production' || order.orderStatus === 'shipped'
-                            ? 'bg-blue-100 text-blue-700 border-blue-200'
-                            : 'bg-destructive/10 text-destructive border-destructive/30'
+                              ? 'bg-amber-100 text-amber-700 border-amber-200'
+                              : order.orderStatus === 'in_production' || order.orderStatus === 'shipped'
+                                ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                : 'bg-destructive/10 text-destructive border-destructive/30'
                         }
                       >
                         {getOrderStatusLabel(order.orderStatus)}
@@ -342,17 +348,17 @@ export default function OrdersPage() {
                           order.paymentStatus === 'approved'
                             ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
                             : order.paymentStatus === 'waiting'
-                            ? 'bg-amber-100 text-amber-700 border-amber-200'
-                            : order.paymentStatus === 'refused' || order.paymentStatus === 'refunded'
-                            ? 'bg-destructive/10 text-destructive border-destructive/30'
-                            : 'bg-muted text-muted-foreground border-muted'
+                              ? 'bg-amber-100 text-amber-700 border-amber-200'
+                              : order.paymentStatus === 'refused' || order.paymentStatus === 'refunded'
+                                ? 'bg-destructive/10 text-destructive border-destructive/30'
+                                : 'bg-muted text-muted-foreground border-muted'
                         }
                       >
                         {getPaymentStatusLabel(order.paymentStatus)}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">

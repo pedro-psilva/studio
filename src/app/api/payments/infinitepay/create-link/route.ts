@@ -23,6 +23,15 @@ export async function POST(req: NextRequest) {
     const redirectUrl = `${baseUrl}/checkout/${orderId}`;
     const webhookUrl = `${baseUrl}/api/webhooks/infinitepay`;
 
+    // Validar valor mínimo aceito pelo InfinitePay (R$ 1,00)
+    if (total < 1.00) {
+      console.error('Valor do pedido abaixo do mínimo aceito pelo InfinitePay:', total);
+      return NextResponse.json(
+        { error: 'O valor mínimo para pagamento é de R$ 1,00' },
+        { status: 400 }
+      );
+    }
+
     // Validar e processar items
     const validItems = Array.isArray(rawItems)
       ? rawItems.filter(
