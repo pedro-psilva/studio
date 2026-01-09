@@ -1,16 +1,16 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { MoreHorizontal, Truck, FileText, Clock, Download, Paperclip } from "lucide-react";
+import { Truck, Clock, Download, Paperclip } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { listAllOrders, type OrderDocument, updateOrderStatus } from "@/lib/orderService";
 import { useToast } from "@/hooks/use-toast";
 import { downloadOrderFilesAsZip } from "@/lib/storageHelper";
+import { KanbanCard } from "@/components/admin/KanbanCard";
 
 type Order = {
     id: string;
@@ -22,6 +22,7 @@ type Order = {
     userId?: string;
     productIds?: string[];
     files: number;
+    labels?: { text: string; color: string }[];
 };
 
 type KanbanColumn = {
@@ -117,18 +118,19 @@ export default function ShippingPage() {
                         : new Date().toISOString();
 
                     const productIdsForDownload = order.items?.map(i => i.productId).filter(Boolean) as string[] || [];
-                    const files = order.items?.length ?? 0;
+                    const files = order.items?.filter(item => item.stlFileUrl).length ?? 0;
 
                     const shippingOrder: Order = {
                         id: order.id,
                         client: order.clientName,
                         carrier: 'Transportadora',
-                        trackingCode: undefined,
+                        trackingCode: undefined, // You might want to map this from order data if available
                         shippingDate,
                         paymentStatus: order.paymentStatus,
                         userId: order.userId,
                         productIds: productIdsForDownload,
                         files,
+                        labels: order.labels,
                     };
 
                     let columnKey: KanbanColumn['id'] = 'entry';
@@ -305,80 +307,61 @@ export default function ShippingPage() {
                                         <div className="flex-1 p-3 overflow-y-auto space-y-3">
                                             {column.orders.length > 0 ? (
                                                 column.orders.map((order, index) => (
-                                                    <Draggable key={order.id} draggableId={order.id} index={index}>
-                                                        {(provided, snapshot) => (
-                                                            <div
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                {...provided.dragHandleProps}
-                                                                className={cn(
-                                                                    "bg-background rounded-[16px] border border-border p-4 shadow-sm transition-all duration-200 hover:scale-[1.03] hover:shadow-md",
-                                                                    snapshot.isDragging && "scale-[1.03] shadow-lg opacity-90 border-primary"
+                                                    <KanbanCard
+                                                        key={order.id}
+                                                        order={order}
+                                                        index={index}
+                                                        badges={
+                                                            <>
+                                                                {order.paymentStatus === 'approved' && (
+                                                                    <Badge className="bg-emerald-600 text-white h-5">Aprovado</Badge>
                                                                 )}
-                                                            >
-                                                                <div className="flex justify-between items-start mb-2">
-                                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                                        {order.paymentStatus === 'approved' && (
-                                                                            <Badge className="bg-emerald-600 text-white h-5">Aprovado</Badge>
-                                                                        )}
-                                                                        {order.paymentStatus === 'waiting' && (
-                                                                            <Badge className="bg-amber-500 text-white h-5">Pendente</Badge>
-                                                                        )}
-                                                                        {(order.paymentStatus === 'refused' || order.paymentStatus === 'refunded') && (
-                                                                            <Badge className="bg-red-600 text-white h-5">Recusado</Badge>
-                                                                        )}
-                                                                        {order.trackingCode ? <Badge variant="secondary">{order.trackingCode}</Badge> : <Badge variant="destructive" className="bg-orange-600">Sem NF</Badge>}
-                                                                    </div>
+                                                                {order.paymentStatus === 'waiting' && (
+                                                                    <Badge className="bg-amber-500 text-white h-5">Pendente</Badge>
+                                                                )}
+                                                                {(order.paymentStatus === 'refused' || order.paymentStatus === 'refunded') && (
+                                                                    <Badge className="bg-red-600 text-white h-5">Recusado</Badge>
+                                                                )}
+                                                                {order.trackingCode ? <Badge variant="secondary">{order.trackingCode}</Badge> : <Badge variant="destructive" className="bg-orange-600">Sem NF</Badge>}
+                                                            </>
+                                                        }
+                                                        infoBar={
+                                                            <>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <Truck className="h-3 w-3" />
+                                                                    <span>{order.carrier}</span>
                                                                 </div>
-                                                                <p className="font-semibold text-foreground mb-1">{order.client}</p>
-                                                                <p className="text-xs text-muted-foreground font-mono mb-1">#{order.id}</p>
-
-                                                                <div className="flex justify-between items-center text-xs text-muted-foreground">
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <Truck className="h-3 w-3" />
-                                                                        <span>{order.carrier}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <Clock className="h-3 w-3" />
-                                                                        <span>{new Date(order.shippingDate).toLocaleDateString()}</span>
-                                                                    </div>
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button aria-haspopup="true" size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-foreground">
-                                                                                <MoreHorizontal className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent align="end">
-                                                                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                                            <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
-                                                                            <DropdownMenuSeparator />
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <Clock className="h-3 w-3" />
+                                                                    <span>{new Date(order.shippingDate).toLocaleDateString()}</span>
                                                                 </div>
-
-                                                                {/* Botão de Download de Arquivos ZIP */}
-                                                                <div className="mt-2 pt-2 border-t border-border">
-                                                                    {order.userId && order.productIds && order.productIds.length > 0 && order.files > 0 ? (
-                                                                        <Button
-                                                                            variant="outline"
-                                                                            size="sm"
-                                                                            className="w-full text-xs"
-                                                                            onClick={() => handleDownloadFiles(order)}
-                                                                            disabled={downloadingFiles.has(order.id)}
-                                                                        >
-                                                                            <Download className="h-3 w-3 mr-1.5" />
-                                                                            {downloadingFiles.has(order.id) ? 'Baixando...' : `Baixar Arquivos (${order.files})`}
-                                                                        </Button>
-                                                                    ) : (
-                                                                        <div className="text-xs text-muted-foreground text-center py-1">
-                                                                            <Paperclip className="h-3 w-3 inline mr-1" />
-                                                                            Sem Arquivos
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </Draggable>
+                                                            </>
+                                                        }
+                                                        footer={
+                                                            <>
+                                                                {order.userId && order.productIds && order.productIds.length > 0 && order.files > 0 ? (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="w-full text-xs"
+                                                                        onClick={() => handleDownloadFiles(order)}
+                                                                        disabled={downloadingFiles.has(order.id)}
+                                                                    >
+                                                                        <Download className="h-3 w-3 mr-1.5" />
+                                                                        {downloadingFiles.has(order.id) ? 'Baixando...' : `Baixar Arquivos (${order.files})`}
+                                                                    </Button>
+                                                                ) : (
+                                                                    <div className="text-xs text-muted-foreground text-center py-1">
+                                                                        <Paperclip className="h-3 w-3 inline mr-1" />
+                                                                        Sem Arquivos
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        }
+                                                    >
+                                                        <p className="font-semibold text-foreground mb-1">{order.client}</p>
+                                                        <p className="text-xs text-muted-foreground font-mono mb-1">#{order.id}</p>
+                                                    </KanbanCard>
                                                 ))
                                             ) : (
                                                 <div className="border-2 border-dashed border-gray-700 rounded-lg h-24 flex items-center justify-center text-gray-500">Nenhum pedido</div>

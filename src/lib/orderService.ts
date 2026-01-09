@@ -50,6 +50,7 @@ export type OrderDocument = {
   paymentProvider: 'infinitepay' | null;
   paymentStatus: PaymentStatus;
   paymentId?: string;
+  labels?: { text: string; color: string }[];
 };
 
 const COLLECTION_NAME = 'orders';
@@ -121,6 +122,7 @@ export async function getOrder(orderId: string): Promise<OrderDocument | null> {
     paymentProvider: data.paymentProvider ?? null,
     paymentStatus: data.paymentStatus ?? null,
     paymentId: data.paymentId,
+    labels: data.labels ?? [],
   };
 }
 
@@ -159,6 +161,7 @@ export async function listUserOrders(userId: string): Promise<OrderDocument[]> {
       paymentProvider: data.paymentProvider ?? null,
       paymentStatus: data.paymentStatus ?? null,
       paymentId: data.paymentId,
+      labels: data.labels ?? [],
     };
   });
 }
@@ -200,6 +203,7 @@ export async function listAllOrders(): Promise<OrderDocument[]> {
       paymentProvider: data.paymentProvider ?? null,
       paymentStatus: data.paymentStatus ?? null,
       paymentId: data.paymentId,
+      labels: data.labels ?? [],
     } as OrderDocument;
   });
 }
@@ -299,32 +303,36 @@ export async function createOrderFromCart(
     updatedAt: new Date(),
     paymentProvider: 'infinitepay',
     paymentStatus: 'waiting',
+    labels: [],
   };
 }
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
+  const currentOrder = await getOrder(orderId);
+
   const ref = doc(db, COLLECTION_NAME, orderId);
   await updateDoc(ref, {
     status,
     updatedAt: serverTimestamp(),
   });
 
-  // Dispara e-mail de atualização de status via API route
-  try {
-    const order = await getOrder(orderId);
-    if (order && order.userId) {
-      const user = await getUserDataById(order.userId);
-      if (user && user.email) {
-        await sendOrderEmail('status-update', {
-          to: user.email,
-          customerName: user.displayName || 'Cliente',
-          orderId,
-          newStatus: status,
-        });
+  // Only send email if status has changed
+  if (currentOrder && currentOrder.status !== status) {
+    try {
+      if (currentOrder.userId) {
+        const user = await getUserDataById(currentOrder.userId);
+        if (user && user.email) {
+          await sendOrderEmail('status-update', {
+            to: user.email,
+            customerName: user.displayName || 'Cliente',
+            orderId,
+            newStatus: status,
+          });
+        }
       }
+    } catch (apiError) {
+      console.error(`Falha ao disparar e-mail de atualização para o pedido ${orderId}:`, apiError);
     }
-  } catch (apiError) {
-    console.error(`Falha ao disparar e-mail de atualização para o pedido ${orderId}:`, apiError);
   }
 }
 
@@ -347,4 +355,15 @@ export async function updateOrderPayment(
   }
 
   await updateDoc(ref, updateData);
+}
+
+export async function updateOrderLabels(
+  orderId: string,
+  labels: { text: string; color: string }[]
+): Promise<void> {
+  const ref = doc(db, COLLECTION_NAME, orderId);
+  await updateDoc(ref, {
+    labels,
+    updatedAt: serverTimestamp(),
+  });
 }
