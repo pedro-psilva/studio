@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Draggable } from "react-beautiful-dnd";
 import { KanbanLabelManager } from "./KanbanLabelManager";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 // Simplified generic Order type that covers most needs
 // Specific fields can be passed via 'children' or specific props if needed commonly
@@ -36,6 +37,7 @@ type KanbanCardProps = {
 export function KanbanCard({ order, index, badges, children, footer, infoBar }: KanbanCardProps) {
     // Local state for labels to update UI optimistically/immediately without full page reload
     const [labels, setLabels] = useState(order.labels || []);
+    const router = useRouter();
 
     return (
         <Draggable draggableId={order.id} index={index}>
@@ -94,7 +96,9 @@ export function KanbanCard({ order, index, badges, children, footer, infoBar }: 
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push(`/admin/orders/${order.id}`)}>
+                                    Ver Detalhes
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 {/* Label Manager Component rendered as a custom item */}
                                 <div className="p-1">

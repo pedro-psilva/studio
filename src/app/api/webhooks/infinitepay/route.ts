@@ -91,11 +91,31 @@ export async function POST(req: NextRequest) {
     }
 
     const orderData = orderSnap.data()!;
-    const paid = (typeof paidAmount === 'number' && paidAmount > 0) || statusField === 'approved' || statusField === 'paid';
+    const paid = (() => {
+      // Prioridade: status explícito
+      if (statusField === 'approved' || statusField === 'paid') return true;
+
+      // Verificação baseada no paid_amount ou flag paid (alguns payloads podem variar)
+      if (typeof paidAmount === 'number' && paidAmount > 0) return true;
+
+      // Verificações adicionais baseadas em payloads observados
+      if (data.paid) {
+        if (typeof data.paid === 'boolean') return data.paid;
+        if (typeof data.paid === 'number') return data.paid === 100 || data.paid > 0;
+        if (typeof data.paid === 'string') return data.paid === 'true' || data.paid === '100' || data.paid.toLowerCase() === 'paid';
+      }
+
+      return false;
+    })();
 
     if (paid) {
       if (orderData.paymentStatus !== 'approved') {
-        console.log(`Atualizando pedido ${orderId} para pago...`);
+        console.log(`Atualizando pedido ${orderId} para pago (Webhook)...`, {
+          transactionNsu,
+          paidAmount,
+          status: statusField
+        });
+
         await orderRef.update({
           paymentStatus: 'approved',
           status: 'paid',
@@ -116,12 +136,19 @@ export async function POST(req: NextRequest) {
         console.log(`Pedido ${orderId} já estava marcado como pago. Webhook ignorado.`);
       }
     } else {
-      console.log(`Atualizando pedido ${orderId} como pagamento recusado...`);
-      await orderRef.update({
-        paymentStatus: 'refused',
-        paymentId: transactionNsu ?? null,
-        updatedAt: new Date(),
+      console.log(`Atualizando pedido ${orderId} como pagamento recusado/pendente...`, {
+        status: statusField,
+        paid
       });
+      // Só marca como recusado se status for explicitamente failure ou refused
+      // Se for apenas pendente, não faz nada para não cancelar prematuramente
+      if (statusField === 'refused' || statusField === 'failed' || statusField === 'chargeback') {
+        await orderRef.update({
+          paymentStatus: 'refused',
+          paymentId: transactionNsu ?? null,
+          updatedAt: new Date(),
+        });
+      }
     }
 
     return NextResponse.json({ success: true });
